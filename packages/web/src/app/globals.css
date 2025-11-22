@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 244 248 247;
+    --foreground: 26 26 26;
+    --card: 255 255 255;
+    --card-foreground: 26 26 26;
+    --popover: 255 255 255;
+    --popover-foreground: 26 26 26;
+    --primary: 42 127 121;
+    --primary-foreground: 255 255 255;
+    --secondary: 245 247 248;
+    --secondary-foreground: 26 26 26;
+    --muted: 245 247 248;
+    --muted-foreground: 91 102 113;
+    --accent: 71 193 185;
+    --accent-foreground: 26 26 26;
+    --destructive: 214 69 69;
+    --destructive-foreground: 255 255 255;
+    --border: 198 205 211;
+    --input: 198 205 211;
+    --ring: 42 127 121;
+    --radius: 12px;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Smooth transitions */
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Card hover elevation */
+  .card-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(42, 127, 121, 0.15);
+  }
+  
+  /* Button press animation */
+  .btn-press:active {
+    transform: scale(0.98);
+  }
+  
+  /* Slide in animation */
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-slide-in {
+    animation: slideIn 0.3s ease-out;
+  }
+  
+  /* Fade in */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  /* Skeleton loader */
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+  
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      #f0f0f0 0px,
+      #e0e0e0 40px,
+      #f0f0f0 80px
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+  }
+  
+  /* Progress ring animation */
+  @keyframes progressRing {
+    from {
+      stroke-dashoffset: 100;
+    }
+  }
+  
+  .progress-ring {
+    transition: stroke-dashoffset 0.5s ease-in-out;
+  }
+}
+

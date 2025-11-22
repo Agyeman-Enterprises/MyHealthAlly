@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyHealthAlly - Phase 2 Features Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #2A7F79 0%, #1B5854 100%);
+            color: #1A1A1A;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #2A7F79;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #5B6671;
+            font-size: 1.2em;
+            margin-bottom: 40px;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-top: 40px;
+        }
+        .feature-card {
+            background: #F4F8F7;
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid #2A7F79;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(42, 127, 121, 0.2);
+        }
+        .feature-card.completed {
+            border-left-color: #4CAF50;
+        }
+        .feature-card.pending {
+            border-left-color: #E5A31A;
+        }
+        .feature-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #1A1A1A;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-completed {
+            background: #4CAF50;
+            color: white;
+        }
+        .status-pending {
+            background: #E5A31A;
+            color: white;
+        }
+        .feature-list {
+            list-style: none;
+            margin-top: 12px;
+        }
+        .feature-list li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        .feature-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .code-block {
+            background: #1A1A1A;
+            color: #47C1B9;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            margin-top: 12px;
+        }
+        .section {
+            margin-top: 40px;
+            padding-top: 40px;
+            border-top: 2px solid #C6CDD3;
+        }
+        .section h2 {
+            color: #2A7F79;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+        }
+        .endpoint {
+            background: #F5F7F8;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 8px 0;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        .endpoint.method {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        .method.get { background: #4CAF50; color: white; }
+        .method.post { background: #2A7F79; color: white; }
+        .method.patch { background: #E5A31A; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏥 MyHealthAlly</h1>
+        <p class="subtitle">Phase 2 Implementation - Feature Overview</p>
+
+        <div class="feature-grid">
+            <div class="feature-card completed">
+                <div class="feature-title">
+                    <span class="status-badge status-completed">✓ Completed</span>
+                    Task 1: Advanced Rules Engine
+                </div>
+                <ul class="feature-list">
+                    <li>Database schema for clinical rules</li>
+                    <li>Rule evaluation engine</li>
+                    <li>Multiple condition types (threshold, trend, volatility)</li>
+                    <li>Action system (alerts, visits, tasks, content)</li>
+                    <li>10 default rules seeded</li>
+                    <li>REST API endpoints</li>
+                </ul>
+            </div>
+
+            <div class="feature-card completed">
+                <div class="feature-title">
+                    <span class="status-badge status-completed">✓ Completed</span>
+                    Task 2: Secure Messaging
+                </div>
+                <ul class="feature-list">
+                    <li>Backend: Threads & Messages</li>
+                    <li>File upload support</li>
+                    <li>Read receipts & unread counts</li>
+                    <li>Web dashboard interface</li>
+                    <li>iOS SwiftUI chat</li>
+                </ul>
+            </div>
+
+            <div class="feature-card completed">
+                <div class="feature-title">
+                    <span class="status-badge status-completed">✓ Completed</span>
+                    Task 5: Monitoring
+                </div>
+                <ul class="feature-list">
+                    <li>Health check endpoints</li>
+                    <li>Request logging middleware</li>
+                    <li>Rate limiting (100 req/min)</li>
+                    <li>Error tracking ready</li>
+                </ul>
+            </div>
+
+            <div class="feature-card completed">
+                <div class="feature-title">
+                    <span class="status-badge status-completed">✓ Completed</span>
+                    Task 7: Weekly Summaries
+                </div>
+                <ul class="feature-list">
+                    <li>Weekly cron job (Mondays 9 AM)</li>
+                    <li>Trend analysis (BP, glucose, weight)</li>
+                    <li>Adherence tracking</li>
+                    <li>Personalized recommendations</li>
+                    <li>Auto-alert generation</li>
+                </ul>
+            </div>
+
+            <div class="feature-card pending">
+                <div class="feature-title">
+                    <span class="status-badge status-pending">Pending</span>
+                    Task 3: Telehealth (WebRTC)
+                </div>
+                <ul class="feature-list">
+                    <li>Requires Daily.co API key</li>
+                    <li>Video room creation</li>
+                    <li>Web & iOS integration</li>
+                </ul>
+            </div>
+
+            <div class="feature-card pending">
+                <div class="feature-title">
+                    <span class="status-badge status-pending">Pending</span>
+                    Task 4: Android App
+                </div>
+                <ul class="feature-list">
+                    <li>Jetpack Compose setup</li>
+                    <li>Feature parity with iOS</li>
+                    <li>Health Connect integration</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📡 API Endpoints</h2>
+            
+            <h3 style="margin-top: 20px; color: #5B6671;">Rules Engine</h3>
+            <div class="endpoint"><span class="method get">GET</span> /rules</div>
+            <div class="endpoint"><span class="method post">POST</span> /rules</div>
+            <div class="endpoint"><span class="method post">POST</span> /rules/evaluate/:patientId</div>
+
+            <h3 style="margin-top: 20px; color: #5B6671;">Messaging</h3>
+            <div class="endpoint"><span class="method get">GET</span> /messaging/threads</div>
+            <div class="endpoint"><span class="method post">POST</span> /messaging/threads/:threadId/messages</div>
+            <div class="endpoint"><span class="method get">GET</span> /messaging/unread-count</div>
+
+            <h3 style="margin-top: 20px; color: #5B6671;">Health & Monitoring</h3>
+            <div class="endpoint"><span class="method get">GET</span> /health</div>
+            <div class="endpoint"><span class="method get">GET</span> /health/ready</div>
+            <div class="endpoint"><span class="method get">GET</span> /health/live</div>
+
+            <h3 style="margin-top: 20px; color: #5B6671;">Weekly Summaries</h3>
+            <div class="endpoint"><span class="method get">GET</span> /patients/:patientId/summaries</div>
+        </div>
+
+        <div class="section">
+            <h2>🚀 Quick Start</h2>
+            <div class="code-block">
+# Install dependencies
+pnpm install
+
+# Start Docker (Postgres + Redis)
+docker-compose up -d
+
+# Run migrations
+cd packages/backend
+pnpm prisma migrate dev
+
+# Start backend (port 3000)
+pnpm dev
+
+# Start web dashboard (port 3001)
+cd ../web
+pnpm dev
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📊 Architecture Highlights</h2>
+            <ul class="feature-list" style="margin-top: 20px;">
+                <li><strong>Rules Engine:</strong> Evaluates clinical rules every 5 minutes, creates alerts, suggests visits, assigns tasks/content</li>
+                <li><strong>Messaging:</strong> HIPAA-ready secure messaging with file attachments, read receipts, and real-time updates</li>
+                <li><strong>Weekly Summaries:</strong> Automated patient insights generated every Monday with trends and recommendations</li>
+                <li><strong>Monitoring:</strong> Health checks, request logging, and rate limiting for production readiness</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
+

@@ -1,0 +1,253 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  passwordHash String  @map("password_hash")
+  role        String   // PATIENT, PROVIDER, MEDICAL_ASSISTANT, ADMIN
+  clinicId    String?  @map("clinic_id")
+  patientId   String?  @unique @map("patient_id")
+  providerId  String?  @unique @map("provider_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  clinic   Clinic?   @relation(fields: [clinicId], references: [id])
+  patient  Patient?  @relation("PatientToUser")
+  provider Provider? @relation("ProviderToUser")
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model Clinic {
+  id            String   @id @default(uuid())
+  name          String
+  brandingConfig Json?   @map("branding_config")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  users    User[]
+  patients Patient[]
+  providers Provider[]
+
+  @@map("clinics")
+}
+
+model Patient {
+  id           String   @id @default(uuid())
+  userId       String   @unique @map("user_id")
+  clinicId     String   @map("clinic_id")
+  firstName    String?  @map("first_name")
+  lastName     String?  @map("last_name")
+  dateOfBirth  DateTime? @map("date_of_birth")
+  demographics Json?
+  flags        String[]
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user         User         @relation("PatientToUser", fields: [userId], references: [id])
+  clinic       Clinic       @relation(fields: [clinicId], references: [id])
+  measurements Measurement[]
+  carePlans    CarePlan[]
+  alerts       Alert[]
+  visitRequests VisitRequest[]
+  ruleExecutions RuleExecution[]
+  messageThreads MessageThread[]
+  weeklySummaries WeeklySummary[]
+
+  @@map("patients")
+}
+
+model Provider {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  clinicId  String   @map("clinic_id")
+  firstName String?  @map("first_name")
+  lastName  String?  @map("last_name")
+  specialty String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user  User   @relation("ProviderToUser", fields: [userId], references: [id])
+  clinic Clinic @relation(fields: [clinicId], references: [id])
+
+  @@map("providers")
+}
+
+model Measurement {
+  id        String   @id @default(uuid())
+  patientId String   @map("patient_id")
+  type      String   // BLOOD_PRESSURE, GLUCOSE, WEIGHT, etc.
+  value     Json     // Can be number or object (e.g., {systolic: 120, diastolic: 80})
+  timestamp DateTime
+  source    String   // "HEALTHKIT", "MANUAL", "DEVICE"
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId, timestamp])
+  @@index([patientId, type, timestamp])
+  @@map("measurements")
+}
+
+model CarePlan {
+  id        String   @id @default(uuid())
+  patientId String   @map("patient_id")
+  phases    Json     // Array of CarePlanPhase
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@map("care_plans")
+}
+
+model Alert {
+  id        String   @id @default(uuid())
+  patientId String   @map("patient_id")
+  severity  String   // INFO, WARNING, CRITICAL
+  type      String   // BP_HIGH_TREND, GLUCOSE_HIGH, etc.
+  title     String
+  body      String
+  payload   Json?
+  status    String   @default("ACTIVE") // ACTIVE, RESOLVED, DISMISSED
+  createdAt DateTime @default(now()) @map("created_at")
+  resolvedAt DateTime? @map("resolved_at")
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId, status])
+  @@index([status, createdAt])
+  @@map("alerts")
+}
+
+model VisitRequest {
+  id          String    @id @default(uuid())
+  patientId   String    @map("patient_id")
+  type        String    // MA_CHECK, PROVIDER
+  status      String    @default("PENDING") // PENDING, SCHEDULED, COMPLETED, CANCELLED
+  requestedAt DateTime  @default(now()) @map("requested_at")
+  scheduledAt DateTime? @map("scheduled_at")
+  notes       String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId, status])
+  @@map("visit_requests")
+}
+
+model WeeklySummary {
+  id          String   @id @default(uuid())
+  patientId   String   @map("patient_id")
+  weekStart   DateTime @map("week_start")
+  weekEnd     DateTime @map("week_end")
+  summary     Json     // { bpTrend, glucoseTrend, weightTrend, steps, sleep, adherence, recommendations }
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@unique([patientId, weekStart])
+  @@index([patientId, weekStart])
+  @@map("weekly_summaries")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+model MessageThread {
+  id        String   @id @default(uuid())
+  patientId String   @map("patient_id")
+  clinicId  String?  @map("clinic_id")
+  participants Json  // Array of user IDs
+  subject   String?
+  lastMessageAt DateTime? @map("last_message_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@index([patientId])
+  @@index([clinicId])
+  @@map("message_threads")
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  threadId  String   @map("thread_id")
+  senderId  String   @map("sender_id")
+  content   String
+  attachments Json?  // Array of { type, url, filename, size }
+  read      Boolean  @default(false)
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  thread MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, createdAt])
+  @@index([senderId])
+  @@map("messages")
+}
+
+model ClinicalRule {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  metric      String   // bp, glucose, weight, sleep, hrv, a1c
+  windowDays  Int      @default(7)
+  condition   Json     // { op: '>' | '<' | 'trendUp' | 'trendDown' | 'missing', threshold?: number }
+  severity    String   // info, warn, critical
+  action      String   // alert, suggest_visit, assign_task, assign_content
+  actionParams Json?   // Additional parameters for action (e.g., content module ID, task type)
+  enabled     Boolean  @default(true)
+  priority    Int      @default(0) // Higher priority rules evaluated first
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  executions RuleExecution[]
+
+  @@index([metric, enabled])
+  @@index([enabled, priority])
+  @@map("clinical_rules")
+}
+
+model RuleExecution {
+  id          String   @id @default(uuid())
+  ruleId      String   @map("rule_id")
+  patientId   String   @map("patient_id")
+  triggered   Boolean  @default(false)
+  result      Json?    // Execution result details
+  executedAt  DateTime @default(now()) @map("executed_at")
+
+  rule    ClinicalRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  patient Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId, executedAt])
+  @@index([ruleId, executedAt])
+  @@map("rule_executions")
+}
+
