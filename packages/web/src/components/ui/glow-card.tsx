@@ -12,7 +12,7 @@ const GlowCard = React.forwardRef<HTMLDivElement, GlowCardProps>(
       <div
         ref={ref}
         className={cn(
-          "bg-myh-surface border border-myh-border rounded-xl p-4 transition-all duration-200",
+          "bg-myh-surface border border-myh-border rounded-xl p-4 shadow-md shadow-slate-200/70 transition-all duration-200",
           clickable && "cursor-pointer hover:shadow-lg hover:border-myh-primary/40",
           glow && clickable && "hover:bg-gradient-to-br hover:from-myh-primarySoft/50 hover:to-white",
           className

@@ -28,4 +28,3 @@ describe('PatientsService', () => {
     expect(service).toBeDefined();
   });
 });
-

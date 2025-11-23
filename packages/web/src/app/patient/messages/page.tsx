@@ -1,130 +1,233 @@
 'use client';
 
-import { useState } from 'react';
-import { GlowCard } from '@/components/ui/glow-card';
-import { PrimaryButton } from '@/components/ui/primary-button';
-import FloatingNav from '@/components/patient/FloatingNav';
-import { Send, Bot } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { PageContainer } from '@/components/layout/PageContainer';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { fetchAPI } from '@/lib/utils';
+import { formatTime, formatRelativeTime } from '@/utils/date';
+import { Send, Bot, MessageSquare } from 'lucide-react';
+
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 
 interface Message {
   id: string;
-  text: string;
-  sender: 'user' | 'assistant';
-  timestamp: Date;
+  content: string;
+  from: { name: string; role: string };
+  to: { name: string; role: string };
+  createdAt: string;
 }
 
 export default function PatientMessagesPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: 'Hello! I\'m your MyHealthAlly Assistant. How can I help you today?',
-      sender: 'assistant',
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [threads, setThreads] = useState<any[]>([]);
+  const [selectedThread, setSelectedThread] = useState<string | null>(null);
   const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
 
-  const sendMessage = async (text: string, isAI: boolean = false) => {
-    if (!text.trim()) return;
+  useEffect(() => {
+    loadThreads();
+  }, []);
 
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      text,
-      sender: isAI ? 'assistant' : 'user',
-      timestamp: new Date(),
-    };
+  useEffect(() => {
+    if (selectedThread) {
+      loadMessages(selectedThread);
+    }
+  }, [selectedThread]);
 
-    setMessages([...messages, newMessage]);
-    setInput('');
-
-    if (!isAI) {
-      setLoading(true);
-      // Simulate AI response
-      setTimeout(() => {
-        const prompt = `You are MyHealthAlly, a supportive, clinically grounded health assistant. The user asks: '${text}'. Reply in a calm, professional tone, under 80 words. Use plain language. Be reassuring and practical. If the question is urgent-sounding (chest pain, trouble breathing, stroke symptoms), include this line at the end: 'If this feels severe or sudden, please seek urgent care or call emergency services.'`;
-        
-        const aiResponse: Message = {
-          id: (Date.now() + 1).toString(),
-          text: "I understand your question. Let me provide you with helpful information. If you have specific concerns about your health, I recommend discussing them with your care team during your next visit. If this feels severe or sudden, please seek urgent care or call emergency services.",
-          sender: 'assistant',
-          timestamp: new Date(),
-        };
-        setMessages(prev => [...prev, aiResponse]);
-        setLoading(false);
-      }, 1000);
+  const loadThreads = async () => {
+    try {
+      const data = await fetchAPI('/patients/me/messages/threads');
+      setThreads(data || []);
+      if (data && data.length > 0 && !selectedThread) {
+        setSelectedThread(data[0].id);
+      }
+    } catch (error) {
+      console.error('Failed to load threads:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const loadMessages = async (threadId: string) => {
+    try {
+      const data = await fetchAPI(`/patients/me/messages/threads/${threadId}`);
+      setMessages(data?.messages || []);
+    } catch (error) {
+      console.error('Failed to load messages:', error);
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!input.trim() || !selectedThread) return;
+    setSending(true);
+    try {
+      await fetchAPI(`/patients/me/messages`, {
+        method: 'POST',
+        body: JSON.stringify({
+          threadId: selectedThread,
+          content: input,
+        }),
+      });
+      setInput('');
+      await loadMessages(selectedThread);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const currentThread = threads.find(t => t.id === selectedThread);
+
+  if (loading) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+            Loading...
+          </div>
+        </div>
+      </PageContainer>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-myh-bg pb-24 flex flex-col">
-      <div className="max-w-4xl mx-auto w-full p-6 space-y-4 flex-1 flex flex-col">
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold text-myh-text">Messages</h1>
-          <div className="flex items-center gap-2 text-sm text-myh-textSoft">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span>Secure connection</span>
-          </div>
+    <PageContainer>
+      <div className="py-6">
+        <div className="mb-6">
+          <h1 className="text-h1 mb-2">Messages</h1>
+          <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+            Communicate with your care team
+          </p>
         </div>
 
-        <GlowCard className="p-4 mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-myh-primarySoft rounded-full flex items-center justify-center">
-              <Bot className="w-5 h-5 text-myh-primary" />
-            </div>
-            <div>
-              <p className="font-medium text-myh-text">MyHealthAlly Assistant</p>
-              <p className="text-xs text-myh-textSoft">Online</p>
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
+          {/* Threads List */}
+          <div className="lg:col-span-1">
+            <Card className="h-full flex flex-col">
+              <CardContent className="p-4 flex-1 overflow-y-auto">
+                <div className="space-y-2">
+                  {threads.map((thread) => (
+                    <div
+                      key={thread.id}
+                      onClick={() => setSelectedThread(thread.id)}
+                      className={`p-3 border-radius cursor-pointer transition-colors ${
+                        selectedThread === thread.id ? 'bg-primary/10' : 'hover:bg-background'
+                      }`}
+                      style={{
+                        borderRadius: 'var(--radius)',
+                        backgroundColor: selectedThread === thread.id ? 'var(--color-primary)' + '10' : 'transparent',
+                      }}
+                    >
+                      <div className="flex items-start justify-between mb-1">
+                        <p className="text-body font-medium" style={{ color: 'var(--color-textPrimary)' }}>
+                          {thread.participants?.find((p: any) => p.role !== 'PATIENT')?.name || 'Care Team'}
+                        </p>
+                        {thread.unreadCount > 0 && (
+                          <span
+                            className="px-2 py-0.5 text-caption border-radius"
+                            style={{
+                              backgroundColor: 'var(--color-primary)',
+                              color: '#FFFFFF',
+                              borderRadius: 'var(--radius)',
+                            }}
+                          >
+                            {thread.unreadCount}
+                          </span>
+                        )}
+                      </div>
+                      {thread.lastMessage && (
+                        <p className="text-caption truncate" style={{ color: 'var(--color-textSecondary)' }}>
+                          {thread.lastMessage.content}
+                        </p>
+                      )}
+                      <p className="text-caption mt-1" style={{ color: 'var(--color-textSecondary)' }}>
+                        {thread.lastMessage ? formatRelativeTime(thread.lastMessage.createdAt) : ''}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </GlowCard>
 
-        <div className="flex-1 space-y-4 overflow-y-auto">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-[80%] rounded-xl p-4 ${
-                  msg.sender === 'user'
-                    ? 'bg-myh-primary text-white'
-                    : 'bg-myh-surface border border-myh-border text-myh-text'
-                }`}
-              >
-                <p className="text-sm">{msg.text}</p>
-                <p className={`text-xs mt-2 ${msg.sender === 'user' ? 'text-white/70' : 'text-myh-textSoft'}`}>
-                  {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
-              </div>
-            </div>
-          ))}
-          {loading && (
-            <div className="flex justify-start">
-              <div className="bg-myh-surface border border-myh-border rounded-xl p-4">
-                <p className="text-sm text-myh-textSoft">Thinking...</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && sendMessage(input)}
-            placeholder="Ask a health question…"
-            className="flex-1 bg-myh-surface border border-myh-border rounded-xl px-4 py-3 text-myh-text placeholder:text-myh-textSoft focus:outline-none focus:ring-2 focus:ring-myh-primary"
-          />
-          <PrimaryButton onClick={() => sendMessage(input)} className="px-6">
-            <Send className="w-5 h-5" />
-          </PrimaryButton>
+          {/* Messages */}
+          <div className="lg:col-span-2 flex flex-col">
+            <Card className="flex-1 flex flex-col">
+              {currentThread ? (
+                <>
+                  <CardContent className="p-4 border-b flex items-center gap-3" style={{ borderColor: 'var(--color-border)' }}>
+                    <MessageSquare className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+                    <div>
+                      <p className="text-body font-medium" style={{ color: 'var(--color-textPrimary)' }}>
+                        {currentThread.participants?.find((p: any) => p.role !== 'PATIENT')?.name || 'Care Team'}
+                      </p>
+                      <p className="text-caption" style={{ color: 'var(--color-textSecondary)' }}>
+                        {currentThread.participants?.find((p: any) => p.role !== 'PATIENT')?.role || 'Provider'}
+                      </p>
+                    </div>
+                  </CardContent>
+                  <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
+                    {messages.map((msg) => {
+                      const isPatient = msg.from.role === 'PATIENT';
+                      return (
+                        <div
+                          key={msg.id}
+                          className={`flex ${isPatient ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div
+                            className={`max-w-[80%] p-3 border-radius`}
+                            style={{
+                              backgroundColor: isPatient ? 'var(--color-primary)' : 'var(--color-background)',
+                              color: isPatient ? '#FFFFFF' : 'var(--color-textPrimary)',
+                              borderRadius: 'var(--radius)',
+                            }}
+                          >
+                            <p className="text-body">{msg.content}</p>
+                            <p
+                              className="text-caption mt-1"
+                              style={{ color: isPatient ? 'rgba(255,255,255,0.7)' : 'var(--color-textSecondary)' }}
+                            >
+                              {formatTime(msg.createdAt)}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                  <CardContent className="p-4 border-t" style={{ borderColor: 'var(--color-border)' }}>
+                    <div className="flex gap-2">
+                      <Input
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                        placeholder="Type a message..."
+                        className="flex-1"
+                      />
+                      <Button onClick={sendMessage} disabled={!input.trim() || sending}>
+                        <Send className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </>
+              ) : (
+                <CardContent className="flex-1 flex items-center justify-center">
+                  <div className="text-center">
+                    <Bot className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--color-textSecondary)' }} />
+                    <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+                      Select a conversation to start messaging
+                    </p>
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          </div>
         </div>
       </div>
-
-      <FloatingNav />
-    </div>
+    </PageContainer>
   );
 }
-

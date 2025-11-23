@@ -22,4 +22,3 @@ export class ClinicsController {
     return this.clinicsService.findOne(id);
   }
 }
-

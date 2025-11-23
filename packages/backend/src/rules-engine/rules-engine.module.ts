@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { RulesEngineService } from './rules-engine.service';
 import { RulesEngineController } from './rules-engine.controller';
 import { RulesSeedService } from './rules-seed.service';
@@ -8,10 +8,9 @@ import { VisitRequestsModule } from '../visit-requests/visit-requests.module';
 import { CarePlansModule } from '../care-plans/care-plans.module';
 
 @Module({
-  imports: [PrismaModule, AlertsModule, VisitRequestsModule, CarePlansModule],
+  imports: [PrismaModule, forwardRef(() => AlertsModule), VisitRequestsModule, CarePlansModule],
   controllers: [RulesEngineController],
   providers: [RulesEngineService, RulesSeedService],
   exports: [RulesEngineService],
 })
 export class RulesEngineModule {}
-

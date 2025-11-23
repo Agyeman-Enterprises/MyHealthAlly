@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { AlertsService } from './alerts.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RulesEngineService } from '../rules-engine/rules-engine.service';
@@ -11,6 +11,7 @@ export class AlertsSchedulerService {
   constructor(
     private alertsService: AlertsService,
     private prisma: PrismaService,
+    @Inject(forwardRef(() => RulesEngineService))
     private rulesEngine: RulesEngineService,
   ) {}
 
@@ -25,11 +26,13 @@ export class AlertsSchedulerService {
         // Use rules engine for all evaluations
         await this.rulesEngine.evaluateRulesForPatient(patient.id);
       } catch (error) {
-        this.logger.error(`Error checking alerts for patient ${patient.id}:`, error);
+        this.logger.error(
+          `Error checking alerts for patient ${patient.id}:`,
+          error,
+        );
       }
     }
 
     this.logger.log('Alerts check completed');
   }
 }
-

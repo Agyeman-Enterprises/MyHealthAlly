@@ -6,13 +6,16 @@ import { MeasurementType } from '@myhealthally/shared';
 export class MeasurementsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(patientId: string, data: {
-    type: MeasurementType;
-    value: number | Record<string, any>;
-    timestamp: Date;
-    source: string;
-    metadata?: Record<string, any>;
-  }) {
+  async create(
+    patientId: string,
+    data: {
+      type: MeasurementType;
+      value: number | Record<string, any>;
+      timestamp: Date;
+      source: string;
+      metadata?: Record<string, any>;
+    },
+  ) {
     return this.prisma.measurement.create({
       data: {
         patientId,
@@ -21,7 +24,11 @@ export class MeasurementsService {
     });
   }
 
-  async findByPatient(patientId: string, type?: MeasurementType, limit?: number) {
+  async findByPatient(
+    patientId: string,
+    type?: MeasurementType,
+    limit?: number,
+  ) {
     return this.prisma.measurement.findMany({
       where: {
         patientId,
@@ -34,7 +41,11 @@ export class MeasurementsService {
     });
   }
 
-  async getRecentByType(patientId: string, type: MeasurementType, days: number = 7) {
+  async getRecentByType(
+    patientId: string,
+    type: MeasurementType,
+    days: number = 7,
+  ) {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
@@ -52,4 +63,3 @@ export class MeasurementsService {
     });
   }
 }
-

@@ -12,4 +12,3 @@ import { AlertsModule } from '../alerts/alerts.module';
   exports: [SummariesService],
 })
 export class SummariesModule {}
-

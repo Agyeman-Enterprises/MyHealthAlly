@@ -164,7 +164,15 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Link href="/dashboard/today">
+            <Card className="hover:bg-accent/5 cursor-pointer transition-colors">
+              <CardHeader>
+                <CardTitle>Today&apos;s Triage</CardTitle>
+                <CardDescription>Patients needing attention and priorities</CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
           <Link href="/patients">
             <Card className="hover:bg-accent/5 cursor-pointer transition-colors">
               <CardHeader>

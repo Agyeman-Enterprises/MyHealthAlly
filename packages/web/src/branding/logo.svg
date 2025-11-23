@@ -1,0 +1,9 @@
+<svg width="200" height="60" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Icon: Health cross in circle -->
+  <circle cx="30" cy="30" r="24" fill="#E0F2EF" stroke="#2A7F79" stroke-width="2"/>
+  <path d="M30 18V42M18 30H42" stroke="#2A7F79" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Wordmark -->
+  <text x="65" y="38" font-family="Inter, sans-serif" font-size="24" font-weight="600" fill="#2A7F79">MyHealthAlly</text>
+</svg>
+

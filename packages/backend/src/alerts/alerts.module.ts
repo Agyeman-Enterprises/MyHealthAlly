@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { AlertsController } from './alerts.controller';
 import { AlertsService } from './alerts.service';
 import { AlertsSchedulerService } from './alerts-scheduler.service';
@@ -6,10 +6,9 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { RulesEngineModule } from '../rules-engine/rules-engine.module';
 
 @Module({
-  imports: [PrismaModule, RulesEngineModule],
+  imports: [PrismaModule, forwardRef(() => RulesEngineModule)],
   controllers: [AlertsController],
   providers: [AlertsService, AlertsSchedulerService],
   exports: [AlertsService],
 })
 export class AlertsModule {}
-

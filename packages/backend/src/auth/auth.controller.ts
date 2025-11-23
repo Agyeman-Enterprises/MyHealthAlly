@@ -1,8 +1,8 @@
 import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
-import { LoginDto, RegisterDto } from '@myhealthally/shared';
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { LoginDto, RegisterDto, UserRole } from '@myhealthally/shared';
+import { IsEmail, IsString, MinLength, IsEnum } from 'class-validator';
 
 class LoginDtoClass implements LoginDto {
   @IsEmail()
@@ -21,8 +21,8 @@ class RegisterDtoClass implements RegisterDto {
   @MinLength(6)
   password: string;
 
-  @IsString()
-  role: string;
+  @IsEnum(UserRole)
+  role: UserRole;
 
   clinicId?: string;
   firstName?: string;
@@ -54,4 +54,3 @@ export class AuthController {
     return req.user;
   }
 }
-

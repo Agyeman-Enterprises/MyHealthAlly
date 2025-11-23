@@ -7,7 +7,11 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "pnpm --filter backend dev",
+    "postinstall": "node auto-start.js",
+    "dev": "node start-servers.js",
+    "start": "node start-servers.js",
+    "start:dev": "node start-servers.js",
+    "setup": "node setup.js",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint"
@@ -20,4 +24,3 @@
     "pnpm": ">=8.0.0"
   }
 }
-

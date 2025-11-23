@@ -82,6 +82,20 @@ const config = {
           error: "#DC2626",
           warning: "#B8860D",
         },
+        clinician: {
+          primary: {
+            DEFAULT: "#0FB5B3",
+            soft: "#1EC5A5",
+          },
+          bg: "#F3FAFB",
+          surface: "#FFFFFF",
+          panel: "#ECF7F7",
+          text: "#123047",
+          textMuted: "#6B7C93",
+          good: "#16A34A",
+          warning: "#F97316",
+          danger: "#EF4444",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

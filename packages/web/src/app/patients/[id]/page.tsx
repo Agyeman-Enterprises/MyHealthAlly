@@ -6,9 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { fetchAPI } from '@/lib/utils';
 import { Patient, Alert, RiskLevel } from '@myhealthally/shared';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { MessageSquare, Calendar, Activity, FileText, ArrowUp, ArrowDown, Minus, Clock } from 'lucide-react';
 
 export default function PatientDetailPage() {
   const router = useRouter();
@@ -19,6 +22,13 @@ export default function PatientDetailPage() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [measurements, setMeasurements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [alertStatusFilter, setAlertStatusFilter] = useState<string>('all');
+  const [alertSeverityFilter, setAlertSeverityFilter] = useState<string>('all');
+  const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
+  const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
+  const [resolveNote, setResolveNote] = useState('');
+  const [noteDialogOpen, setNoteDialogOpen] = useState(false);
+  const [noteContent, setNoteContent] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -48,12 +58,77 @@ export default function PatientDetailPage() {
     }
   };
 
-  const handleResolveAlert = async (alertId: string) => {
+  const handleResolveAlert = async (alertId: string, note?: string) => {
     try {
-      await fetchAPI(`/alerts/${alertId}/resolve`, { method: 'PATCH' });
+      await fetchAPI(`/alerts/${alertId}/resolve`, { 
+        method: 'PATCH',
+        body: JSON.stringify({ note }),
+      });
+      setResolveDialogOpen(false);
+      setResolveNote('');
+      setSelectedAlert(null);
       loadPatientData();
     } catch (error) {
       console.error('Failed to resolve alert:', error);
+    }
+  };
+
+  const handleUpdateAlertStatus = async (alertId: string, status: string) => {
+    try {
+      await fetchAPI(`/alerts/${alertId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+      loadPatientData();
+    } catch (error) {
+      console.error('Failed to update alert status:', error);
+    }
+  };
+
+  const handleSendMessage = () => {
+    router.push(`/messages?patient=${patientId}`);
+  };
+
+  const handleRequestReadings = async () => {
+    try {
+      // Find or create a thread with the patient
+      const threads = await fetchAPI('/messaging/threads');
+      let thread = threads.find((t: any) => t.patientId === patientId);
+      
+      if (!thread) {
+        thread = await fetchAPI('/messaging/threads', {
+          method: 'POST',
+          body: JSON.stringify({ patientId, subject: 'Request for readings' }),
+        });
+      }
+
+      // Send templated message
+      await fetchAPI(`/messaging/threads/${thread.id}/messages`, {
+        method: 'POST',
+        body: JSON.stringify({
+          content: 'Hi! Could you please log your blood pressure, glucose, and weight readings for today? Thank you!',
+        }),
+      });
+
+      router.push(`/messages?thread=${thread.id}`);
+    } catch (error) {
+      console.error('Failed to request readings:', error);
+      alert('Failed to send message. Please try again.');
+    }
+  };
+
+  const handleAddNote = async () => {
+    try {
+      // TODO: Implement notes endpoint
+      // await fetchAPI(`/patients/${patientId}/notes`, {
+      //   method: 'POST',
+      //   body: JSON.stringify({ content: noteContent }),
+      // });
+      alert('Note feature coming soon');
+      setNoteDialogOpen(false);
+      setNoteContent('');
+    } catch (error) {
+      console.error('Failed to add note:', error);
     }
   };
 
@@ -95,21 +170,171 @@ export default function PatientDetailPage() {
     })
     .filter((d) => d.systolic && d.diastolic);
 
+  // Calculate age from date of birth if available
+  const age = patient.dateOfBirth 
+    ? Math.floor((new Date().getTime() - new Date(patient.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+    : null;
+
+  // Get last 3 key metrics with trends
+  const latestMetrics = {
+    bp: measurements.find((m) => m.type === 'BLOOD_PRESSURE'),
+    glucose: measurements.find((m) => m.type === 'GLUCOSE'),
+    weight: measurements.find((m) => m.type === 'WEIGHT'),
+  };
+
+  const getTrend = (current: any, previous: any) => {
+    if (!current || !previous) return null;
+    const currentVal = typeof current.value === 'object' ? current.value.systolic || current.value : current.value;
+    const previousVal = typeof previous.value === 'object' ? previous.value.systolic || previous.value : previous.value;
+    if (currentVal > previousVal) return 'up';
+    if (currentVal < previousVal) return 'down';
+    return 'stable';
+  };
+
+  const filteredAlerts = alerts.filter((alert) => {
+    if (alertStatusFilter !== 'all' && alert.status !== alertStatusFilter) return false;
+    if (alertSeverityFilter !== 'all' && alert.severity !== alertSeverityFilter) return false;
+    return true;
+  });
+
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold">
-              {patient.firstName} {patient.lastName}
-            </h1>
-            <p className="text-muted-foreground mt-2">Patient ID: {patient.id}</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline">Message patient</Button>
-            <Button onClick={handleScheduleVisit}>Schedule visit</Button>
-          </div>
-        </div>
+        {/* Enhanced Summary Panel */}
+        <Card className="border-2">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <div className="flex items-center gap-4 mb-2">
+                  <h1 className="text-3xl font-semibold">
+                    {patient.firstName} {patient.lastName}
+                  </h1>
+                  {age && <span className="text-muted-foreground">Age {age}</span>}
+                  <Badge
+                    variant={
+                      risk === RiskLevel.HIGH_RISK
+                        ? 'error'
+                        : risk === RiskLevel.WORSENING
+                        ? 'warning'
+                        : 'success'
+                    }
+                  >
+                    {risk === RiskLevel.HIGH_RISK
+                      ? 'High Risk'
+                      : risk === RiskLevel.WORSENING
+                      ? 'Watch'
+                      : 'Stable'}
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Program: {patient.flags?.[0] || 'Standard Care'} • Patient ID: {patient.id.slice(0, 8)}
+                </p>
+              </div>
+            </div>
+
+            {/* Last 3 Key Metrics */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              {latestMetrics.bp && (
+                <div className="border rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-muted-foreground">Blood Pressure</span>
+                    {(() => {
+                      const prev = measurements.find((m, i) => 
+                        i > measurements.indexOf(latestMetrics.bp!) && m.type === 'BLOOD_PRESSURE'
+                      );
+                      const trend = prev ? getTrend(latestMetrics.bp, prev) : null;
+                      return trend === 'up' ? <ArrowUp className="w-4 h-4 text-warning" /> :
+                             trend === 'down' ? <ArrowDown className="w-4 h-4 text-success" /> :
+                             <Minus className="w-4 h-4 text-muted-foreground" />;
+                    })()}
+                  </div>
+                  <p className="text-lg font-semibold">
+                    {typeof latestMetrics.bp.value === 'object' 
+                      ? `${latestMetrics.bp.value.systolic}/${latestMetrics.bp.value.diastolic}`
+                      : latestMetrics.bp.value}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(latestMetrics.bp.timestamp).toLocaleDateString()}
+                  </p>
+                </div>
+              )}
+              {latestMetrics.glucose && (
+                <div className="border rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-muted-foreground">Glucose</span>
+                    {(() => {
+                      const prev = measurements.find((m, i) => 
+                        i > measurements.indexOf(latestMetrics.glucose!) && m.type === 'GLUCOSE'
+                      );
+                      const trend = prev ? getTrend(latestMetrics.glucose, prev) : null;
+                      return trend === 'up' ? <ArrowUp className="w-4 h-4 text-warning" /> :
+                             trend === 'down' ? <ArrowDown className="w-4 h-4 text-success" /> :
+                             <Minus className="w-4 h-4 text-muted-foreground" />;
+                    })()}
+                  </div>
+                  <p className="text-lg font-semibold">{latestMetrics.glucose.value} mg/dL</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(latestMetrics.glucose.timestamp).toLocaleDateString()}
+                  </p>
+                </div>
+              )}
+              {latestMetrics.weight && (
+                <div className="border rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-muted-foreground">Weight</span>
+                    {(() => {
+                      const prev = measurements.find((m, i) => 
+                        i > measurements.indexOf(latestMetrics.weight!) && m.type === 'WEIGHT'
+                      );
+                      const trend = prev ? getTrend(latestMetrics.weight, prev) : null;
+                      return trend === 'up' ? <ArrowUp className="w-4 h-4 text-warning" /> :
+                             trend === 'down' ? <ArrowDown className="w-4 h-4 text-success" /> :
+                             <Minus className="w-4 h-4 text-muted-foreground" />;
+                    })()}
+                  </div>
+                  <p className="text-lg font-semibold">{latestMetrics.weight.value} lbs</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(latestMetrics.weight.timestamp).toLocaleDateString()}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Last Contact & Weekly Summary */}
+            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                <span>Last contact: 2 days ago</span>
+              </div>
+              <span>•</span>
+              <span>Last weekly summary: Dec 8, 2024</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex flex-wrap gap-3">
+              <Button variant="outline" onClick={handleSendMessage}>
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Send message
+              </Button>
+              <Button variant="outline" onClick={handleRequestReadings}>
+                <Activity className="w-4 h-4 mr-2" />
+                Request new readings
+              </Button>
+              <Button variant="outline" onClick={handleScheduleVisit}>
+                <Calendar className="w-4 h-4 mr-2" />
+                Schedule follow-up
+              </Button>
+              <Button variant="outline" onClick={() => setNoteDialogOpen(true)}>
+                <FileText className="w-4 h-4 mr-2" />
+                Add note
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsList>
@@ -235,15 +460,39 @@ export default function PatientDetailPage() {
           <TabsContent value="alerts">
             <Card>
               <CardHeader>
-                <CardTitle>All Alerts</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>All Alerts</CardTitle>
+                  <div className="flex gap-2">
+                    <select
+                      value={alertStatusFilter}
+                      onChange={(e) => setAlertStatusFilter(e.target.value)}
+                      className="text-sm border rounded px-2 py-1"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="ACTIVE">Open</option>
+                      <option value="ACTIVE">Active</option>
+                      <option value="RESOLVED">Resolved</option>
+                    </select>
+                    <select
+                      value={alertSeverityFilter}
+                      onChange={(e) => setAlertSeverityFilter(e.target.value)}
+                      className="text-sm border rounded px-2 py-1"
+                    >
+                      <option value="all">All Severity</option>
+                      <option value="CRITICAL">Critical</option>
+                      <option value="WARNING">Warning</option>
+                      <option value="INFO">Info</option>
+                    </select>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {alerts.map((alert) => (
-                    <div key={alert.id} className="border-b pb-4 last:border-0">
-                      <div className="flex items-start justify-between">
+                  {filteredAlerts.map((alert) => (
+                    <div key={alert.id} className="border rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-2">
                             <Badge
                               variant={
                                 alert.severity === 'CRITICAL'
@@ -255,33 +504,143 @@ export default function PatientDetailPage() {
                             >
                               {alert.severity}
                             </Badge>
+                            <Badge variant="outline">{alert.status}</Badge>
                             <span className="text-sm text-muted-foreground">
                               {new Date(alert.createdAt).toLocaleDateString()}
                             </span>
                           </div>
-                          <h4 className="font-medium">{alert.title}</h4>
-                          <p className="text-sm text-muted-foreground mt-1">{alert.body}</p>
+                          <h4 className="font-medium mb-1">{alert.title}</h4>
+                          <p className="text-sm text-muted-foreground">{alert.body}</p>
                         </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => router.push(`/patients/${patientId}`)}
+                        >
+                          Open patient
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => router.push(`/messages?patient=${patientId}`)}
+                        >
+                          Send message
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleScheduleVisit}
+                        >
+                          Schedule follow-up
+                        </Button>
+                        {alert.status === 'ACTIVE' && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleUpdateAlertStatus(alert.id, 'ACTIVE')}
+                            >
+                              Mark in review
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="primary"
+                              onClick={() => {
+                                setSelectedAlert(alert);
+                                setResolveDialogOpen(true);
+                              }}
+                            >
+                              Resolve
+                            </Button>
+                          </>
+                        )}
                         {alert.status === 'ACTIVE' && (
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleResolveAlert(alert.id)}
+                            onClick={() => handleUpdateAlertStatus(alert.id, 'ACTIVE')}
                           >
-                            Resolve
+                            Reopen
                           </Button>
                         )}
                       </div>
                     </div>
                   ))}
-                  {alerts.length === 0 && (
-                    <p className="text-muted-foreground">No alerts</p>
+                  {filteredAlerts.length === 0 && (
+                    <p className="text-muted-foreground text-center py-8">No alerts match the selected filters</p>
                   )}
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Resolve Alert Dialog */}
+        <Dialog open={resolveDialogOpen} onOpenChange={setResolveDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Resolve Alert</DialogTitle>
+              <DialogDescription>
+                Add a note about how this alert was resolved (e.g., &quot;Reviewed, BP stabilized&quot;).
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <label className="text-sm font-medium">Resolution note</label>
+                <textarea
+                  value={resolveNote}
+                  onChange={(e) => setResolveNote(e.target.value)}
+                  className="w-full mt-1 border rounded p-2 min-h-[100px]"
+                  placeholder="e.g., Reviewed, BP stabilized after medication adjustment"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setResolveDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => selectedAlert && handleResolveAlert(selectedAlert.id, resolveNote)}
+                disabled={!resolveNote.trim()}
+              >
+                Resolve
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Note Dialog */}
+        <Dialog open={noteDialogOpen} onOpenChange={setNoteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Internal Note</DialogTitle>
+              <DialogDescription>
+                Add a private note about this patient (visible only to clinic staff).
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <label className="text-sm font-medium">Note</label>
+                <textarea
+                  value={noteContent}
+                  onChange={(e) => setNoteContent(e.target.value)}
+                  className="w-full mt-1 border rounded p-2 min-h-[100px]"
+                  placeholder="Enter your note here..."
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setNoteDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddNote} disabled={!noteContent.trim()}>
+                Save note
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

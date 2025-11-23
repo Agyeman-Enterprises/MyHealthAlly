@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { MeasurementsService } from './measurements.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { MeasurementType } from '@myhealthally/shared';
@@ -11,7 +19,8 @@ export class MeasurementsController {
   @Post()
   create(
     @Param('patientId') patientId: string,
-    @Body() data: {
+    @Body()
+    data: {
       type: MeasurementType;
       value: number | Record<string, any>;
       timestamp: Date;
@@ -23,10 +32,7 @@ export class MeasurementsController {
   }
 
   @Get()
-  findAll(
-    @Param('patientId') patientId: string,
-    @Request() req: any,
-  ) {
+  findAll(@Param('patientId') patientId: string, @Request() req: any) {
     // Patients can only see their own measurements
     if (req.user.role === 'PATIENT' && req.user.patientId !== patientId) {
       throw new Error('Unauthorized');
@@ -43,4 +49,3 @@ export class MeasurementsController {
     return this.measurementsService.getRecentByType(patientId, type, days);
   }
 }
-

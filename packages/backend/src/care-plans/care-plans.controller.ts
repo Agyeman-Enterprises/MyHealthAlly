@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Put, Body, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Body,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import { CarePlansService } from './care-plans.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CarePlanPhase } from '@myhealthally/shared';
@@ -29,4 +37,3 @@ export class CarePlansController {
     return this.carePlansService.update(patientId, phases);
   }
 }
-

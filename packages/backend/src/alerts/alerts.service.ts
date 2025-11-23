@@ -6,13 +6,16 @@ import { AlertSeverity, AlertType } from '@myhealthally/shared';
 export class AlertsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(patientId: string, data: {
-    severity: AlertSeverity;
-    type: AlertType;
-    title: string;
-    body: string;
-    payload?: Record<string, any>;
-  }) {
+  async create(
+    patientId: string,
+    data: {
+      severity: AlertSeverity;
+      type: AlertType;
+      title: string;
+      body: string;
+      payload?: Record<string, any>;
+    },
+  ) {
     return this.prisma.alert.create({
       data: {
         patientId,
@@ -55,13 +58,33 @@ export class AlertsService {
     });
   }
 
-  async resolve(id: string) {
+  async resolve(id: string, note?: string) {
     return this.prisma.alert.update({
       where: { id },
       data: {
         status: 'RESOLVED',
         resolvedAt: new Date(),
+        ...(note && { payload: { resolutionNote: note } }),
       },
+    });
+  }
+
+  async update(id: string, data: { status?: string; note?: string }) {
+    const updateData: any = {};
+    if (data.status) {
+      updateData.status = data.status;
+      if (data.status === 'RESOLVED') {
+        updateData.resolvedAt = new Date();
+      }
+    }
+    if (data.note) {
+      const alert = await this.prisma.alert.findUnique({ where: { id } });
+      const payload = (alert?.payload as any) || {};
+      updateData.payload = { ...payload, note: data.note };
+    }
+    return this.prisma.alert.update({
+      where: { id },
+      data: updateData,
     });
   }
 
@@ -94,7 +117,10 @@ export class AlertsService {
     const allHigh = recentBp.every((m) => {
       const value = m.value as any;
       if (typeof value === 'object' && value.systolic && value.diastolic) {
-        return value.systolic > threshold.systolic || value.diastolic > threshold.diastolic;
+        return (
+          value.systolic > threshold.systolic ||
+          value.diastolic > threshold.diastolic
+        );
       }
       return false;
     });
@@ -114,7 +140,7 @@ export class AlertsService {
           severity: AlertSeverity.WARNING,
           type: AlertType.BP_HIGH_TREND,
           title: 'Your blood pressure has been high',
-          body: 'Your readings have been above your target for 2 days. It\'s a good idea to check in.',
+          body: "Your readings have been above your target for 2 days. It's a good idea to check in.",
           payload: { readings: recentBp.map((m) => m.value) },
         });
       }
@@ -139,7 +165,8 @@ export class AlertsService {
 
     const threshold = 140; // mg/dL
     const highReadings = recentGlucose.filter((m) => {
-      const value = typeof m.value === 'number' ? m.value : (m.value as any).value;
+      const value =
+        typeof m.value === 'number' ? m.value : (m.value as any).value;
       return value > threshold;
     });
 
@@ -157,7 +184,7 @@ export class AlertsService {
           severity: AlertSeverity.WARNING,
           type: AlertType.GLUCOSE_HIGH,
           title: 'Your sugars are above target',
-          body: 'Your glucose readings have been above your target even though you\'re taking your medication. This may mean your plan needs adjustment.',
+          body: "Your glucose readings have been above your target even though you're taking your medication. This may mean your plan needs adjustment.",
           payload: { readings: highReadings.map((m) => m.value) },
         });
       }
@@ -191,10 +218,9 @@ export class AlertsService {
           severity: AlertSeverity.INFO,
           type: AlertType.NO_DATA,
           title: 'No data received',
-          body: 'We haven\'t received any health data from you in the last 3 days. Please sync your devices or enter data manually.',
+          body: "We haven't received any health data from you in the last 3 days. Please sync your devices or enter data manually.",
         });
       }
     }
   }
 }
-

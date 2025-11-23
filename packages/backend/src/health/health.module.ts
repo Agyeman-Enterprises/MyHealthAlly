@@ -8,4 +8,3 @@ import { PrismaModule } from '../prisma/prisma.module';
   controllers: [HealthController],
 })
 export class HealthModule {}
-

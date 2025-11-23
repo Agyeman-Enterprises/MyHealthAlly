@@ -44,7 +44,11 @@ export class SummariesService {
     private alertsService: AlertsService,
   ) {}
 
-  async generateWeeklySummary(patientId: string, weekStart: Date, weekEnd: Date): Promise<SummaryData> {
+  async generateWeeklySummary(
+    patientId: string,
+    weekStart: Date,
+    weekEnd: Date,
+  ): Promise<SummaryData> {
     // Get all measurements for the week
     const measurements = await this.prisma.measurement.findMany({
       where: {
@@ -64,11 +68,15 @@ export class SummariesService {
     });
 
     // Analyze BP
-    const bpMeasurements = measurements.filter((m) => m.type === 'BLOOD_PRESSURE');
+    const bpMeasurements = measurements.filter(
+      (m) => m.type === 'BLOOD_PRESSURE',
+    );
     const bpTrend = this.analyzeBPTrend(bpMeasurements);
 
     // Analyze Glucose
-    const glucoseMeasurements = measurements.filter((m) => m.type === 'GLUCOSE');
+    const glucoseMeasurements = measurements.filter(
+      (m) => m.type === 'GLUCOSE',
+    );
     const glucoseTrend = this.analyzeGlucoseTrend(glucoseMeasurements);
 
     // Analyze Weight
@@ -112,13 +120,15 @@ export class SummariesService {
       return { average: 0, trend: 'stable', daysAboveTarget: 0 };
     }
 
-    const values = measurements.map((m) => {
-      const value = m.value as any;
-      if (typeof value === 'object' && value.systolic) {
-        return value.systolic as number;
-      }
-      return 0;
-    }).filter((v) => v > 0);
+    const values = measurements
+      .map((m) => {
+        const value = m.value as any;
+        if (typeof value === 'object' && value.systolic) {
+          return value.systolic as number;
+        }
+        return 0;
+      })
+      .filter((v) => v > 0);
 
     if (values.length === 0) {
       return { average: 0, trend: 'stable', daysAboveTarget: 0 };
@@ -126,27 +136,41 @@ export class SummariesService {
 
     const average = values.reduce((a, b) => a + b, 0) / values.length;
     const threshold = 130;
-    const daysAboveTarget = this.countDaysAboveThreshold(measurements, threshold);
+    const daysAboveTarget = this.countDaysAboveThreshold(
+      measurements,
+      threshold,
+    );
 
     // Simple trend calculation
     const firstHalf = values.slice(0, Math.floor(values.length / 2));
     const secondHalf = values.slice(Math.floor(values.length / 2));
     const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
     const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
-    const trend = secondAvg > firstAvg + 5 ? 'up' : secondAvg < firstAvg - 5 ? 'down' : 'stable';
+    const trend =
+      secondAvg > firstAvg + 5
+        ? 'up'
+        : secondAvg < firstAvg - 5
+          ? 'down'
+          : 'stable';
 
     return { average, trend, daysAboveTarget };
   }
 
-  private analyzeGlucoseTrend(measurements: any[]): SummaryData['glucoseTrend'] {
+  private analyzeGlucoseTrend(
+    measurements: any[],
+  ): SummaryData['glucoseTrend'] {
     if (measurements.length === 0) {
       return { average: 0, trend: 'stable', daysAboveTarget: 0 };
     }
 
-    const values = measurements.map((m) => {
-      const value = m.value as any;
-      return typeof value === 'number' ? value : (value?.value as number) || 0;
-    }).filter((v) => v > 0);
+    const values = measurements
+      .map((m) => {
+        const value = m.value as any;
+        return typeof value === 'number'
+          ? value
+          : (value?.value as number) || 0;
+      })
+      .filter((v) => v > 0);
 
     if (values.length === 0) {
       return { average: 0, trend: 'stable', daysAboveTarget: 0 };
@@ -154,13 +178,21 @@ export class SummariesService {
 
     const average = values.reduce((a, b) => a + b, 0) / values.length;
     const threshold = 140;
-    const daysAboveTarget = this.countDaysAboveThreshold(measurements, threshold);
+    const daysAboveTarget = this.countDaysAboveThreshold(
+      measurements,
+      threshold,
+    );
 
     const firstHalf = values.slice(0, Math.floor(values.length / 2));
     const secondHalf = values.slice(Math.floor(values.length / 2));
     const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
     const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
-    const trend = secondAvg > firstAvg + 5 ? 'up' : secondAvg < firstAvg - 5 ? 'down' : 'stable';
+    const trend =
+      secondAvg > firstAvg + 5
+        ? 'up'
+        : secondAvg < firstAvg - 5
+          ? 'down'
+          : 'stable';
 
     return { average, trend, daysAboveTarget };
   }
@@ -170,10 +202,14 @@ export class SummariesService {
       return { current: 0, change: 0, trend: 'stable' };
     }
 
-    const values = measurements.map((m) => {
-      const value = m.value as any;
-      return typeof value === 'number' ? value : (value?.value as number) || 0;
-    }).filter((v) => v > 0);
+    const values = measurements
+      .map((m) => {
+        const value = m.value as any;
+        return typeof value === 'number'
+          ? value
+          : (value?.value as number) || 0;
+      })
+      .filter((v) => v > 0);
 
     if (values.length === 0) {
       return { current: 0, change: 0, trend: 'stable' };
@@ -214,15 +250,21 @@ export class SummariesService {
     });
 
     const averageHours = values.reduce((a, b) => a + b, 0) / values.length;
-    const quality = averageHours >= 7 ? 'good' : averageHours >= 6 ? 'fair' : 'poor';
+    const quality =
+      averageHours >= 7 ? 'good' : averageHours >= 6 ? 'fair' : 'poor';
 
     return { averageHours, quality };
   }
 
-  private calculateAdherence(carePlan: any, measurements: any[]): SummaryData['adherence'] {
+  private calculateAdherence(
+    carePlan: any,
+    measurements: any[],
+  ): SummaryData['adherence'] {
     // Simplified adherence calculation
     // In production, this would check task completion records
-    const medicationCount = measurements.filter((m) => m.type === 'MEDICATION').length;
+    const medicationCount = measurements.filter(
+      (m) => m.type === 'MEDICATION',
+    ).length;
     const trackingCount = measurements.length;
     const habitCount = measurements.filter((m) => m.type === 'HABIT').length;
 
@@ -234,11 +276,17 @@ export class SummariesService {
     return { medications, tracking, habits };
   }
 
-  private countDaysAboveThreshold(measurements: any[], threshold: number): number {
+  private countDaysAboveThreshold(
+    measurements: any[],
+    threshold: number,
+  ): number {
     const days = new Set<string>();
     measurements.forEach((m) => {
       const value = m.value as any;
-      const numValue = typeof value === 'number' ? value : (value?.systolic || value?.value || 0);
+      const numValue =
+        typeof value === 'number'
+          ? value
+          : value?.systolic || value?.value || 0;
       if (numValue > threshold) {
         const date = new Date(m.timestamp).toDateString();
         days.add(date);
@@ -251,37 +299,59 @@ export class SummariesService {
     const recommendations: string[] = [];
 
     if (data.bpTrend?.trend === 'up' || data.bpTrend?.daysAboveTarget > 3) {
-      recommendations.push('Your blood pressure has been elevated. Consider scheduling a check-in with your care team.');
+      recommendations.push(
+        'Your blood pressure has been elevated. Consider scheduling a check-in with your care team.',
+      );
     }
 
-    if (data.glucoseTrend?.trend === 'up' || data.glucoseTrend?.daysAboveTarget > 3) {
-      recommendations.push('Your glucose levels have been above target. Review your medication and diet plan.');
+    if (
+      data.glucoseTrend?.trend === 'up' ||
+      data.glucoseTrend?.daysAboveTarget > 3
+    ) {
+      recommendations.push(
+        'Your glucose levels have been above target. Review your medication and diet plan.',
+      );
     }
 
     if (data.weightTrend?.trend === 'up' && data.weightTrend.change > 2) {
-      recommendations.push('You\'ve gained weight this week. Let\'s review your nutrition plan.');
+      recommendations.push(
+        "You've gained weight this week. Let's review your nutrition plan.",
+      );
     }
 
     if (data.steps?.average < 5000) {
-      recommendations.push('Try to increase your daily steps. Aim for at least 7,500 steps per day.');
+      recommendations.push(
+        'Try to increase your daily steps. Aim for at least 7,500 steps per day.',
+      );
     }
 
     if (data.sleep?.quality === 'poor') {
-      recommendations.push('Your sleep quality could be improved. Check out our sleep hygiene tips in the Coach section.');
+      recommendations.push(
+        'Your sleep quality could be improved. Check out our sleep hygiene tips in the Coach section.',
+      );
     }
 
     if (data.adherence?.medications < 80) {
-      recommendations.push('Medication adherence is important. Try setting reminders to take your medications on time.');
+      recommendations.push(
+        'Medication adherence is important. Try setting reminders to take your medications on time.',
+      );
     }
 
     if (recommendations.length === 0) {
-      recommendations.push('Great job this week! Keep up the excellent work with your care plan.');
+      recommendations.push(
+        'Great job this week! Keep up the excellent work with your care plan.',
+      );
     }
 
     return recommendations;
   }
 
-  async saveSummary(patientId: string, weekStart: Date, weekEnd: Date, summary: SummaryData) {
+  async saveSummary(
+    patientId: string,
+    weekStart: Date,
+    weekEnd: Date,
+    summary: SummaryData,
+  ) {
     return this.prisma.weeklySummary.upsert({
       where: {
         patientId_weekStart: {
@@ -326,4 +396,3 @@ export class SummariesService {
     });
   }
 }
-

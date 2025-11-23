@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Patch, Body, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import { AlertsService } from './alerts.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AlertSeverity, AlertType } from '@myhealthally/shared';
@@ -20,7 +28,8 @@ export class AlertsController {
 
   @Post()
   create(
-    @Body() data: {
+    @Body()
+    data: {
       patientId: string;
       severity: AlertSeverity;
       type: AlertType;
@@ -33,8 +42,16 @@ export class AlertsController {
   }
 
   @Patch(':id/resolve')
-  resolve(@Param('id') id: string) {
-    return this.alertsService.resolve(id);
+  resolve(@Param('id') id: string, @Body() data?: { note?: string }) {
+    return this.alertsService.resolve(id, data?.note);
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @Body() data: { status?: string; note?: string },
+  ) {
+    return this.alertsService.update(id, data);
   }
 
   @Patch(':id/dismiss')
@@ -42,4 +59,3 @@ export class AlertsController {
     return this.alertsService.dismiss(id);
   }
 }
-

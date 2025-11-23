@@ -1,103 +1,197 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { GlowCard } from '@/components/ui/glow-card';
-import { PrimaryButton } from '@/components/ui/primary-button';
-import FloatingNav from '@/components/patient/FloatingNav';
+import { useEffect, useState } from 'react';
+import { PageContainer } from '@/components/layout/PageContainer';
+import { Grid } from '@/components/layout/Grid';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { VitalCard } from '@/components/widgets/VitalCard';
+import { AppointmentCard } from '@/components/widgets/AppointmentCard';
+import { useVitals } from '@/hooks/useVitals';
+import { useMetrics } from '@/hooks/useMetrics';
+import { fetchAPI } from '@/lib/utils';
+import { formatRelativeTime } from '@/utils/date';
+import { calculateBMI, getBMICategory } from '@/utils/bmi';
+import { Activity, Heart, Droplet, TrendingUp, Calendar, MessageSquare } from 'lucide-react';
 
-interface Vitals {
-  heartRate: number;
-  bloodPressure: string;
-  oxygen: number;
-  recovery: number;
-  sleepDepth: number;
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+
+interface DashboardData {
+  upcomingAppointments?: any[];
+  recentMessages?: any[];
+  carePlanProgress?: number;
 }
 
 export default function PatientDashboardPage() {
-  const [vitals, setVitals] = useState<Vitals>({
-    heartRate: 72,
-    bloodPressure: '120/80',
-    oxygen: 98,
-    recovery: 85,
-    sleepDepth: 7.5,
-  });
-  const [aiSummary, setAiSummary] = useState<string>('');
-  const [loading, setLoading] = useState(false);
+  const { vitals, loading: vitalsLoading } = useVitals();
+  const { metrics } = useMetrics();
+  const [dashboardData, setDashboardData] = useState<DashboardData>({});
+  const [loading, setLoading] = useState(true);
 
-  const runAnalysis = async () => {
-    setLoading(true);
-    const vitalsStr = `Heart rate: ${vitals.heartRate} bpm, Blood pressure: ${vitals.bloodPressure}, Oxygen: ${vitals.oxygen}%, Recovery: ${vitals.recovery}%, Sleep: ${vitals.sleepDepth} hours`;
-    
-    // Simulate API call
-    setTimeout(() => {
-      const prompt = `You are MyHealthAlly, a calm, clinically grounded health assistant. Analyze the following patient vitals: ${vitalsStr}. 1) Give a brief, reassuring 2–3 sentence summary in plain language. 2) Then give exactly one actionable next step labeled 'Next step:'. Avoid technical jargon. Be supportive, concise, and practical.`;
-      
-      // Fallback if no API key
-      setAiSummary("Your health metrics are within normal ranges today. Your heart rate and blood pressure are stable, and your recovery score indicates good rest. Next step: Continue with your daily medication routine and aim for 8 hours of sleep tonight.");
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      const [appointments, messages] = await Promise.all([
+        fetchAPI('/patients/me/appointments?upcoming=true').catch(() => []),
+        fetchAPI('/patients/me/messages?limit=3').catch(() => []),
+      ]);
+      setDashboardData({
+        upcomingAppointments: appointments || [],
+        recentMessages: messages || [],
+      });
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
-  return (
-    <div className="min-h-screen bg-myh-bg pb-24">
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold text-myh-text">Welcome back, Alex</h1>
-          <p className="text-myh-textSoft">Your health data is updating in real time.</p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <GlowCard>
-            <p className="text-xs text-myh-textSoft mb-1">Heart Rate</p>
-            <p className="text-2xl font-semibold text-myh-text">{vitals.heartRate}</p>
-            <p className="text-xs text-myh-textSoft">bpm</p>
-          </GlowCard>
-          <GlowCard>
-            <p className="text-xs text-myh-textSoft mb-1">Blood Pressure</p>
-            <p className="text-2xl font-semibold text-myh-text">{vitals.bloodPressure}</p>
-            <p className="text-xs text-myh-textSoft">mmHg</p>
-          </GlowCard>
-          <GlowCard>
-            <p className="text-xs text-myh-textSoft mb-1">O₂ Saturation</p>
-            <p className="text-2xl font-semibold text-myh-text">{vitals.oxygen}%</p>
-          </GlowCard>
-          <GlowCard>
-            <p className="text-xs text-myh-textSoft mb-1">Recovery score</p>
-            <p className="text-2xl font-semibold text-myh-text">{vitals.recovery}%</p>
-          </GlowCard>
-        </div>
-
-        <GlowCard className="p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-myh-text">AI Health Summary</h2>
-            <PrimaryButton onClick={runAnalysis} disabled={loading} className="text-sm px-4 py-2">
-              {loading ? 'Generating...' : 'Generate summary'}
-            </PrimaryButton>
+  if (loading || vitalsLoading) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+            Loading...
           </div>
-          {aiSummary && (
-            <div className="bg-myh-surfaceSoft rounded-lg p-4 border border-myh-border">
-              <p className="text-myh-text text-sm leading-relaxed">{aiSummary}</p>
-            </div>
-          )}
-        </GlowCard>
-
-        <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-myh-text">Your daily health snapshot</h2>
-          <GlowCard>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-myh-textSoft">Recovery score</span>
-              <span className="text-myh-text font-semibold">{vitals.recovery}%</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-myh-textSoft">Sleep quality</span>
-              <span className="text-myh-text font-semibold">{vitals.sleepDepth} hrs</span>
-            </div>
-          </GlowCard>
         </div>
-      </div>
+      </PageContainer>
+    );
+  }
 
-      <FloatingNav />
-    </div>
+  const bmi = vitals?.bmi || (vitals?.weight && vitals?.heightCm ? calculateBMI(vitals.weight, vitals.heightCm) : null);
+  const bmiCategory = bmi ? getBMICategory(bmi) : null;
+
+  return (
+    <PageContainer>
+      <div className="py-6 space-y-6">
+        {/* Header */}
+        <div>
+          <h1 className="text-h1 mb-2">Dashboard</h1>
+          <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+            Your health overview
+          </p>
+        </div>
+
+        {/* Vitals Grid */}
+        <Grid cols={4} gap="md" responsive>
+          {vitals?.heartRate && (
+            <VitalCard
+              label="Heart Rate"
+              value={vitals.heartRate}
+              unit="bpm"
+              status="normal"
+              lastUpdated={formatRelativeTime(new Date())}
+            />
+          )}
+          {vitals?.systolicBP && vitals?.diastolicBP && (
+            <VitalCard
+              label="Blood Pressure"
+              value={`${vitals.systolicBP}/${vitals.diastolicBP}`}
+              unit="mmHg"
+              status="normal"
+              lastUpdated={formatRelativeTime(new Date())}
+            />
+          )}
+          {bmi && (
+            <VitalCard
+              label="BMI"
+              value={bmi}
+              unit=""
+              status={bmiCategory?.status === 'normal' ? 'normal' : bmiCategory?.status === 'obese' ? 'high' : 'warning'}
+              lastUpdated={formatRelativeTime(new Date())}
+            />
+          )}
+          {vitals?.hrv && (
+            <VitalCard
+              label="HRV"
+              value={vitals.hrv}
+              unit="ms"
+              status="normal"
+              trend="stable"
+              lastUpdated={formatRelativeTime(new Date())}
+            />
+          )}
+        </Grid>
+
+        {/* Main Content Grid */}
+        <Grid cols={2} gap="lg" responsive>
+          {/* Upcoming Appointments */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+                Upcoming Appointments
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {dashboardData.upcomingAppointments && dashboardData.upcomingAppointments.length > 0 ? (
+                <div className="space-y-4">
+                  {dashboardData.upcomingAppointments.slice(0, 3).map((appt: any) => (
+                    <AppointmentCard
+                      key={appt.id}
+                      date={new Date(appt.startTime).toLocaleDateString()}
+                      time={new Date(appt.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      provider={appt.provider?.name || 'Provider'}
+                      type={appt.visitMode === 'VIRTUAL' ? 'virtual' : 'in_person'}
+                      status="scheduled"
+                      reason={appt.reason}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+                  No upcoming appointments
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recent Messages */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+                Recent Messages
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {dashboardData.recentMessages && dashboardData.recentMessages.length > 0 ? (
+                <div className="space-y-3">
+                  {dashboardData.recentMessages.map((msg: any) => (
+                    <div
+                      key={msg.id}
+                      className="p-3 border-radius"
+                      style={{
+                        backgroundColor: 'var(--color-background)',
+                        borderRadius: 'var(--radius)',
+                      }}
+                    >
+                      <div className="flex items-start justify-between mb-1">
+                        <span className="text-body font-medium" style={{ color: 'var(--color-textPrimary)' }}>
+                          {msg.from?.name || 'Care Team'}
+                        </span>
+                        <span className="text-caption" style={{ color: 'var(--color-textSecondary)' }}>
+                          {formatRelativeTime(msg.createdAt)}
+                        </span>
+                      </div>
+                      <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+                        {msg.content?.substring(0, 100)}...
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+                  No recent messages
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+      </div>
+    </PageContainer>
   );
 }
-

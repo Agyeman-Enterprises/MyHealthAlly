@@ -1,15 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AlertsService } from '../alerts/alerts.service';
 import { VisitRequestsService } from '../visit-requests/visit-requests.service';
 import { CarePlansService } from '../care-plans/care-plans.service';
 import {
   ClinicalRule,
-  ClinicalRuleCondition,
   MetricType,
-  ConditionOp,
   Severity,
-  ActionType,
   RuleExecutionResult,
 } from '@myhealthally/shared';
 import { AlertSeverity, AlertType } from '@myhealthally/shared';
@@ -20,6 +17,7 @@ export class RulesEngineService {
 
   constructor(
     private prisma: PrismaService,
+    @Inject(forwardRef(() => AlertsService))
     private alertsService: AlertsService,
     private visitRequestsService: VisitRequestsService,
     private carePlansService: CarePlansService,
@@ -34,7 +32,7 @@ export class RulesEngineService {
     for (const rule of rules) {
       try {
         const result = await this.evaluateRule(patientId, rule as any);
-        
+
         // Log execution
         await this.prisma.ruleExecution.create({
           data: {
@@ -49,7 +47,10 @@ export class RulesEngineService {
           await this.executeAction(patientId, rule as any, result);
         }
       } catch (error) {
-        this.logger.error(`Error evaluating rule ${rule.id} for patient ${patientId}:`, error);
+        this.logger.error(
+          `Error evaluating rule ${rule.id} for patient ${patientId}:`,
+          error,
+        );
       }
     }
   }
@@ -107,14 +108,15 @@ export class RulesEngineService {
     }
 
     const latestValue = recentValues[recentValues.length - 1];
-    const triggered = op === '>' ? latestValue > threshold : latestValue < threshold;
+    const triggered =
+      op === '>' ? latestValue > threshold : latestValue < threshold;
 
     if (triggered) {
       // Check if this is a persistent condition
       const days = rule.condition.days || 3;
       const recentDays = this.getRecentDays(measurements, days);
       const recentValuesInWindow = this.extractValues(recentDays, rule.metric);
-      
+
       const allTriggered = recentValuesInWindow.every((v) =>
         op === '>' ? v > threshold : v < threshold,
       );
@@ -142,7 +144,7 @@ export class RulesEngineService {
 
     const days = rule.condition.days || 5;
     const recentValues = values.slice(-days);
-    
+
     // Calculate slope using linear regression
     const slope = this.calculateSlope(recentValues);
     const isRising = slope > 0;
@@ -182,7 +184,11 @@ export class RulesEngineService {
     return {
       triggered,
       value: values[values.length - 1],
-      metadata: { volatilityPercent, maxChange, minChange: Math.min(...values) },
+      metadata: {
+        volatilityPercent,
+        maxChange,
+        minChange: Math.min(...values),
+      },
       message: triggered
         ? `${rule.metric} showing ${volatilityPercent.toFixed(1)}% volatility`
         : undefined,
@@ -210,7 +216,9 @@ export class RulesEngineService {
             return value.systolic as number;
           }
           // Try to find first numeric value
-          const numericValue = Object.values(value).find((v) => typeof v === 'number');
+          const numericValue = Object.values(value).find(
+            (v) => typeof v === 'number',
+          );
           return numericValue as number | undefined;
         }
         return undefined;
@@ -308,7 +316,8 @@ export class RulesEngineService {
       severity: severityMap[rule.severity],
       type: alertTypeMap[rule.metric],
       title: rule.name,
-      body: result.message || rule.description || `Rule triggered: ${rule.name}`,
+      body:
+        result.message || rule.description || `Rule triggered: ${rule.name}`,
       payload: {
         ruleId: rule.id,
         metric: rule.metric,
@@ -328,7 +337,7 @@ export class RulesEngineService {
     const existing = await this.prisma.visitRequest.findFirst({
       where: {
         patientId,
-        status: 'PENDING',
+        status: 'NEW' as any,
         createdAt: {
           gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
         },
@@ -339,16 +348,18 @@ export class RulesEngineService {
       return;
     }
 
-    await this.visitRequestsService.create(patientId, {
-      type: rule.severity === 'critical' ? 'PROVIDER' : 'MA_CHECK',
-      notes: `Suggested by rule: ${rule.name}. ${result.message}`,
+    // Create visit request using the service method
+    await this.visitRequestsService.createWalkInRequest(patientId, {
+      visitMode: 'VIRTUAL' as any,
+      reasonText: `Suggested by rule: ${rule.name}. ${result.message}`,
     });
   }
 
   private async assignTask(
     patientId: string,
     rule: ClinicalRule,
-    result: RuleExecutionResult,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _result: RuleExecutionResult,
   ): Promise<void> {
     // This would integrate with care plans to add tasks
     // For now, we'll create an alert that can be converted to a task
@@ -371,10 +382,11 @@ export class RulesEngineService {
   private async assignContent(
     patientId: string,
     rule: ClinicalRule,
-    result: RuleExecutionResult,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _result: RuleExecutionResult,
   ): Promise<void> {
     const contentModule = rule.actionParams?.contentModule || 'general';
-    
+
     // Create an alert that can trigger content assignment in the app
     await this.alertsService.create(patientId, {
       severity: AlertSeverity.INFO,
@@ -401,7 +413,10 @@ export class RulesEngineService {
     }) as any;
   }
 
-  async updateRule(id: string, data: Partial<ClinicalRule>): Promise<ClinicalRule> {
+  async updateRule(
+    id: string,
+    data: Partial<ClinicalRule>,
+  ): Promise<ClinicalRule> {
     return this.prisma.clinicalRule.update({
       where: { id },
       data: data as any,
@@ -414,4 +429,3 @@ export class RulesEngineService {
     });
   }
 }
-

@@ -1,0 +1,48 @@
+{
+  "colors": {
+    "primary": "#39C6B3",
+    "primaryDark": "#2AA494",
+    "primaryLight": "#D7F4F0",
+    "gradientStart": "#1FBCA9",
+    "gradientEnd": "#0D8A77",
+    "accentGreen": "#12A38A",
+    "accentCoral": "#F06D41",
+    "background": "#F3F8F7",
+    "surface": "#FFFFFF",
+    "border": "#DCE5E3",
+    "line": "#E6EFED",
+    "textPrimary": "#0D3B36",
+    "textSecondary": "#4E6F6A",
+    "textMuted": "#8BA7A2",
+    "success": "#12A38A",
+    "warning": "#F4A024",
+    "danger": "#E15555",
+    "info": "#39C6B3"
+  },
+  "radius": {
+    "sm": 4,
+    "md": 6,
+    "lg": 8
+  },
+  "spacing": {
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "xxl": 32
+  },
+  "typography": {
+    "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue'",
+    "h1": { "size": 32, "weight": 600 },
+    "h2": { "size": 24, "weight": 600 },
+    "h3": { "size": 20, "weight": 500 },
+    "body": { "size": 16, "weight": 400 },
+    "small": { "size": 14, "weight": 400 },
+    "caption": { "size": 12, "weight": 400 }
+  },
+  "shadows": {
+    "sm": "0px 1px 2px rgba(0,0,0,0.04)",
+    "md": "0px 1px 3px rgba(0,0,0,0.08), 0px 4px 8px rgba(0,0,0,0.05)"
+  }
+}

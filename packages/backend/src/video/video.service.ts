@@ -14,28 +14,36 @@ export class VideoService {
   ) {
     // Get Daily.co Video API key from environment
     // Get from: https://dashboard.daily.co/developers → API Keys
-    this.dailyApiKey = this.config.get<string>('DAILY_API_KEY') || 'placeholder-secret';
-    
+    this.dailyApiKey =
+      this.config.get<string>('DAILY_API_KEY') || 'placeholder-secret';
+
     if (this.dailyApiKey === 'placeholder-secret') {
-      console.warn('⚠️  Daily.co API key not configured. Using placeholder. Video calls will not work.');
-      console.warn('   Get your API key from: https://dashboard.daily.co/developers');
+      console.warn(
+        '⚠️  Daily.co API key not configured. Using placeholder. Video calls will not work.',
+      );
+      console.warn(
+        '   Get your API key from: https://dashboard.daily.co/developers',
+      );
     }
   }
 
-  async createRoom(patientId: string, providerId?: string): Promise<{
+  async createRoom(
+    patientId: string,
+    providerId?: string,
+  ): Promise<{
     roomUrl: string;
     token: string;
     roomName: string;
   }> {
     const roomName = `room-${patientId}-${Date.now()}`;
-    
+
     // If API key is configured, use real Daily.co API
     if (this.dailyApiKey && this.dailyApiKey !== 'placeholder-secret') {
       try {
         const response = await fetch(`${this.dailyApiUrl}/rooms`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${this.dailyApiKey}`,
+            Authorization: `Bearer ${this.dailyApiKey}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
@@ -76,7 +84,11 @@ export class VideoService {
     };
   }
 
-  private generateDailyToken(roomName: string, patientId: string, providerId?: string): string {
+  private generateDailyToken(
+    roomName: string,
+    patientId: string,
+    providerId?: string,
+  ): string {
     // Generate Daily.co token using their API
     const payload = {
       room: roomName,
@@ -91,7 +103,11 @@ export class VideoService {
     });
   }
 
-  private generateToken(roomName: string, patientId: string, providerId?: string): string {
+  private generateToken(
+    roomName: string,
+    patientId: string,
+    providerId?: string,
+  ): string {
     // Placeholder token generation (when API key not configured)
     const payload = {
       room: roomName,
@@ -105,11 +121,15 @@ export class VideoService {
     });
   }
 
-  async getRoomToken(roomName: string, userId: string, isOwner: boolean = false): Promise<string> {
+  async getRoomToken(
+    roomName: string,
+    userId: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _isOwner: boolean = false,
+  ): Promise<string> {
     if (this.dailyApiKey && this.dailyApiKey !== 'placeholder-secret') {
       return this.generateDailyToken(roomName, userId);
     }
     return this.generateToken(roomName, userId);
   }
 }
-

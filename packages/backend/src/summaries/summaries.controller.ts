@@ -12,4 +12,3 @@ export class SummariesController {
     return this.summariesService.getSummaries(patientId);
   }
 }
-

@@ -1,128 +1,149 @@
-# MyHealthAlly – Continuous Care App
+# MyHealthAlly Web App
 
-Monorepo for MyHealthAlly patient app and clinic dashboard.
+A comprehensive healthcare management platform for patients and clinicians, built with Next.js, TypeScript, and Tailwind CSS.
 
-## Structure
+## 🎨 Design System
 
-- `/packages/backend` - NestJS API with Prisma, Postgres, Redis
-- `/packages/shared` - Shared TypeScript types and interfaces
-- `/packages/web` - Next.js clinic dashboard (PWA)
-- `/packages/ios` - SwiftUI iOS app with HealthKit
-- `/docs` - Architecture and setup documentation
+- **Primary Color**: Teal `#39C6B3`
+- **Border Radius**: 6px universal
+- **Typography**: Inter, Roboto, Segoe
+- **Framework**: Next.js 15 with App Router
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 22+
-- pnpm 8+
-- Docker & Docker Compose
-- Xcode 15+ (for iOS development)
+- Node.js 18.x or higher
+- pnpm (recommended) or npm
 
-### Setup
+### Installation
 
-1. **Install dependencies:**
 ```bash
+# Install dependencies
 pnpm install
+
+# Run development server
+pnpm --filter @myhealthally/web dev
 ```
 
-2. **Choose Database Option:**
+Visit `http://localhost:3001` (or the port shown in terminal)
 
-   **Option A: Supabase (Recommended)**
-   - Create project at https://supabase.com
-   - Get connection string from Settings → Database
-   - Update `DATABASE_URL` in `packages/backend/.env`
-   - See `SUPABASE_SETUP.md` for detailed instructions
-
-   **Option B: Local Docker**
-   ```bash
-   docker-compose up -d
-   ```
-   - Uses connection string already in `.env.example`
-
-3. **Set up backend:**
-```bash
-cd packages/backend
-# .env file should already exist from SETUP_ENV.ps1
-# Update DATABASE_URL if using Supabase
-pnpm prisma generate
-pnpm prisma migrate dev
-```
-
-4. **Start backend:**
-```bash
-# From root
-pnpm dev
-
-# Or from backend directory
-cd packages/backend && pnpm dev
-```
-
-5. **Start web dashboard:**
-```bash
-cd packages/web
-echo "NEXT_PUBLIC_API_URL=http://localhost:3000" > .env.local
-pnpm dev
-```
-
-6. **iOS app:**
-   - Open `packages/ios/MyHealthAlly.xcodeproj` in Xcode
-   - Enable HealthKit capability
-   - Build and run
-
-## Development URLs
-
-- Backend API: `http://localhost:3000`
-- Web Dashboard: `http://localhost:3001`
-- Postgres: `localhost:5432`
-- Redis: `localhost:6379`
-
-## Features
-
-### Backend
-- ✅ JWT authentication with refresh tokens
-- ✅ User roles (Patient, Provider, MA, Admin)
-- ✅ Patient management
-- ✅ Health measurements (BP, glucose, weight, etc.)
-- ✅ Care plans with phases and tasks
-- ✅ Automated alerts engine (cron every 5 min)
-- ✅ Visit request management
-
-### Web Dashboard
-- ✅ Clinic staff authentication
-- ✅ Patient list with risk assessment
-- ✅ Patient detail views (metrics, alerts, care plans)
-- ✅ Alert management
-- ✅ Visit scheduling
-
-### iOS App
-- ✅ Patient onboarding and authentication
-- ✅ Home dashboard with today's tasks
-- ✅ Metrics trends with charts
-- ✅ HealthKit integration
-- ✅ Visit request flow
-- ✅ Coach feed (placeholder)
-
-## Documentation
-
-- [Architecture](./docs/ARCHITECTURE.md) - System architecture and design
-- [Setup Guide](./docs/SETUP.md) - Detailed setup instructions
-
-## Environment Variables
-
-See `.env.example` files in each package for required environment variables.
-
-## Testing
+### Production Build
 
 ```bash
-# Backend tests
-cd packages/backend && pnpm test
+# Build for production
+pnpm --filter @myhealthally/web build
 
-# Web tests
-cd packages/web && pnpm test
+# Start production server
+pnpm --filter @myhealthally/web start
 ```
 
-## License
+## 📁 Project Structure
+
+```
+packages/web/
+├── src/
+│   ├── app/              # Next.js App Router pages
+│   │   ├── patient/      # Patient-facing routes
+│   │   ├── clinician/    # Clinician portal routes
+│   │   └── content/      # Ohimaa content engine
+│   ├── components/       # React components
+│   │   ├── ui/          # Base UI components
+│   │   ├── widgets/     # Feature widgets
+│   │   └── layout/      # Layout components
+│   ├── theme/           # Design system tokens
+│   ├── hooks/           # React hooks
+│   ├── services/        # API services
+│   └── utils/           # Utility functions
+└── public/              # Static assets
+```
+
+## 🌐 Routes
+
+### Patient App
+- `/patient/dashboard` - Patient dashboard
+- `/patient/analytics` - Health analytics & trends
+- `/patient/labs` - Lab orders & results
+- `/patient/messages` - Messaging with care team
+- `/patient/schedule` - Appointment scheduling
+- `/patient/profile` - Profile & settings
+
+### Clinician Portal
+- `/clinician/dashboard` - Clinician dashboard
+- `/clinician/patients` - Patient list
+- `/clinician/patients/[id]` - Patient detail
+- `/clinician/visit/[id]` - Virtual visit workspace
+- `/clinician/tasks` - Task center
+- `/clinician/messages` - Messaging inbox
+- `/clinician/labs` - Lab ordering center
+
+### Ohimaa Content Engine
+- `/content/programs` - Program library
+- `/content/meal-plans` - Meal plan library
+- `/content/exercises` - Exercise library
+- `/content/stress` - Stress management resources
+- `/content/sleep` - Sleep resources
+- `/content/gi-reset` - GI reset program
+- `/content/detox` - Detox program
+- `/content/support` - Support resources
+
+## 🔧 Environment Variables
+
+Create `packages/web/.env.local`:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3000
+NEXT_PUBLIC_BUILDER_API_KEY_MYHEALTHALLY=your_api_key_here
+NODE_ENV=development
+```
+
+## 📦 Deployment
+
+See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for detailed deployment instructions.
+
+### Quick Deploy to Vercel
+
+1. Push code to GitHub
+2. Import repository in Vercel
+3. Set environment variables
+4. Deploy!
+
+## 🧪 Testing
+
+```bash
+# Run linter
+pnpm --filter @myhealthally/web lint
+
+# Type check
+pnpm --filter @myhealthally/web type-check
+```
+
+## 📚 Documentation
+
+- [Deployment Guide](./DEPLOYMENT_GUIDE.md)
+- [API Reference](./docs/API_REFERENCE.md)
+- [Database Schema](./docs/DATABASE_SCHEMA.md)
+- [Design System](./docs/DESIGN_SYSTEM_IMPLEMENTATION.md)
+
+## 🛠️ Tech Stack
+
+- **Framework**: Next.js 15
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS + CSS Variables
+- **UI Components**: Radix UI + Custom components
+- **Charts**: Recharts
+- **State Management**: React Context + Hooks
+- **API Client**: Fetch API with custom utilities
+
+## 📄 License
 
 Private - MyHealthAlly
 
+## 🤝 Contributing
+
+This is a private project. For questions or issues, contact the development team.
+
+---
+
+**Version**: 1.0.0  
+**Last Updated**: 2024-01-XX

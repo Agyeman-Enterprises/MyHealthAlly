@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { SummariesService } from './summaries.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -32,16 +32,23 @@ export class SummariesSchedulerService {
           weekEnd,
         );
 
-        await this.summariesService.saveSummary(patient.id, weekStart, weekEnd, summary);
+        await this.summariesService.saveSummary(
+          patient.id,
+          weekStart,
+          weekEnd,
+          summary,
+        );
         await this.summariesService.createSummaryAlert(patient.id, summary);
 
         this.logger.log(`Generated summary for patient ${patient.id}`);
       } catch (error) {
-        this.logger.error(`Error generating summary for patient ${patient.id}:`, error);
+        this.logger.error(
+          `Error generating summary for patient ${patient.id}:`,
+          error,
+        );
       }
     }
 
     this.logger.log('Weekly summaries generation completed');
   }
 }
-

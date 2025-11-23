@@ -1,97 +1,152 @@
-# MyHealthAlly - Phase 2 Deployment Checklist
+# MyHealthAlly Web App - Deployment Checklist
 
-## ✅ Pre-Deployment Verification
+Use this checklist to ensure a successful deployment to production.
 
-### Backend
-- [ ] Run database migrations: `cd packages/backend && pnpm prisma migrate dev`
-- [ ] Verify all environment variables are set:
-  - `DATABASE_URL`
-  - `JWT_SECRET`
-  - `JWT_REFRESH_SECRET`
-  - `DAILY_API_KEY` (for telehealth)
-  - `SENTRY_DSN` (optional)
-- [ ] Test health endpoint: `GET /health`
-- [ ] Verify rules are seeded: `GET /rules`
-- [ ] Test messaging: Create thread and send message
-- [ ] Verify weekly summary cron job is scheduled
+## Pre-Deployment
 
-### Web Dashboard
-- [ ] Set `NEXT_PUBLIC_API_URL` in `.env.local`
-- [ ] Build production: `pnpm build`
-- [ ] Test all pages load correctly
-- [ ] Verify animations work smoothly
-- [ ] Test messaging interface
+### Code Quality
+- [ ] All TypeScript errors resolved
+- [ ] All ESLint warnings addressed (or documented)
+- [ ] Production build succeeds locally (`pnpm --filter @myhealthally/web build`)
+- [ ] No console errors in browser DevTools
+- [ ] All routes tested locally
 
-### iOS App
-- [ ] Update API base URL in `APIClient.swift`
-- [ ] Enable HealthKit capability
-- [ ] Test on device/simulator
-- [ ] Verify all screens navigate correctly
-- [ ] Test HealthKit permissions flow
+### Git Repository
+- [ ] Git repository initialized
+- [ ] All files committed
+- [ ] `.gitignore` properly configured
+- [ ] GitHub repository created: `myhealthally-web`
+- [ ] Code pushed to `main` branch
 
-### Android App
-- [ ] Open in Android Studio
-- [ ] Sync Gradle
-- [ ] Update API base URL in `ApiClient.kt`
-- [ ] Configure Health Connect permissions
-- [ ] Build and test on device/emulator
+### Environment Variables
+- [ ] `NEXT_PUBLIC_API_URL` defined (production API URL)
+- [ ] `NEXT_PUBLIC_BUILDER_API_KEY_MYHEALTHALLY` defined
+- [ ] `NODE_ENV` set to `production`
 
-## 🚀 Deployment Steps
+## Vercel Configuration
 
-### Backend (Railway/Render/Heroku)
-1. Set environment variables
-2. Run migrations: `pnpm prisma migrate deploy`
-3. Deploy application
-4. Verify `/health` endpoint responds
+### Project Setup
+- [ ] Repository imported from GitHub
+- [ ] Framework preset: Next.js (auto-detected)
+- [ ] Root Directory: `packages/web`
+- [ ] Build Command: `pnpm install && pnpm --filter @myhealthally/web build`
+- [ ] Output Directory: `.next` (auto-detected)
+- [ ] Install Command: `pnpm install`
+- [ ] Node Version: 18.x
 
-### Web Dashboard (Vercel)
-1. Connect repository
-2. Set environment variables
-3. Deploy
-4. Verify production build works
+### Environment Variables in Vercel
+- [ ] `NEXT_PUBLIC_API_URL` = `https://api.myhealthally.com`
+- [ ] `NEXT_PUBLIC_BUILDER_API_KEY_MYHEALTHALLY` = (your API key)
+- [ ] `NODE_ENV` = `production`
 
-### iOS (App Store)
-1. Archive build in Xcode
-2. Upload to App Store Connect
-3. Submit for review
+### Deployment Settings
+- [ ] Production branch: `main`
+- [ ] Automatic deployments: Enabled
+- [ ] Serverless functions: Enabled
 
-### Android (Play Store)
-1. Generate signed APK/AAB
-2. Upload to Google Play Console
-3. Submit for review
+## Deployment
 
-## 📊 Post-Deployment Monitoring
+- [ ] Initial deployment triggered
+- [ ] Build completed successfully (check Vercel logs)
+- [ ] Production URL received: `https://myhealthally-web.vercel.app`
+- [ ] Preview URL received (for PRs)
 
-- [ ] Check error logs in Sentry (if configured)
-- [ ] Monitor `/health` endpoint
-- [ ] Verify rate limiting is working
-- [ ] Check database connection pool
-- [ ] Monitor weekly summary generation logs
-- [ ] Verify rules engine is running (check logs every 5 min)
+## Post-Deployment QA
 
-## 🔧 Configuration Notes
+### Design & Styling
+- [ ] Teal brand color `#39C6B3` visible across all pages
+- [ ] 6px border radius applied to cards, buttons, inputs
+- [ ] Typography matches design system (Inter font)
+- [ ] Shadows match theme.json
+- [ ] Responsive design works on mobile devices
 
-### Daily.co Integration
-When API key is available:
-1. Add `DAILY_API_KEY` to backend `.env`
-2. Update `VideoService` to use real API calls
-3. Test video room creation
+### Patient App Routes
+- [ ] `/patient/dashboard` - Loads and displays data
+- [ ] `/patient/analytics` - Charts render correctly
+- [ ] `/patient/analytics` - BMI graph displays
+- [ ] `/patient/labs` - Orders tab loads
+- [ ] `/patient/labs` - Results tab loads
+- [ ] `/patient/profile` - Profile tab loads
+- [ ] `/patient/profile` - Referrals tab loads
+- [ ] `/patient/profile` - Documents tab loads
+- [ ] `/patient/messages` - Messages load
+- [ ] `/patient/messages` - AI thread works
+- [ ] `/patient/schedule` - Schedule page loads
 
-### Sentry Integration
-1. Create Sentry project
-2. Add `SENTRY_DSN` to backend `.env`
-3. Install Sentry SDK: `@sentry/node`
-4. Initialize in `main.ts`
+### Clinician Portal Routes
+- [ ] `/clinician/dashboard` - Dashboard loads
+- [ ] `/clinician/patients` - Patient list loads
+- [ ] `/clinician/patients/[id]` - Patient detail loads
+- [ ] `/clinician/visit/[id]` - Visit workspace loads
+- [ ] `/clinician/tasks` - Tasks page loads
+- [ ] `/clinician/messages` - Messages inbox loads
+- [ ] `/clinician/labs` - Labs page loads
 
-## ✨ All Phase 2 Features Ready
+### Ohimaa Content Engine Routes
+- [ ] `/content/programs` - Programs page loads
+- [ ] `/content/meal-plans` - Meal plans load
+- [ ] `/content/exercises` - Exercises load
+- [ ] `/content/stress` - Stress resources load
+- [ ] `/content/sleep` - Sleep resources load
+- [ ] `/content/gi-reset` - GI reset program loads
+- [ ] `/content/detox` - Detox program loads
+- [ ] `/content/support` - Support page loads
 
-- ✅ Advanced Clinical Rules Engine
-- ✅ Secure Messaging (Backend + Web + iOS)
-- ✅ Telehealth Stubs (Ready for Daily.co)
-- ✅ Android App Structure
-- ✅ Monitoring & Observability
-- ✅ UI Polish & Animations
-- ✅ Weekly Snapshot Summaries
+### Technical Checks
+- [ ] No 404 errors (check browser console)
+- [ ] No JavaScript errors (check browser console)
+- [ ] No missing assets (images, fonts, etc.)
+- [ ] API calls succeed (check Network tab)
+- [ ] Authentication flow works
+- [ ] Protected routes redirect correctly
+- [ ] Loading states display properly
+- [ ] Error states handle gracefully
 
-**Status: READY FOR DEPLOYMENT** 🚀
+### Performance
+- [ ] Page load times < 3 seconds
+- [ ] Images optimized and loading
+- [ ] Fonts loading correctly
+- [ ] No layout shift (CLS)
+- [ ] Lighthouse score > 80
 
+### Browser Compatibility
+- [ ] Chrome/Edge (latest)
+- [ ] Firefox (latest)
+- [ ] Safari (latest)
+- [ ] Mobile Safari (iOS)
+- [ ] Chrome Mobile (Android)
+
+## Custom Domain (Optional)
+
+- [ ] Domain added in Vercel project settings
+- [ ] DNS records configured
+- [ ] SSL certificate issued
+- [ ] Domain verified and active
+
+## Monitoring & Alerts
+
+- [ ] Vercel Analytics enabled
+- [ ] Error tracking configured (if applicable)
+- [ ] Uptime monitoring set up (if applicable)
+- [ ] Performance monitoring active
+
+## Documentation
+
+- [ ] Production URL documented
+- [ ] Environment variables documented
+- [ ] Deployment process documented
+- [ ] Rollback procedure documented
+
+## Sign-Off
+
+- [ ] All checklist items completed
+- [ ] QA testing passed
+- [ ] Stakeholder approval received
+- [ ] Production deployment confirmed
+
+---
+
+**Deployment Date**: _______________  
+**Deployed By**: _______________  
+**Production URL**: _______________  
+**Status**: ☐ Ready for Production ☐ Needs Fixes

@@ -18,6 +18,14 @@ import { HealthModule } from './health/health.module';
 import { SummariesModule } from './summaries/summaries.module';
 import { VideoModule } from './video/video.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { SlotsModule } from './slots/slots.module';
+import { VisitsModule } from './visits/visits.module';
+import { VirtualVisitsModule } from './virtual-visits/virtual-visits.module';
+import { DeviceWebhooksModule } from './device-webhooks/device-webhooks.module';
+import { LabOrdersModule } from './lab-orders/lab-orders.module';
+import { ReferralsModule } from './referrals/referrals.module';
+import { ExcuseNotesModule } from './excuse-notes/excuse-notes.module';
+import { AppConfigModule } from './config/config.module';
 
 @Module({
   imports: [
@@ -45,6 +53,14 @@ import { PrismaModule } from './prisma/prisma.module';
     HealthModule,
     SummariesModule,
     VideoModule,
+    SlotsModule,
+    VisitsModule,
+    VirtualVisitsModule,
+    DeviceWebhooksModule,
+    LabOrdersModule,
+    ReferralsModule,
+    ExcuseNotesModule,
+    AppConfigModule,
   ],
   providers: [
     {
@@ -58,4 +74,3 @@ export class AppModule implements NestModule {
     consumer.apply(LoggingMiddleware).forRoutes('*');
   }
 }
-

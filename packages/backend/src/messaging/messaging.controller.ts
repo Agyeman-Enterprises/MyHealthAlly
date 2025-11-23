@@ -7,14 +7,11 @@ import {
   UseGuards,
   Request,
   UseInterceptors,
-  UploadedFile,
   UploadedFiles,
 } from '@nestjs/common';
-import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { MessagingService } from './messaging.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
 
 @Controller('messaging')
 @UseGuards(JwtAuthGuard)
@@ -86,4 +83,3 @@ export class MessagingController {
     return { count };
   }
 }
-

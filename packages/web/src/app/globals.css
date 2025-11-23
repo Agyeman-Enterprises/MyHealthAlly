@@ -2,28 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import '../theme/theme.css';
+
 @layer base {
   :root {
-    --background: 244 248 247;
-    --foreground: 26 26 26;
+    --background: 243 248 247;
+    --foreground: 13 59 54;
     --card: 255 255 255;
-    --card-foreground: 26 26 26;
+    --card-foreground: 13 59 54;
     --popover: 255 255 255;
-    --popover-foreground: 26 26 26;
-    --primary: 42 127 121;
+    --popover-foreground: 13 59 54;
+    --primary: 57 198 179;
     --primary-foreground: 255 255 255;
-    --secondary: 245 247 248;
-    --secondary-foreground: 26 26 26;
-    --muted: 245 247 248;
-    --muted-foreground: 91 102 113;
-    --accent: 71 193 185;
-    --accent-foreground: 26 26 26;
-    --destructive: 214 69 69;
+    --secondary: 243 248 247;
+    --secondary-foreground: 78 111 106;
+    --muted: 243 248 247;
+    --muted-foreground: 139 167 162;
+    --accent: 18 163 138;
+    --accent-foreground: 255 255 255;
+    --destructive: 225 85 85;
     --destructive-foreground: 255 255 255;
-    --border: 198 205 211;
-    --input: 198 205 211;
-    --ring: 42 127 121;
-    --radius: 12px;
+    --border: 220 229 227;
+    --input: 220 229 227;
+    --ring: 57 198 179;
+    --radius: 6px;
   }
 }
 

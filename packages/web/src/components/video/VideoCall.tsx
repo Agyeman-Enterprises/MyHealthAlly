@@ -54,7 +54,7 @@ export function VideoCall({ roomName, token, onEndCall }: VideoCallProps) {
         {/* Controls */}
         <div className="flex justify-center gap-4">
           <Button
-            variant={isMuted ? "destructive" : "outline"}
+            variant={isMuted ? "danger" : "outline"}
             size="icon"
             onClick={() => setIsMuted(!isMuted)}
           >
@@ -62,7 +62,7 @@ export function VideoCall({ roomName, token, onEndCall }: VideoCallProps) {
           </Button>
           
           <Button
-            variant={isVideoOff ? "destructive" : "outline"}
+            variant={isVideoOff ? "danger" : "outline"}
             size="icon"
             onClick={() => setIsVideoOff(!isVideoOff)}
           >
@@ -70,7 +70,7 @@ export function VideoCall({ roomName, token, onEndCall }: VideoCallProps) {
           </Button>
           
           <Button
-            variant="destructive"
+            variant="danger"
             size="icon"
             onClick={onEndCall}
           >

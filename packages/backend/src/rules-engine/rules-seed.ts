@@ -6,7 +6,8 @@ export async function seedDefaultRules() {
   const defaultRules = [
     {
       name: 'BP High Trend (3 days)',
-      description: 'Blood pressure elevated above 130/80 for 3 consecutive days',
+      description:
+        'Blood pressure elevated above 130/80 for 3 consecutive days',
       metric: 'bp',
       windowDays: 7,
       condition: {
@@ -189,4 +190,3 @@ if (require.main === module) {
       await prisma.$disconnect();
     });
 }
-

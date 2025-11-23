@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import { RulesEngineService } from './rules-engine.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ClinicalRule } from '@myhealthally/shared';
@@ -19,7 +28,10 @@ export class RulesEngineController {
   }
 
   @Put(':id')
-  async updateRule(@Param('id') id: string, @Body() data: Partial<ClinicalRule>) {
+  async updateRule(
+    @Param('id') id: string,
+    @Body() data: Partial<ClinicalRule>,
+  ) {
     return this.rulesEngineService.updateRule(id, data);
   }
 
@@ -35,4 +47,3 @@ export class RulesEngineController {
     return { success: true };
   }
 }
-

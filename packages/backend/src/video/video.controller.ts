@@ -1,4 +1,12 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { VideoService } from './video.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -16,14 +24,14 @@ export class VideoController {
   }
 
   @Get('room/:roomName/token')
-  async getRoomToken(
-    @Param('roomName') roomName: string,
-    @Request() req: any,
-  ) {
+  async getRoomToken(@Param('roomName') roomName: string, @Request() req: any) {
     const isOwner = req.user.role === 'PATIENT';
     return {
-      token: await this.videoService.getRoomToken(roomName, req.user.id, isOwner),
+      token: await this.videoService.getRoomToken(
+        roomName,
+        req.user.id,
+        isOwner,
+      ),
     };
   }
 }
-

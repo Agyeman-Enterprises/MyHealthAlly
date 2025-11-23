@@ -1,54 +1,94 @@
 import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { cva, type VariantProps } from "class-variance-authority"
-
 import { cn } from "@/lib/utils"
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-95 hover:shadow-md",
-  {
-    variants: {
-      variant: {
-        default: "bg-primary text-white hover:bg-primary-dark",
-        destructive: "bg-destructive text-white hover:bg-destructive/90",
-        outline: "border border-primary text-primary bg-transparent hover:bg-primary/10",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "text-primary hover:bg-accent/10",
-        link: "text-primary underline-offset-4 hover:underline",
-      },
-      size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  }
-)
-
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+  size?: 'sm' | 'md' | 'lg' | 'icon';
+  fullWidth?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button"
+  ({ className, variant = 'primary', size = 'md', fullWidth = false, disabled, children, ...props }, ref) => {
+    const baseStyles: React.CSSProperties = {
+      borderRadius: 'var(--radius)',
+      fontFamily: 'var(--font-family)',
+      fontWeight: 500,
+      transition: 'all 0.2s ease',
+      cursor: disabled ? 'not-allowed' : 'pointer',
+      border: 'none',
+      outline: 'none',
+      width: fullWidth ? '100%' : 'auto',
+      opacity: disabled ? 0.6 : 1,
+    };
+
+    const variantStyles: Record<string, React.CSSProperties> = {
+      primary: {
+        backgroundColor: 'var(--color-primary)',
+        color: '#FFFFFF',
+      },
+      secondary: {
+        backgroundColor: 'var(--color-secondary)',
+        color: '#FFFFFF',
+      },
+      outline: {
+        backgroundColor: 'transparent',
+        color: 'var(--color-primary)',
+        border: '1px solid var(--color-border)',
+      },
+      ghost: {
+        backgroundColor: 'transparent',
+        color: 'var(--color-textPrimary)',
+      },
+      danger: {
+        backgroundColor: 'var(--color-danger)',
+        color: '#FFFFFF',
+      },
+    };
+
+    const sizeStyles: Record<string, React.CSSProperties> = {
+      sm: {
+        padding: '6px 12px',
+        fontSize: '14px',
+      },
+      md: {
+        padding: '10px 20px',
+        fontSize: '16px',
+      },
+      lg: {
+        padding: '14px 28px',
+        fontSize: '18px',
+      },
+      icon: {
+        padding: '10px',
+        fontSize: '16px',
+        width: '40px',
+        height: '40px',
+      },
+    };
+
+    const style = {
+      ...baseStyles,
+      ...variantStyles[variant],
+      ...sizeStyles[size],
+    };
+
     return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
+      <button
+        className={cn(
+          'hover:opacity-90 active:scale-95',
+          className
+        )}
+        style={style}
         ref={ref}
+        disabled={disabled}
         {...props}
-      />
+      >
+        {children}
+      </button>
     )
   }
 )
 Button.displayName = "Button"
 
-export { Button, buttonVariants }
-
+export { Button }

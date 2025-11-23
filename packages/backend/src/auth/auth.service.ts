@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { UsersService } from '../users/users.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto, RegisterDto } from '@myhealthally/shared';
@@ -18,6 +18,7 @@ export class AuthService {
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.usersService.findByEmail(email);
     if (user && (await bcrypt.compare(password, user.passwordHash))) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { passwordHash, ...result } = user;
       return result;
     }
@@ -50,7 +51,7 @@ export class AuthService {
 
   async register(registerDto: RegisterDto) {
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
-    
+
     const user = await this.prisma.user.create({
       data: {
         email: registerDto.email,
@@ -97,7 +98,7 @@ export class AuthService {
   async refreshToken(refreshToken: string) {
     const tokenRecord = await this.prisma.refreshToken.findUnique({
       where: { token: refreshToken },
-      include: { 
+      include: {
         user: {
           select: {
             id: true,
@@ -143,4 +144,3 @@ export class AuthService {
     return token;
   }
 }
-

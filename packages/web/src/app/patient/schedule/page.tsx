@@ -1,69 +1,119 @@
 'use client';
 
-import { GlowCard } from '@/components/ui/glow-card';
-import FloatingNav from '@/components/patient/FloatingNav';
-import { Calendar, Clock, MapPin } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { PageContainer } from '@/components/layout/PageContainer';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AppointmentCard } from '@/components/widgets/AppointmentCard';
+import { Button } from '@/components/ui/button';
+import { fetchAPI } from '@/lib/utils';
+import { formatDate, formatTime } from '@/utils/date';
+import { Calendar, Plus } from 'lucide-react';
 
-const upcomingVisits = [
-  {
-    id: '1',
-    date: 'Dec 15, 2024',
-    time: '10:00 AM',
-    provider: 'Dr. Sarah Johnson',
-    type: 'Follow-up',
-    location: 'Main Clinic',
-  },
-  {
-    id: '2',
-    date: 'Dec 22, 2024',
-    time: '2:30 PM',
-    provider: 'Dr. Michael Chen',
-    type: 'Annual Checkup',
-    location: 'Main Clinic',
-  },
-];
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 
 export default function PatientSchedulePage() {
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadAppointments();
+  }, []);
+
+  const loadAppointments = async () => {
+    try {
+      const data = await fetchAPI('/patients/me/appointments');
+      setAppointments(data || []);
+    } catch (error) {
+      console.error('Failed to load appointments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+            Loading...
+          </div>
+        </div>
+      </PageContainer>
+    );
+  }
+
+  const upcoming = appointments.filter((a: any) => new Date(a.startTime) > new Date());
+  const past = appointments.filter((a: any) => new Date(a.startTime) <= new Date());
+
   return (
-    <div className="min-h-screen bg-myh-bg pb-24">
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold text-myh-text">Schedule</h1>
-          <p className="text-myh-textSoft">Your upcoming appointments</p>
+    <PageContainer>
+      <div className="py-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-h1 mb-2">Schedule</h1>
+            <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+              Your appointments and visits
+            </p>
+          </div>
+          <Button>
+            <Plus className="w-4 h-4 mr-2" />
+            Book Appointment
+          </Button>
         </div>
 
-        <div className="space-y-4">
-          {upcomingVisits.map((visit) => (
-            <GlowCard key={visit.id} className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-5 h-5 text-myh-primary" />
-                  <div>
-                    <p className="font-semibold text-myh-text">{visit.date}</p>
-                    <p className="text-sm text-myh-textSoft flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
-                      {visit.time}
-                    </p>
-                  </div>
-                </div>
-                <span className="px-3 py-1 bg-myh-primarySoft text-myh-primary rounded-full text-sm font-medium">
-                  {visit.type}
-                </span>
-              </div>
-              <div className="space-y-2">
-                <p className="text-myh-text font-medium">{visit.provider}</p>
-                <p className="text-sm text-myh-textSoft flex items-center gap-1">
-                  <MapPin className="w-4 h-4" />
-                  {visit.location}
-                </p>
-              </div>
-            </GlowCard>
-          ))}
-        </div>
+        {/* Upcoming Appointments */}
+        {upcoming.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-h3">Upcoming</h2>
+            {upcoming.map((appt: any) => (
+              <AppointmentCard
+                key={appt.id}
+                date={formatDate(appt.startTime)}
+                time={formatTime(appt.startTime)}
+                provider={appt.provider?.name || 'Provider'}
+                type={appt.visitMode === 'VIRTUAL' ? 'virtual' : 'in_person'}
+                status="scheduled"
+                reason={appt.reason}
+                onJoin={appt.visitMode === 'VIRTUAL' ? () => window.location.href = `/patient/visit/${appt.id}` : undefined}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Past Appointments */}
+        {past.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-h3">Past</h2>
+            {past.map((appt: any) => (
+              <AppointmentCard
+                key={appt.id}
+                date={formatDate(appt.startTime)}
+                time={formatTime(appt.startTime)}
+                provider={appt.provider?.name || 'Provider'}
+                type={appt.visitMode === 'VIRTUAL' ? 'virtual' : 'in_person'}
+                status="completed"
+                reason={appt.reason}
+              />
+            ))}
+          </div>
+        )}
+
+        {appointments.length === 0 && (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Calendar className="w-12 h-12 mb-4" style={{ color: 'var(--color-textSecondary)' }} />
+              <p className="text-body mb-4" style={{ color: 'var(--color-textSecondary)' }}>
+                No appointments scheduled
+              </p>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Book Your First Appointment
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
-
-      <FloatingNav />
-    </div>
+    </PageContainer>
   );
 }
-
