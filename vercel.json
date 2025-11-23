@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd packages/web && pnpm install && pnpm build",
+  "buildCommand": "pnpm install && pnpm --filter @myhealthally/web build",
   "outputDirectory": "packages/web/.next",
   "installCommand": "pnpm install",
   "framework": "nextjs"
