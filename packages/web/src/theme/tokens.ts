@@ -1,4 +1,4 @@
-import theme from '../../../../theme.json';
+import theme from './theme.json';
 
 export const colors = theme.colors;
 export const radius = theme.radius;
