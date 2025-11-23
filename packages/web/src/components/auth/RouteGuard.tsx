@@ -37,9 +37,9 @@ export function RouteGuard({ children, allowedRoles, redirectTo }: RouteGuardPro
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-clinician-bg flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-background)' }}>
         <div className="text-center">
-          <p className="text-clinician-textMuted">Loading...</p>
+          <p style={{ color: 'var(--color-textSecondary)' }}>Loading...</p>
         </div>
       </div>
     );

@@ -110,9 +110,19 @@ export function PatientUpcomingVisitCard() {
           </div>
 
           {isRequest && (
-            <div className="flex items-center gap-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-yellow-600" />
-              <p className="text-xs text-yellow-800">Please confirm your preferred time slot</p>
+            <div 
+              className="flex items-center gap-2 p-3 rounded-lg"
+              style={{
+                backgroundColor: 'var(--color-warning)',
+                border: '1px solid var(--color-warning)',
+                borderRadius: 'var(--radius)',
+                opacity: 0.15,
+              }}
+            >
+              <AlertCircle className="w-4 h-4" style={{ color: 'var(--color-warning)', opacity: 1 }} />
+              <p className="text-xs font-medium" style={{ color: 'var(--color-textPrimary)', opacity: 1 }}>
+                Please confirm your preferred time slot
+              </p>
             </div>
           )}
 

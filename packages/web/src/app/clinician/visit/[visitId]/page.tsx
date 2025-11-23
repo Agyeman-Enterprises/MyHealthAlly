@@ -24,7 +24,7 @@ export default function VisitWorkspacePage({ params }: { params: Promise<{ visit
   const patient = visit ? getPatientById(visit.patientId) : null;
 
   if (!visit || !patient) {
-    return <div className="text-center py-12">Visit not found</div>;
+    return <div className="text-center py-12" style={{ color: 'var(--color-textPrimary)' }}>Visit not found</div>;
   }
 
   const formatTime = (seconds: number) => {
@@ -34,93 +34,108 @@ export default function VisitWorkspacePage({ params }: { params: Promise<{ visit
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
+  const getRiskBadgeColor = (risk: string): React.CSSProperties => {
+    switch (risk) {
+      case 'high':
+        return { backgroundColor: 'var(--color-danger)', color: '#FFFFFF' };
+      case 'moderate':
+        return { backgroundColor: 'var(--color-warning)', color: '#FFFFFF' };
+      default:
+        return { backgroundColor: 'var(--color-success)', color: '#FFFFFF' };
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Patient Sidebar */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Patient Info (30%) */}
         <div className="lg:col-span-3 space-y-4">
-          <Card className="bg-clinician-surface">
+          <Card style={{ backgroundColor: 'var(--color-surface)' }}>
             <CardContent className="p-4">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-full bg-clinician-primary-soft flex items-center justify-center">
-                  <span className="text-clinician-primary font-medium">{patient.name.charAt(0)}</span>
+                <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-primaryLight)' }}>
+                  <span className="font-medium" style={{ color: 'var(--color-primary)' }}>{patient.name.charAt(0)}</span>
                 </div>
                 <div>
-                  <p className="font-medium text-clinician-text">{patient.name}</p>
-                  <p className="text-sm text-clinician-textMuted">
+                  <p className="font-medium text-body" style={{ color: 'var(--color-textPrimary)' }}>{patient.name}</p>
+                  <p className="text-small" style={{ color: 'var(--color-textSecondary)' }}>
                     {patient.age} {patient.sex} • {patient.primaryDx}
                   </p>
                 </div>
               </div>
-              <Badge className="bg-clinician-danger text-white">{patient.riskLevel}</Badge>
+              <Badge style={getRiskBadgeColor(patient.riskLevel)}>{patient.riskLevel}</Badge>
             </CardContent>
           </Card>
 
-          <Card className="bg-clinician-surface">
+          <Card style={{ backgroundColor: 'var(--color-surface)' }}>
             <CardHeader>
-              <CardTitle className="text-sm text-clinician-text">Key Vitals</CardTitle>
+              <CardTitle className="text-small" style={{ color: 'var(--color-textPrimary)' }}>Key Vitals</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 text-sm">
+            <CardContent className="space-y-2 text-small">
               <div className="flex justify-between">
-                <span className="text-clinician-textMuted">HR</span>
-                <span className="text-clinician-text">{patient.latestVitals.heartRate} bpm</span>
+                <span style={{ color: 'var(--color-textSecondary)' }}>HR</span>
+                <span style={{ color: 'var(--color-textPrimary)' }}>{patient.latestVitals.heartRate} bpm</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-clinician-textMuted">BP</span>
-                <span className="text-clinician-text">
+                <span style={{ color: 'var(--color-textSecondary)' }}>BP</span>
+                <span style={{ color: 'var(--color-textPrimary)' }}>
                   {patient.latestVitals.systolic}/{patient.latestVitals.diastolic}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-clinician-textMuted">HRV</span>
-                <span className="text-clinician-text">{patient.latestVitals.hrvMs} ms</span>
+                <span style={{ color: 'var(--color-textSecondary)' }}>HRV</span>
+                <span style={{ color: 'var(--color-textPrimary)' }}>{patient.latestVitals.hrvMs} ms</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-clinician-textMuted">BMI</span>
-                <span className="text-clinician-text">{patient.latestVitals.bmi.toFixed(1)}</span>
+                <span style={{ color: 'var(--color-textSecondary)' }}>BMI</span>
+                <span style={{ color: 'var(--color-textPrimary)' }}>{patient.latestVitals.bmi.toFixed(1)}</span>
               </div>
-              <p className="text-xs text-clinician-textMuted mt-2">
+              <p className="text-caption mt-2" style={{ color: 'var(--color-textSecondary)' }}>
                 Updated {new Date(patient.latestVitals.timestamp).toLocaleTimeString()}
               </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-clinician-surface">
+          <Card style={{ backgroundColor: 'var(--color-surface)' }}>
             <CardHeader>
-              <CardTitle className="text-sm text-clinician-text">Medications</CardTitle>
+              <CardTitle className="text-small" style={{ color: 'var(--color-textPrimary)' }}>Medications</CardTitle>
             </CardHeader>
             <CardContent>
-              <ul className="text-sm text-clinician-text space-y-1">
+              <ul className="text-small space-y-1" style={{ color: 'var(--color-textPrimary)' }}>
                 <li>• Lisinopril 10mg daily</li>
                 <li>• Metformin 500mg BID</li>
               </ul>
             </CardContent>
           </Card>
 
-          <Card className="bg-clinician-surface">
+          <Card style={{ backgroundColor: 'var(--color-surface)' }}>
             <CardHeader>
-              <CardTitle className="text-sm text-clinician-text">Allergies</CardTitle>
+              <CardTitle className="text-small" style={{ color: 'var(--color-textPrimary)' }}>Allergies</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-clinician-textMuted">None known</p>
+              <p className="text-small" style={{ color: 'var(--color-textSecondary)' }}>None known</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Center: Video Area (50%) */}
         <div className="lg:col-span-6 space-y-4">
-          <Card className="bg-clinician-surface">
+          <Card style={{ backgroundColor: 'var(--color-surface)' }}>
             <CardContent className="p-8">
-              <div className="aspect-video bg-clinician-panel rounded-lg flex items-center justify-center border-2 border-dashed border-clinician-textMuted">
+              <div className="aspect-video rounded-lg flex items-center justify-center border-2 border-dashed" style={{ 
+                backgroundColor: 'var(--color-background)', 
+                borderColor: 'var(--color-textSecondary)',
+                borderRadius: 'var(--radius)',
+              }}>
                 <div className="text-center">
-                  <Video className="w-16 h-16 text-clinician-textMuted mx-auto mb-4" />
-                  <p className="text-clinician-textMuted">Video visit</p>
-                  <p className="text-sm text-clinician-textMuted">(to be connected to telehealth provider)</p>
+                  <Video className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-textSecondary)' }} />
+                  <p style={{ color: 'var(--color-textSecondary)' }}>Video visit</p>
+                  <p className="text-small" style={{ color: 'var(--color-textSecondary)' }}>(to be connected to telehealth provider)</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 mt-4">
-                <Button className="bg-clinician-primary hover:bg-clinician-primary-soft">
+                <Button variant="primary">
                   <Video className="w-4 h-4 mr-2" />
                   Start Video
                 </Button>
@@ -143,7 +158,7 @@ export default function VisitWorkspacePage({ params }: { params: Promise<{ visit
 
         {/* Right: Notes & Orders (20%) */}
         <div className="lg:col-span-3 space-y-4">
-          <Card className="bg-clinician-surface">
+          <Card style={{ backgroundColor: 'var(--color-surface)' }}>
             <Tabs defaultValue="notes">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -153,7 +168,11 @@ export default function VisitWorkspacePage({ params }: { params: Promise<{ visit
               <TabsContent value="notes" className="space-y-3">
                 <Textarea
                   placeholder="SOAP note..."
-                  className="min-h-[200px] bg-clinician-panel border-clinician-panel"
+                  className="min-h-[200px]"
+                  style={{
+                    backgroundColor: 'var(--color-background)',
+                    borderColor: 'var(--color-border)',
+                  }}
                 />
                 <div className="flex gap-2 flex-wrap">
                   {['HPI', 'Assessment', 'Plan'].map((template) => (
@@ -165,16 +184,16 @@ export default function VisitWorkspacePage({ params }: { params: Promise<{ visit
               </TabsContent>
               <TabsContent value="orders" className="space-y-3">
                 <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm text-clinician-text">
-                    <input type="checkbox" className="rounded" />
+                  <label className="flex items-center gap-2 text-small" style={{ color: 'var(--color-textPrimary)' }}>
+                    <input type="checkbox" className="rounded" style={{ borderRadius: 'var(--radius)' }} />
                     Order labs
                   </label>
-                  <label className="flex items-center gap-2 text-sm text-clinician-text">
-                    <input type="checkbox" className="rounded" />
+                  <label className="flex items-center gap-2 text-small" style={{ color: 'var(--color-textPrimary)' }}>
+                    <input type="checkbox" className="rounded" style={{ borderRadius: 'var(--radius)' }} />
                     Adjust meds
                   </label>
-                  <label className="flex items-center gap-2 text-sm text-clinician-text">
-                    <input type="checkbox" className="rounded" />
+                  <label className="flex items-center gap-2 text-small" style={{ color: 'var(--color-textPrimary)' }}>
+                    <input type="checkbox" className="rounded" style={{ borderRadius: 'var(--radius)' }} />
                     Add follow-up task
                   </label>
                 </div>
@@ -188,11 +207,14 @@ export default function VisitWorkspacePage({ params }: { params: Promise<{ visit
                   ].map((msg, idx) => (
                     <div
                       key={idx}
-                      className={`p-2 rounded-lg text-sm ${
-                        msg.sender === 'clinician'
-                          ? 'bg-clinician-primary-soft text-clinician-text ml-auto text-right'
-                          : 'bg-clinician-panel text-clinician-text'
-                      }`}
+                      className="p-2 rounded-lg text-small"
+                      style={{
+                        backgroundColor: msg.sender === 'clinician' ? 'var(--color-primaryLight)' : 'var(--color-background)',
+                        color: 'var(--color-textPrimary)',
+                        borderRadius: 'var(--radius)',
+                        marginLeft: msg.sender === 'clinician' ? 'auto' : '0',
+                        textAlign: msg.sender === 'clinician' ? 'right' : 'left',
+                      }}
                     >
                       {msg.text}
                     </div>
@@ -200,7 +222,7 @@ export default function VisitWorkspacePage({ params }: { params: Promise<{ visit
                 </div>
                 <div className="flex gap-2">
                   <Textarea placeholder="Type a message..." className="flex-1" />
-                  <Button size="sm">
+                  <Button size="sm" variant="primary">
                     <Send className="w-4 h-4" />
                   </Button>
                 </div>
@@ -211,14 +233,18 @@ export default function VisitWorkspacePage({ params }: { params: Promise<{ visit
       </div>
 
       {/* Bottom Bar */}
-      <div className="sticky bottom-0 bg-clinician-surface border-t border-clinician-panel p-4 rounded-lg">
+      <div className="sticky bottom-0 border-t p-4 rounded-lg" style={{ 
+        backgroundColor: 'var(--color-surface)', 
+        borderColor: 'var(--color-border)',
+        borderRadius: 'var(--radius)',
+      }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-clinician-textMuted" />
-              <span className="text-clinician-text font-mono">{formatTime(visitTime)}</span>
+              <Clock className="w-4 h-4" style={{ color: 'var(--color-textSecondary)' }} />
+              <span className="font-mono" style={{ color: 'var(--color-textPrimary)' }}>{formatTime(visitTime)}</span>
             </div>
-            <Badge className="bg-clinician-primary text-white">{visit.status}</Badge>
+            <Badge style={{ backgroundColor: 'var(--color-primary)', color: '#FFFFFF' }}>{visit.status}</Badge>
           </div>
           <div className="flex gap-2">
             <Button variant="outline">End Visit</Button>
@@ -242,4 +268,3 @@ export default function VisitWorkspacePage({ params }: { params: Promise<{ visit
     </div>
   );
 }
-

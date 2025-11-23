@@ -26,24 +26,24 @@ export function VitalsCard(props: VitalsCardProps) {
     stressLevel = 'moderate',
   } = props;
 
-  const getBMIColor = (bmiValue?: number) => {
-    if (!bmiValue) return 'text-myh-textSoft';
-    if (bmiValue < 18.5) return 'text-blue-600';
-    if (bmiValue < 25) return 'text-green-600';
-    if (bmiValue < 30) return 'text-yellow-600';
-    return 'text-red-600';
+  const getBMIColor = (bmiValue?: number): string => {
+    if (!bmiValue) return 'var(--color-textSecondary)';
+    if (bmiValue < 18.5) return 'var(--color-info)';
+    if (bmiValue < 25) return 'var(--color-success)';
+    if (bmiValue < 30) return 'var(--color-warning)';
+    return 'var(--color-danger)';
   };
 
-  const getStressColor = (level: string) => {
+  const getStressColor = (level: string): string => {
     switch (level) {
       case 'low':
-        return 'text-green-600';
+        return 'var(--color-success)';
       case 'moderate':
-        return 'text-yellow-600';
+        return 'var(--color-warning)';
       case 'high':
-        return 'text-red-600';
+        return 'var(--color-danger)';
       default:
-        return 'text-myh-textSoft';
+        return 'var(--color-textSecondary)';
     }
   };
 
@@ -101,7 +101,7 @@ export function VitalsCard(props: VitalsCardProps) {
                 <Scale className="w-4 h-4 text-myh-textSoft" />
                 <span className="text-xs text-myh-textSoft">BMI</span>
               </div>
-              <span className={`text-xl font-semibold ${getBMIColor(bmi)}`}>
+              <span className="text-xl font-semibold" style={{ color: getBMIColor(bmi) }}>
                 {bmi.toFixed(1)}
               </span>
               {bmiLabel && (
@@ -129,7 +129,7 @@ export function VitalsCard(props: VitalsCardProps) {
                 <Gauge className="w-4 h-4 text-myh-textSoft" />
                 <span className="text-xs text-myh-textSoft">Stress</span>
               </div>
-              <span className={`text-lg font-semibold capitalize ${getStressColor(stressLevel)}`}>
+              <span className="text-lg font-semibold capitalize" style={{ color: getStressColor(stressLevel) }}>
                 {stressLevel}
               </span>
             </div>

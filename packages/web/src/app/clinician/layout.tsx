@@ -43,11 +43,7 @@ export default function ClinicianLayout({
   const pathname = usePathname();
   const [onCallStatus, setOnCallStatus] = useState<'available' | 'in_visit' | 'offline'>('available');
 
-  const statusColors = {
-    available: 'bg-green-500 text-white',
-    in_visit: 'bg-yellow-500 text-white',
-    offline: 'bg-gray-500 text-white',
-  };
+  // Status colors now use theme variables via inline styles
 
   return (
     <RouteGuard allowedRoles={['PROVIDER', 'MEDICAL_ASSISTANT', 'ADMIN']} redirectTo="/patient/login">

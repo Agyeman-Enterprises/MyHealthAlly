@@ -23,7 +23,7 @@ export function useLabOrders() {
     try {
       setLoading(true);
       setError(null);
-      const data = await fetchAPI('/patients/me/lab-orders');
+      const data = await fetchAPI('/patients/me/labs/orders');
       setOrders(data || []);
     } catch (err: any) {
       setError(err.message || 'Failed to load lab orders');
@@ -53,7 +53,7 @@ export function useLabResults() {
     try {
       setLoading(true);
       setError(null);
-      const data = await fetchAPI('/patients/me/lab-results');
+      const data = await fetchAPI('/patients/me/labs/results');
       setResults(data || []);
     } catch (err: any) {
       setError(err.message || 'Failed to load lab results');

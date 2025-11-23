@@ -25,9 +25,9 @@ export default function PatientLoginPage() {
   // Show loading state while checking auth
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-myh-bg flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--color-background)' }}>
         <div className="text-center">
-          <p className="text-myh-textSoft">Loading...</p>
+          <p style={{ color: 'var(--color-textSecondary)' }}>Loading...</p>
         </div>
       </div>
     );
@@ -59,17 +59,17 @@ export default function PatientLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-myh-bg flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--color-background)' }}>
       <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-semibold text-myh-text">MYHEALTHALLY</h1>
-          <p className="text-myh-textSoft text-lg">Your health, in one connected place.</p>
+          <h1 className="text-h1 font-semibold" style={{ color: 'var(--color-textPrimary)' }}>MYHEALTHALLY</h1>
+          <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>Your health, in one connected place.</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <GlowCard className="p-6 space-y-4">
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-myh-text">
+              <label htmlFor="email" className="text-small font-medium" style={{ color: 'var(--color-textPrimary)' }}>
                 Email
               </label>
               <Input
@@ -79,11 +79,15 @@ export default function PatientLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-myh-surface border-myh-border text-myh-text placeholder:text-myh-textSoft focus-visible:ring-myh-primary"
+                style={{
+                  backgroundColor: 'var(--color-surface)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-textPrimary)',
+                }}
               />
             </div>
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium text-myh-text">
+              <label htmlFor="password" className="text-small font-medium" style={{ color: 'var(--color-textPrimary)' }}>
                 Password
               </label>
               <Input
@@ -93,11 +97,23 @@ export default function PatientLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="bg-myh-surface border-myh-border text-myh-text placeholder:text-myh-textSoft focus-visible:ring-myh-primary"
+                style={{
+                  backgroundColor: 'var(--color-surface)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-textPrimary)',
+                }}
               />
             </div>
             {error && (
-              <div className="text-sm text-myh-error bg-myh-error/10 border border-myh-error/20 rounded-lg p-3">
+              <div 
+                className="text-small rounded-lg p-3"
+                style={{
+                  color: 'var(--color-danger)',
+                  backgroundColor: 'rgba(225, 85, 85, 0.1)',
+                  border: '1px solid rgba(225, 85, 85, 0.2)',
+                  borderRadius: 'var(--radius)',
+                }}
+              >
                 {error}
               </div>
             )}
@@ -112,7 +128,7 @@ export default function PatientLoginPage() {
           </PrimaryButton>
         </form>
 
-        <p className="text-center text-sm text-myh-textSoft">
+        <p className="text-center text-caption" style={{ color: 'var(--color-textSecondary)' }}>
           MyHealthAlly • Secure care connection
         </p>
       </div>

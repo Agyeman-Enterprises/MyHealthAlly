@@ -16,17 +16,17 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
   const patientTasks = getTasks({ patientId });
 
   if (!patient) {
-    return <div className="text-center py-12">Patient not found</div>;
+    return <div className="text-center py-12" style={{ color: 'var(--color-textPrimary)' }}>Patient not found</div>;
   }
 
-  const getRiskBadgeColor = (risk: string) => {
+  const getRiskBadgeColor = (risk: string): React.CSSProperties => {
     switch (risk) {
       case 'high':
-        return 'bg-clinician-danger text-white';
+        return { backgroundColor: 'var(--color-danger)', color: '#FFFFFF' };
       case 'moderate':
-        return 'bg-clinician-warning text-white';
+        return { backgroundColor: 'var(--color-warning)', color: '#FFFFFF' };
       default:
-        return 'bg-clinician-good text-white';
+        return { backgroundColor: 'var(--color-success)', color: '#FFFFFF' };
     }
   };
 
@@ -40,18 +40,18 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
       {/* Patient Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-clinician-primary-soft flex items-center justify-center">
-            <span className="text-clinician-primary font-semibold text-xl">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-primaryLight)' }}>
+            <span className="font-semibold text-xl" style={{ color: 'var(--color-primary)' }}>
               {patient.name.charAt(0)}
             </span>
           </div>
           <div>
-            <h1 className="text-2xl font-semibold text-clinician-text">{patient.name}</h1>
-            <p className="text-clinician-textMuted">
+            <h1 className="text-h2 font-semibold" style={{ color: 'var(--color-textPrimary)' }}>{patient.name}</h1>
+            <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
               {patient.age} {patient.sex} • {patient.primaryDx}
             </p>
             <div className="flex items-center gap-2 mt-2">
-              <Badge className={getRiskBadgeColor(patient.riskLevel)}>{patient.riskLevel}</Badge>
+              <Badge style={getRiskBadgeColor(patient.riskLevel)}>{patient.riskLevel}</Badge>
               {patient.devices.map((device) => (
                 <Badge key={device} variant="outline" className="text-xs">
                   {device === 'Apple Watch' && <Apple className="w-3 h-3 mr-1" />}
@@ -63,7 +63,7 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
         </div>
         <div className="flex gap-2">
           <Link href={`/clinician/visit/new?patientId=${patient.id}`}>
-            <Button className="bg-clinician-primary hover:bg-clinician-primary-soft">
+            <Button variant="primary">
               <Video className="w-4 h-4 mr-2" />
               Start Virtual Visit
             </Button>
@@ -77,53 +77,53 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
         {/* Left: Vitals & Trends */}
         <div className="space-y-6">
           {/* Current Vitals */}
-          <Card className="bg-clinician-surface">
+          <Card style={{ backgroundColor: 'var(--color-surface)' }}>
             <CardHeader>
-              <CardTitle className="text-clinician-text">Current Vitals</CardTitle>
+              <CardTitle className="text-h3" style={{ color: 'var(--color-textPrimary)' }}>Current Vitals</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg bg-clinician-panel">
+                <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--color-background)', borderRadius: 'var(--radius)' }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <Heart className="w-4 h-4 text-clinician-textMuted" />
-                    <span className="text-sm text-clinician-textMuted">Heart Rate</span>
+                    <Heart className="w-4 h-4" style={{ color: 'var(--color-textSecondary)' }} />
+                    <span className="text-small" style={{ color: 'var(--color-textSecondary)' }}>Heart Rate</span>
                   </div>
-                  <p className="text-2xl font-semibold text-clinician-text">
+                  <p className="text-h2 font-semibold" style={{ color: 'var(--color-textPrimary)' }}>
                     {patient.latestVitals.heartRate}
-                    <span className="text-sm text-clinician-textMuted ml-1">bpm</span>
+                    <span className="text-small ml-1" style={{ color: 'var(--color-textSecondary)' }}>bpm</span>
                   </p>
                 </div>
-                <div className="p-4 rounded-lg bg-clinician-panel">
+                <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--color-background)', borderRadius: 'var(--radius)' }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <Gauge className="w-4 h-4 text-clinician-textMuted" />
-                    <span className="text-sm text-clinician-textMuted">Blood Pressure</span>
+                    <Gauge className="w-4 h-4" style={{ color: 'var(--color-textSecondary)' }} />
+                    <span className="text-small" style={{ color: 'var(--color-textSecondary)' }}>Blood Pressure</span>
                   </div>
-                  <p className="text-2xl font-semibold text-clinician-text">
+                  <p className="text-h2 font-semibold" style={{ color: 'var(--color-textPrimary)' }}>
                     {patient.latestVitals.systolic}/{patient.latestVitals.diastolic}
-                    <span className="text-sm text-clinician-textMuted ml-1">mmHg</span>
+                    <span className="text-small ml-1" style={{ color: 'var(--color-textSecondary)' }}>mmHg</span>
                   </p>
                 </div>
-                <div className="p-4 rounded-lg bg-clinician-panel">
+                <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--color-background)', borderRadius: 'var(--radius)' }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <Activity className="w-4 h-4 text-clinician-textMuted" />
-                    <span className="text-sm text-clinician-textMuted">HRV</span>
+                    <Activity className="w-4 h-4" style={{ color: 'var(--color-textSecondary)' }} />
+                    <span className="text-small" style={{ color: 'var(--color-textSecondary)' }}>HRV</span>
                   </div>
-                  <p className="text-2xl font-semibold text-clinician-text">
+                  <p className="text-h2 font-semibold" style={{ color: 'var(--color-textPrimary)' }}>
                     {patient.latestVitals.hrvMs}
-                    <span className="text-sm text-clinician-textMuted ml-1">ms</span>
+                    <span className="text-small ml-1" style={{ color: 'var(--color-textSecondary)' }}>ms</span>
                   </p>
                 </div>
-                <div className="p-4 rounded-lg bg-clinician-panel">
+                <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--color-background)', borderRadius: 'var(--radius)' }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <Scale className="w-4 h-4 text-clinician-textMuted" />
-                    <span className="text-sm text-clinician-textMuted">BMI</span>
+                    <Scale className="w-4 h-4" style={{ color: 'var(--color-textSecondary)' }} />
+                    <span className="text-small" style={{ color: 'var(--color-textSecondary)' }}>BMI</span>
                   </div>
-                  <p className="text-2xl font-semibold text-clinician-text">
+                  <p className="text-h2 font-semibold" style={{ color: 'var(--color-textPrimary)' }}>
                     {patient.latestVitals.bmi.toFixed(1)}
                   </p>
                 </div>
               </div>
-              <p className="text-xs text-clinician-textMuted mt-4">
+              <p className="text-caption mt-4" style={{ color: 'var(--color-textSecondary)' }}>
                 Last updated:{' '}
                 {new Date(patient.latestVitals.timestamp).toLocaleString('en-US', {
                   month: 'short',
@@ -136,30 +136,30 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
           </Card>
 
           {/* HRV Trend */}
-          <Card className="bg-clinician-surface">
+          <Card style={{ backgroundColor: 'var(--color-surface)' }}>
             <CardHeader>
-              <CardTitle className="text-clinician-text">HRV & Recovery Trend</CardTitle>
+              <CardTitle className="text-h3" style={{ color: 'var(--color-textPrimary)' }}>HRV & Recovery Trend</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#ECF7F7" />
-                    <XAxis dataKey="date" stroke="#6B7C93" fontSize={12} />
-                    <YAxis stroke="#6B7C93" fontSize={12} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-line)" />
+                    <XAxis dataKey="date" stroke="var(--color-textSecondary)" fontSize={12} />
+                    <YAxis stroke="var(--color-textSecondary)" fontSize={12} />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: '#FFFFFF',
-                        border: '1px solid #ECF7F7',
-                        borderRadius: '8px',
+                        backgroundColor: 'var(--color-surface)',
+                        border: '1px solid var(--color-border)',
+                        borderRadius: 'var(--radius)',
                       }}
                     />
                     <Line
                       type="monotone"
                       dataKey="hrv"
-                      stroke="#0FB5B3"
+                      stroke="var(--color-primary)"
                       strokeWidth={2}
-                      dot={{ fill: '#0FB5B3', r: 4 }}
+                      dot={{ fill: 'var(--color-primary)', r: 4 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -171,32 +171,32 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
         {/* Right: Care & Notes */}
         <div className="space-y-6">
           {/* Active Care Plan */}
-          <Card className="bg-clinician-surface">
+          <Card style={{ backgroundColor: 'var(--color-surface)' }}>
             <CardHeader>
-              <CardTitle className="text-clinician-text">Active Care Plan</CardTitle>
+              <CardTitle className="text-h3" style={{ color: 'var(--color-textPrimary)' }}>Active Care Plan</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
                 <li className="flex items-start gap-2">
-                  <span className="text-clinician-primary mt-1">•</span>
-                  <span className="text-clinician-text">Nutrition plan A</span>
+                  <span className="mt-1" style={{ color: 'var(--color-primary)' }}>•</span>
+                  <span className="text-body" style={{ color: 'var(--color-textPrimary)' }}>Nutrition plan A</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-clinician-primary mt-1">•</span>
-                  <span className="text-clinician-text">Exercise plan B</span>
+                  <span className="mt-1" style={{ color: 'var(--color-primary)' }}>•</span>
+                  <span className="text-body" style={{ color: 'var(--color-textPrimary)' }}>Exercise plan B</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-clinician-primary mt-1">•</span>
-                  <span className="text-clinician-text">Sleep hygiene steps</span>
+                  <span className="mt-1" style={{ color: 'var(--color-primary)' }}>•</span>
+                  <span className="text-body" style={{ color: 'var(--color-textPrimary)' }}>Sleep hygiene steps</span>
                 </li>
               </ul>
             </CardContent>
           </Card>
 
           {/* Recent Notes */}
-          <Card className="bg-clinician-surface">
+          <Card style={{ backgroundColor: 'var(--color-surface)' }}>
             <CardHeader>
-              <CardTitle className="text-clinician-text">Recent Notes</CardTitle>
+              <CardTitle className="text-h3" style={{ color: 'var(--color-textPrimary)' }}>Recent Notes</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -217,12 +217,12 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
                     snippet: 'Initial consultation completed...',
                   },
                 ].map((note, idx) => (
-                  <div key={idx} className="p-3 rounded-lg bg-clinician-panel">
+                  <div key={idx} className="p-3 rounded-lg" style={{ backgroundColor: 'var(--color-background)', borderRadius: 'var(--radius)' }}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-clinician-text">{note.author}</span>
-                      <span className="text-xs text-clinician-textMuted">{note.date}</span>
+                      <span className="text-small font-medium" style={{ color: 'var(--color-textPrimary)' }}>{note.author}</span>
+                      <span className="text-caption" style={{ color: 'var(--color-textSecondary)' }}>{note.date}</span>
                     </div>
-                    <p className="text-sm text-clinician-textMuted">{note.snippet}</p>
+                    <p className="text-small" style={{ color: 'var(--color-textSecondary)' }}>{note.snippet}</p>
                   </div>
                 ))}
               </div>
@@ -230,9 +230,9 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
           </Card>
 
           {/* Open Tasks */}
-          <Card className="bg-clinician-surface">
+          <Card style={{ backgroundColor: 'var(--color-surface)' }}>
             <CardHeader>
-              <CardTitle className="text-clinician-text">Open Tasks for This Patient</CardTitle>
+              <CardTitle className="text-h3" style={{ color: 'var(--color-textPrimary)' }}>Open Tasks for This Patient</CardTitle>
             </CardHeader>
             <CardContent>
               {patientTasks.length > 0 ? (
@@ -240,11 +240,16 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
                   {patientTasks.map((task) => (
                     <div
                       key={task.id}
-                      className="p-3 rounded-lg bg-clinician-panel border border-clinician-panel"
+                      className="p-3 rounded-lg"
+                      style={{ 
+                        backgroundColor: 'var(--color-background)', 
+                        border: '1px solid var(--color-border)',
+                        borderRadius: 'var(--radius)',
+                      }}
                     >
-                      <p className="text-sm font-medium text-clinician-text">{task.title}</p>
+                      <p className="text-small font-medium" style={{ color: 'var(--color-textPrimary)' }}>{task.title}</p>
                       {task.dueDate && (
-                        <p className="text-xs text-clinician-textMuted mt-1">
+                        <p className="text-caption mt-1" style={{ color: 'var(--color-textSecondary)' }}>
                           Due: {new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </p>
                       )}
@@ -252,7 +257,7 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-clinician-textMuted">No open tasks</p>
+                <p className="text-small" style={{ color: 'var(--color-textSecondary)' }}>No open tasks</p>
               )}
             </CardContent>
           </Card>
@@ -261,4 +266,3 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
     </div>
   );
 }
-

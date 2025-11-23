@@ -37,13 +37,13 @@ Two Vercel projects have been initialized:
 
 ```
 NEXT_PUBLIC_API_BASE_URL=https://api.myhealthally.com
+NEXT_PUBLIC_API_URL=https://api.myhealthally.com
 NEXT_PUBLIC_CONTENT_URL=https://content.myhealthally.com
-NEXT_PUBLIC_AUTH_CLIENT_ID=your-client-id
-NEXT_PUBLIC_AUTH_TENANT=your-tenant
 NEXT_PUBLIC_VIDEO_BASE_URL=https://video.myhealthally.com
 NEXT_PUBLIC_BUILDER_API_KEY_MYHEALTHALLY=27c0a1050b53444993b6c4968fdc6bd1
-NEXT_PUBLIC_API_URL=https://api.myhealthally.com
 ```
+
+**Note**: This app uses custom JWT authentication (not Auth0/Azure AD), so `AUTH_CLIENT_ID` and `AUTH_TENANT` are not needed.
 
 4. **Redeploy**:
    - Go to **Deployments** tab

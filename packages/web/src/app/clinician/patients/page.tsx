@@ -27,14 +27,14 @@ export default function ClinicianPatientsPage() {
     return matchesSearch && matchesRisk && matchesTelehealth;
   });
 
-  const getRiskBadgeColor = (risk: string) => {
+  const getRiskBadgeColor = (risk: string): React.CSSProperties => {
     switch (risk) {
       case 'high':
-        return 'bg-clinician-danger text-white';
+        return { backgroundColor: 'var(--color-danger)', color: '#FFFFFF' };
       case 'moderate':
-        return 'bg-clinician-warning text-white';
+        return { backgroundColor: 'var(--color-warning)', color: '#FFFFFF' };
       default:
-        return 'bg-clinician-good text-white';
+        return { backgroundColor: 'var(--color-success)', color: '#FFFFFF' };
     }
   };
 
@@ -44,18 +44,19 @@ export default function ClinicianPatientsPage() {
       <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
         <div className="flex-1 max-w-md">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-clinician-textMuted w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--color-textSecondary)' }} />
             <Input
               placeholder="Search patients..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-clinician-surface"
+              className="pl-10"
+              style={{ backgroundColor: 'var(--color-surface)' }}
             />
           </div>
         </div>
         <div className="flex gap-2">
           <Select value={riskFilter} onValueChange={setRiskFilter}>
-            <SelectTrigger className="w-40 bg-clinician-surface">
+            <SelectTrigger className="w-40" style={{ backgroundColor: 'var(--color-surface)' }}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -67,11 +68,22 @@ export default function ClinicianPatientsPage() {
           </Select>
           <button
             onClick={() => setTelehealthFilter(!telehealthFilter)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              telehealthFilter
-                ? 'bg-clinician-primary text-white'
-                : 'bg-clinician-panel text-clinician-text hover:bg-clinician-panel/80'
-            }`}
+            className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            style={{
+              backgroundColor: telehealthFilter ? 'var(--color-primary)' : 'var(--color-background)',
+              color: telehealthFilter ? '#FFFFFF' : 'var(--color-textPrimary)',
+              borderRadius: 'var(--radius)',
+            }}
+            onMouseEnter={(e) => {
+              if (!telehealthFilter) {
+                e.currentTarget.style.opacity = '0.8';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!telehealthFilter) {
+                e.currentTarget.style.opacity = '1';
+              }
+            }}
           >
             Telehealth Only
           </button>
@@ -79,38 +91,45 @@ export default function ClinicianPatientsPage() {
       </div>
 
       {/* Patients Table */}
-      <Card className="bg-clinician-surface">
+      <Card style={{ backgroundColor: 'var(--color-surface)' }}>
         <CardContent className="p-0">
           <ScrollArea className="h-[calc(100vh-300px)]">
-            <div className="divide-y divide-clinician-panel">
+            <div className="divide-y" style={{ borderColor: 'var(--color-border)' }}>
               {filteredPatients.map((patient: PatientSummary) => (
                 <Link
                   key={patient.id}
                   href={`/clinician/patients/${patient.id}`}
-                  className="flex items-center gap-4 p-4 hover:bg-clinician-panel transition-colors"
+                  className="flex items-center gap-4 p-4 transition-colors"
+                  style={{ backgroundColor: 'transparent' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-background)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
                 >
-                  <div className="w-12 h-12 rounded-full bg-clinician-primary-soft flex items-center justify-center flex-shrink-0">
-                    <span className="text-clinician-primary font-medium">
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'var(--color-primaryLight)' }}>
+                    <span className="font-medium" style={{ color: 'var(--color-primary)' }}>
                       {patient.name.charAt(0)}
                     </span>
                   </div>
                   <div className="flex-1 grid grid-cols-5 gap-4">
                     <div>
-                      <p className="font-medium text-clinician-text">{patient.name}</p>
-                      <p className="text-sm text-clinician-textMuted">
+                      <p className="font-medium text-body" style={{ color: 'var(--color-textPrimary)' }}>{patient.name}</p>
+                      <p className="text-sm text-caption" style={{ color: 'var(--color-textSecondary)' }}>
                         {patient.age} {patient.sex}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-clinician-text">{patient.primaryDx || '—'}</p>
+                      <p className="text-sm text-body" style={{ color: 'var(--color-textPrimary)' }}>{patient.primaryDx || '—'}</p>
                     </div>
                     <div>
-                      <Badge className={getRiskBadgeColor(patient.riskLevel)}>
+                      <Badge style={getRiskBadgeColor(patient.riskLevel)}>
                         {patient.riskLevel}
                       </Badge>
                     </div>
                     <div>
-                      <p className="text-sm text-clinician-textMuted">
+                      <p className="text-sm text-caption" style={{ color: 'var(--color-textSecondary)' }}>
                         {new Date(patient.lastVisit).toLocaleDateString('en-US', {
                           month: 'short',
                           day: 'numeric',
@@ -120,14 +139,14 @@ export default function ClinicianPatientsPage() {
                     </div>
                     <div>
                       {patient.nextVisit ? (
-                        <p className="text-sm text-clinician-text">
+                        <p className="text-sm text-body" style={{ color: 'var(--color-textPrimary)' }}>
                           {new Date(patient.nextVisit).toLocaleDateString('en-US', {
                             month: 'short',
                             day: 'numeric',
                           })}
                         </p>
                       ) : (
-                        <p className="text-sm text-clinician-textMuted">—</p>
+                        <p className="text-sm text-caption" style={{ color: 'var(--color-textSecondary)' }}>—</p>
                       )}
                     </div>
                   </div>
@@ -140,4 +159,3 @@ export default function ClinicianPatientsPage() {
     </div>
   );
 }
-

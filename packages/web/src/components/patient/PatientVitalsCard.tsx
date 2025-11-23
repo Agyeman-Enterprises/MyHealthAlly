@@ -59,10 +59,10 @@ export function PatientVitalsCard({ title = 'Key Vitals', metrics }: Props) {
             const Icon = iconMap[metric.id] || Activity;
             const statusColor =
               metric.status === 'high'
-                ? 'text-red-600'
+                ? 'var(--color-danger)'
                 : metric.status === 'low'
-                ? 'text-yellow-600'
-                : 'text-green-600';
+                ? 'var(--color-warning)'
+                : 'var(--color-success)';
 
             return (
               <div key={metric.id} className="flex flex-col p-3 rounded-lg bg-myh-surfaceSoft border border-myh-border">
@@ -70,7 +70,7 @@ export function PatientVitalsCard({ title = 'Key Vitals', metrics }: Props) {
                   <Icon className="w-4 h-4 text-myh-textSoft" />
                   <span className="text-xs text-myh-textSoft">{metric.label}</span>
                 </div>
-                <span className={`text-base font-medium ${statusColor}`}>
+                <span className="text-base font-medium" style={{ color: statusColor }}>
                   {metric.value} {metric.unit && <span className="text-xs text-myh-textSoft">{metric.unit}</span>}
                 </span>
               </div>
