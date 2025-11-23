@@ -1,9 +1,7 @@
 {
-  "buildCommand": "pnpm install && pnpm --filter @myhealthally/web build",
-  "outputDirectory": ".next",
-  "installCommand": "pnpm install",
-  "framework": "nextjs",
-  "nodeVersion": "18.x",
-  "rootDirectory": "packages/web"
+  "buildCommand": "cd ../.. && pnpm install && pnpm --filter @myhealthally/web build",
+  "outputDirectory": "packages/web/.next",
+  "installCommand": "cd ../.. && pnpm install",
+  "framework": "nextjs"
 }
 
