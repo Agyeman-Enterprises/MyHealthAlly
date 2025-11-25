@@ -151,7 +151,6 @@ export function LanguagePreference() {
          preferences.lastDetectedLanguage !== 'en' && 
          !preferences.preferredLanguage && (
           <div
-            className="p-3 rounded-lg"
             className="p-3 rounded-lg bg-teal-50 border border-teal-600"
           >
             <p className="text-small text-slate-900">
@@ -165,7 +164,6 @@ export function LanguagePreference() {
 
         {error && (
           <div
-            className="p-3 rounded-lg"
             className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-600"
           >
             {error}

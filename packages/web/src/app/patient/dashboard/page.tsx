@@ -167,8 +167,7 @@ export default function PatientDashboardPage() {
                   {dashboardData.recentMessages.map((msg: any) => (
                     <div
                       key={msg.id}
-                      className="p-3 border-radius"
-                      className="bg-slate-50 rounded-lg"
+                      className="p-3 bg-slate-50 rounded-lg"
                     >
                       <div className="flex items-start justify-between mb-1">
                         <span className="text-body font-medium text-slate-900">
