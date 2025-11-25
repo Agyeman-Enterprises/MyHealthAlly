@@ -1,7 +1,7 @@
 {
-  "buildCommand": "pnpm install && pnpm --filter @myhealthally/web build",
-  "outputDirectory": "packages/web/.next",
+  "buildCommand": "cd packages/web && pnpm run build",
+  "devCommand": "cd packages/web && pnpm run dev",
   "installCommand": "pnpm install",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "outputDirectory": "packages/web/.next"
 }
-
