@@ -48,64 +48,58 @@ export default function ClinicianMessagesPage() {
     'I will get back to you shortly',
   ];
 
+  const riskBadgeClasses: Record<string, string> = {
+    high: 'bg-red-500 text-white',
+    moderate: 'bg-amber-500 text-white',
+    low: 'bg-emerald-500 text-white',
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
       {/* Left: Conversation List */}
       <div className="lg:col-span-1 space-y-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--color-textSecondary)' }} />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
           <Input
             placeholder="Search conversations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
-            style={{ backgroundColor: 'var(--color-surface)' }}
           />
         </div>
-        <Card style={{ backgroundColor: 'var(--color-surface)' }}>
+        <Card className="bg-white">
           <CardContent className="p-0">
             <ScrollArea className="h-[calc(100vh-300px)]">
-              <div className="divide-y" style={{ borderColor: 'var(--color-border)' }}>
+              <div className="divide-y divide-slate-200">
                 {filteredMessages.map((message: MessageSummary) => (
                   <div
                     key={message.id}
                     onClick={() => setActiveThreadId(message.id)}
-                    className="p-4 cursor-pointer transition-colors"
-                    style={{
-                      backgroundColor: activeThreadId === message.id ? 'var(--color-primaryLight)' : 'transparent',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (activeThreadId !== message.id) {
-                        e.currentTarget.style.backgroundColor = 'var(--color-background)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (activeThreadId !== message.id) {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }
-                    }}
+                    className={`p-4 cursor-pointer transition-colors ${
+                      activeThreadId === message.id ? 'bg-teal-50' : 'hover:bg-slate-50'
+                    }`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'var(--color-primaryLight)' }}>
-                        <span className="font-medium text-sm" style={{ color: 'var(--color-primary)' }}>
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-teal-50">
+                        <span className="font-medium text-sm text-teal-600">
                           {message.patientName.charAt(0)}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <p className="font-medium text-small truncate" style={{ color: 'var(--color-textPrimary)' }}>
+                          <p className="font-medium text-small truncate text-slate-900">
                             {message.patientName}
                           </p>
                           {message.unreadCount > 0 && (
-                            <Badge style={{ backgroundColor: 'var(--color-primary)', color: '#FFFFFF' }} className="text-xs">
+                            <Badge className="text-xs bg-teal-600 text-white">
                               {message.unreadCount}
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm truncate" style={{ color: 'var(--color-textSecondary)' }}>
+                        <p className="text-sm truncate text-slate-600">
                           {message.lastMessageSnippet}
                         </p>
-                        <p className="text-xs mt-1" style={{ color: 'var(--color-textSecondary)' }}>
+                        <p className="text-xs mt-1 text-slate-500">
                           {new Date(message.lastMessageTime).toLocaleDateString('en-US', {
                             month: 'short',
                             day: 'numeric',
@@ -125,24 +119,19 @@ export default function ClinicianMessagesPage() {
       <div className="lg:col-span-2 space-y-4">
         {activeThread && patient ? (
           <>
-            <Card style={{ backgroundColor: 'var(--color-surface)' }}>
+            <Card className="bg-white">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-primaryLight)' }}>
-                      <span className="font-medium" style={{ color: 'var(--color-primary)' }}>
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center bg-teal-50">
+                      <span className="font-medium text-teal-600">
                         {patient.name.charAt(0)}
                       </span>
                     </div>
                     <div>
-                      <p className="font-medium text-body" style={{ color: 'var(--color-textPrimary)' }}>{patient.name}</p>
+                      <p className="font-medium text-body text-slate-900">{patient.name}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge
-                          style={{
-                            backgroundColor: patient.riskLevel === 'high' ? 'var(--color-danger)' : 'var(--color-warning)',
-                            color: '#FFFFFF',
-                          }}
-                        >
+                        <Badge className={riskBadgeClasses[patient.riskLevel] ?? riskBadgeClasses.low}>
                           {patient.riskLevel} risk
                         </Badge>
                         <Badge variant="outline" className="text-xs">
@@ -152,7 +141,7 @@ export default function ClinicianMessagesPage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Link href={`/clinician/patients/${patient.id}`}>
+                    <Link href={`/clinician/chart/${patient.id}`}>
                       <Button variant="outline" size="sm">
                         <FileText className="w-4 h-4 mr-2" />
                         Open Chart
@@ -164,31 +153,25 @@ export default function ClinicianMessagesPage() {
               </CardContent>
             </Card>
 
-            <Card className="flex-1" style={{ backgroundColor: 'var(--color-surface)' }}>
+            <Card className="flex-1 bg-white">
               <CardContent className="p-0 flex flex-col h-[calc(100vh-400px)]">
                 <ScrollArea className="flex-1 p-4">
                   <div className="space-y-4">
                     {messageHistory.map((msg) => (
                       <div
                         key={msg.id}
-                        className={`flex ${
-                          msg.sender === 'clinician' ? 'justify-end' : 'justify-start'
-                        }`}
+                        className={`flex ${msg.sender === 'clinician' ? 'justify-end' : 'justify-start'}`}
                       >
                         <div
-                          className="max-w-[70%] rounded-lg p-3"
-                          style={{
-                            backgroundColor: msg.sender === 'clinician' ? 'var(--color-primary)' : 'var(--color-background)',
-                            color: msg.sender === 'clinician' ? '#FFFFFF' : 'var(--color-textPrimary)',
-                            borderRadius: 'var(--radius)',
-                          }}
+                          className={`max-w-[70%] rounded-2xl p-3 ${
+                            msg.sender === 'clinician' ? 'bg-teal-600 text-white' : 'bg-slate-50 text-slate-900'
+                          }`}
                         >
                           <p className="text-sm">{msg.text}</p>
                           <p
-                            className="text-xs mt-1"
-                            style={{
-                              color: msg.sender === 'clinician' ? 'rgba(255,255,255,0.7)' : 'var(--color-textSecondary)',
-                            }}
+                            className={`text-xs mt-1 ${
+                              msg.sender === 'clinician' ? 'text-white/70' : 'text-slate-600'
+                            }`}
                           >
                             {new Date(msg.time).toLocaleTimeString('en-US', {
                               hour: 'numeric',
@@ -200,7 +183,7 @@ export default function ClinicianMessagesPage() {
                     ))}
                   </div>
                 </ScrollArea>
-                <div className="border-t p-4 space-y-3" style={{ borderColor: 'var(--color-border)' }}>
+                <div className="border-t border-slate-200 p-4 space-y-3">
                   <div className="flex gap-2 flex-wrap">
                     {quickResponses.map((response, idx) => (
                       <Button
@@ -219,11 +202,7 @@ export default function ClinicianMessagesPage() {
                       placeholder="Type a message..."
                       value={messageInput}
                       onChange={(e) => setMessageInput(e.target.value)}
-                      className="flex-1"
-                      style={{
-                        backgroundColor: 'var(--color-background)',
-                        borderColor: 'var(--color-border)',
-                      }}
+                      className="flex-1 bg-white border-slate-200"
                       rows={2}
                     />
                     <Button
@@ -241,9 +220,9 @@ export default function ClinicianMessagesPage() {
             </Card>
           </>
         ) : (
-          <Card style={{ backgroundColor: 'var(--color-surface)' }}>
+          <Card className="bg-white">
             <CardContent className="p-12 text-center">
-              <p style={{ color: 'var(--color-textSecondary)' }}>Select a conversation to view messages</p>
+              <p className="text-slate-600">Select a conversation to view messages</p>
             </CardContent>
           </Card>
         )}

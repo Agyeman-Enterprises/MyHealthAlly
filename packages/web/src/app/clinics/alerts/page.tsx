@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchAPI } from '@/lib/utils';
+import { getStoredMetaSync } from '@/lib/auth-storage';
 import { Alert } from '@myhealthally/shared';
 import Link from 'next/link';
 import { AlertTriangle, Filter, Search } from 'lucide-react';
@@ -29,12 +30,12 @@ export default function ClinicsAlertsPage() {
   const [resolveNote, setResolveNote] = useState('');
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
+    if (typeof window === 'undefined') return;
+    const meta = getStoredMetaSync();
+    if (!meta?.user) {
       router.push('/login');
       return;
     }
-
     loadAlerts();
   }, [router]);
 
@@ -122,7 +123,7 @@ export default function ClinicsAlertsPage() {
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         <div>
-          <h1 className="text-3xl font-semibold text-myh-text">Alerts</h1>
+          <h1 className="text-3xl font-semibold text-slate-900">Alerts</h1>
           <p className="text-muted-foreground mt-2">Review and manage patient alerts</p>
         </div>
 
@@ -197,7 +198,7 @@ export default function ClinicsAlertsPage() {
                         <div className="flex items-center gap-4 text-sm">
                           <Link
                             href={`/clinics/patients/${alert.patientId}`}
-                            className="text-myh-primary hover:underline"
+                            className="text-teal-600 hover:underline"
                           >
                             View Patient
                           </Link>

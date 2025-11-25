@@ -1,9 +1,40 @@
-<svg width="200" height="60" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Icon: Health cross in circle -->
-  <circle cx="30" cy="30" r="24" fill="#E0F2EF" stroke="#2A7F79" stroke-width="2"/>
-  <path d="M30 18V42M18 30H42" stroke="#2A7F79" stroke-width="3" stroke-linecap="round"/>
+<svg width="200" height="80" viewBox="0 0 200 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Shield Background -->
+  <path d="M20 10 L20 25 C20 30, 25 35, 30 38 L40 42 C45 44, 55 44, 60 42 L70 38 C75 35, 80 30, 80 25 L80 10 C80 8, 78 6, 76 6 L24 6 C22 6, 20 8, 20 10 Z" 
+        fill="url(#shieldGradient)" stroke="#0D3B36" stroke-width="1"/>
   
-  <!-- Wordmark -->
-  <text x="65" y="38" font-family="Inter, sans-serif" font-size="24" font-weight="600" fill="#2A7F79">MyHealthAlly</text>
+  <!-- Gradient for shield -->
+  <defs>
+    <linearGradient id="shieldGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#0066CC;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#0066CC;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#12A38A;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#12A38A;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Left Figure (Blue) -->
+  <circle cx="35" cy="28" r="4" fill="#0066CC"/>
+  <path d="M35 32 L35 38" stroke="#0066CC" stroke-width="2" stroke-linecap="round"/>
+  <path d="M30 36 L35 38 L35 40" stroke="#0066CC" stroke-width="2" stroke-linecap="round"/>
+  <path d="M40 36 L35 38 L35 40" stroke="#0066CC" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Right Figure (Green) -->
+  <circle cx="65" cy="28" r="4" fill="#12A38A"/>
+  <path d="M65 32 L65 38" stroke="#12A38A" stroke-width="2" stroke-linecap="round"/>
+  <path d="M60 36 L65 38 L65 40" stroke="#12A38A" stroke-width="2" stroke-linecap="round"/>
+  <path d="M70 36 L65 38 L65 40" stroke="#12A38A" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Handshake -->
+  <path d="M48 35 L52 35" stroke="#0066CC" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M48 35 L52 35" stroke="#12A38A" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+  
+  <!-- Medical Cross (split blue/green) -->
+  <path d="M48 40 L52 40" stroke="#0066CC" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M50 38 L50 42" stroke="#0066CC" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M50 38 L50 42" stroke="#12A38A" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+  
+  <!-- Text: MyHealthAlly -->
+  <text x="100" y="35" font-family="Inter, sans-serif" font-size="20" font-weight="700" fill="#0066CC">My</text>
+  <text x="130" y="35" font-family="Inter, sans-serif" font-size="20" font-weight="700" fill="#12A38A">HealthAlly</text>
 </svg>
-

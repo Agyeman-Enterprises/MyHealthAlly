@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchAPI } from '@/lib/utils';
+import { getStoredMetaSync } from '@/lib/auth-storage';
 import { Alert } from '@myhealthally/shared';
 import Link from 'next/link';
 
@@ -20,12 +21,12 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
+    if (typeof window === 'undefined') return;
+    const meta = getStoredMetaSync();
+    if (!meta?.user) {
       router.push('/login');
       return;
     }
-
     loadData();
   }, [router]);
 

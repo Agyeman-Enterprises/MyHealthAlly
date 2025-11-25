@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchAPI } from '@/lib/utils';
+import { getStoredMetaSync } from '@/lib/auth-storage';
 import { Patient, Alert } from '@myhealthally/shared';
 import Link from 'next/link';
 import { Search, Users, Activity } from 'lucide-react';
@@ -19,12 +20,12 @@ export default function ClinicsPatientsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
+    if (typeof window === 'undefined') return;
+    const meta = getStoredMetaSync();
+    if (!meta?.user) {
       router.push('/login');
       return;
     }
-
     loadData();
   }, [router]);
 
@@ -93,7 +94,7 @@ export default function ClinicsPatientsPage() {
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-semibold text-myh-text">Patients</h1>
+            <h1 className="text-3xl font-semibold text-slate-900">Patients</h1>
             <p className="text-muted-foreground mt-2">Manage all your patients</p>
           </div>
           <div className="flex items-center gap-4">

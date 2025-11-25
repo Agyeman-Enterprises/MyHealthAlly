@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { fetchAPI } from '@/lib/utils';
+import { getStoredMetaSync } from '@/lib/auth-storage';
 import { Patient, Alert, RiskLevel } from '@myhealthally/shared';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { MessageSquare, Calendar, Activity, FileText, ArrowUp, ArrowDown, Minus, Clock } from 'lucide-react';
@@ -31,12 +32,14 @@ export default function PatientDetailPage() {
   const [noteContent, setNoteContent] = useState('');
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const meta = getStoredMetaSync();
+    if (!meta?.user) {
       router.push('/login');
       return;
     }
-
     loadPatientData();
   }, [patientId, router]);
 

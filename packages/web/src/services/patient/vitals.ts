@@ -1,4 +1,5 @@
 import { fetchAPI } from '@/lib/utils';
+import { getStoredMetaSync } from '@/lib/auth-storage';
 
 export type Metric = {
   id: string;
@@ -12,11 +13,9 @@ export async function getPatientVitalsSummary(metricIds?: string[]): Promise<Met
   try {
     // Get patient ID from auth context or pass it as parameter
     // For now, we'll need to get it from localStorage or context
-    const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
-    if (!userStr) return [];
-    
-    const user = JSON.parse(userStr);
-    const patientId = user.patientId || user.id;
+    const meta = getStoredMetaSync();
+    if (!meta?.user) return [];
+    const patientId = meta.user.patientId || meta.user.id;
 
     if (!patientId) return [];
 

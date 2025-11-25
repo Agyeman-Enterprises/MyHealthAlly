@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { fetchAPI } from '@/lib/utils';
+import { getStoredMetaSync } from '@/lib/auth-storage';
 import { Patient, RiskLevel } from '@myhealthally/shared';
 
 function getRiskLevel(patient: Patient & { alerts?: any[] }): RiskLevel {
@@ -27,12 +28,12 @@ export default function PatientsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
+    if (typeof window === 'undefined') return;
+    const meta = getStoredMetaSync();
+    if (!meta?.user) {
       router.push('/login');
       return;
     }
-
     loadPatients();
   }, [router]);
 

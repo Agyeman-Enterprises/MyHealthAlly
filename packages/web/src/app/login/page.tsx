@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { fetchAPI } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { QuickUnlockPanel } from '@/components/auth/QuickUnlockPanel';
+import { Logo } from '@/components/branding/Logo';
 
 export default function LoginPage() {
-  const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -20,14 +21,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetchAPI('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-      });
-
-      localStorage.setItem('token', response.accessToken);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      router.push('/dashboard');
+      await login(email, password);
     } catch (err: any) {
       setError(err.message || 'Login failed');
     } finally {
@@ -36,11 +30,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-teal-50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl">MyHealthAlly Clinic Dashboard</CardTitle>
-          <CardDescription>Sign in to your account</CardDescription>
+          <div className="flex justify-center mb-4">
+            <Logo width={200} height={60} />
+          </div>
+          <CardTitle className="text-2xl text-center">Clinic Dashboard</CardTitle>
+          <CardDescription className="text-center">Sign in to your account</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -76,6 +73,9 @@ export default function LoginPage() {
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
+          <div className="mt-6">
+            <QuickUnlockPanel variant="clinician" />
+          </div>
         </CardContent>
       </Card>
     </div>

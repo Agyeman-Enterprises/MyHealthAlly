@@ -6,6 +6,7 @@ import { Grid } from '@/components/layout/Grid';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { VitalCard } from '@/components/widgets/VitalCard';
 import { AppointmentCard } from '@/components/widgets/AppointmentCard';
+import { VoiceRecorderCard } from '@/components/patient/VoiceRecorderCard';
 import { useVitals } from '@/hooks/useVitals';
 import { useMetrics } from '@/hooks/useMetrics';
 import { fetchAPI } from '@/lib/utils';
@@ -53,7 +54,7 @@ export default function PatientDashboardPage() {
     return (
       <PageContainer>
         <div className="flex items-center justify-center min-h-screen">
-          <div className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+          <div className="text-body text-slate-600">
             Loading...
           </div>
         </div>
@@ -70,10 +71,13 @@ export default function PatientDashboardPage() {
         {/* Header */}
         <div>
           <h1 className="text-h1 mb-2">Dashboard</h1>
-          <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+          <p className="text-body text-slate-600">
             Your health overview
           </p>
         </div>
+
+        {/* Voice recording quick action */}
+        <VoiceRecorderCard />
 
         {/* Vitals Grid */}
         <Grid cols={4} gap="md" responsive>
@@ -122,7 +126,7 @@ export default function PatientDashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+                <Calendar className="w-5 h-5 text-teal-600" />
                 Upcoming Appointments
               </CardTitle>
             </CardHeader>
@@ -142,7 +146,7 @@ export default function PatientDashboardPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+                <p className="text-body text-slate-600">
                   No upcoming appointments
                 </p>
               )}
@@ -153,7 +157,7 @@ export default function PatientDashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+                <MessageSquare className="w-5 h-5 text-teal-600" />
                 Recent Messages
               </CardTitle>
             </CardHeader>
@@ -164,27 +168,24 @@ export default function PatientDashboardPage() {
                     <div
                       key={msg.id}
                       className="p-3 border-radius"
-                      style={{
-                        backgroundColor: 'var(--color-background)',
-                        borderRadius: 'var(--radius)',
-                      }}
+                      className="bg-slate-50 rounded-lg"
                     >
                       <div className="flex items-start justify-between mb-1">
-                        <span className="text-body font-medium" style={{ color: 'var(--color-textPrimary)' }}>
+                        <span className="text-body font-medium text-slate-900">
                           {msg.from?.name || 'Care Team'}
                         </span>
-                        <span className="text-caption" style={{ color: 'var(--color-textSecondary)' }}>
+                        <span className="text-caption text-slate-600">
                           {formatRelativeTime(msg.createdAt)}
                         </span>
                       </div>
-                      <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+                      <p className="text-body text-slate-600">
                         {msg.content?.substring(0, 100)}...
                       </p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+                <p className="text-body text-slate-600">
                   No recent messages
                 </p>
               )}

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchAPI } from '@/lib/utils';
+import { getStoredMetaSync } from '@/lib/auth-storage';
 import { VisitRequest } from '@myhealthally/shared';
 import Link from 'next/link';
 import { Calendar, Clock, User, Video } from 'lucide-react';
@@ -16,12 +17,12 @@ export default function ClinicsVisitsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
+    if (typeof window === 'undefined') return;
+    const meta = getStoredMetaSync();
+    if (!meta?.user) {
       router.push('/login');
       return;
     }
-
     loadVisits();
   }, [router]);
 
@@ -86,7 +87,7 @@ export default function ClinicsVisitsPage() {
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         <div>
-          <h1 className="text-3xl font-semibold text-myh-text">Visit Requests</h1>
+          <h1 className="text-3xl font-semibold text-slate-900">Visit Requests</h1>
           <p className="text-muted-foreground mt-2">Schedule and manage patient appointments</p>
         </div>
 
@@ -109,8 +110,8 @@ export default function ClinicsVisitsPage() {
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 bg-myh-primarySoft rounded-lg flex items-center justify-center">
-                              <Calendar className="w-5 h-5 text-myh-primary" />
+                            <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-teal-50">
+                              <Calendar className="w-5 h-5 text-teal-600" />
                             </div>
                             <div>
                               <p className="font-semibold text-lg">
@@ -136,7 +137,7 @@ export default function ClinicsVisitsPage() {
                           )}
                           <Link
                             href={`/clinics/patients/${visit.patientId}`}
-                            className="text-sm text-myh-primary hover:underline ml-13"
+                            className="text-sm text-teal-600 hover:underline ml-13"
                           >
                             View Patient →
                           </Link>

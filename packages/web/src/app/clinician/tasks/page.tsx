@@ -45,36 +45,26 @@ export default function ClinicianTasksPage() {
     return 0;
   });
 
-  const getPriorityColor = (priority: string): React.CSSProperties => {
-    switch (priority) {
-      case 'high':
-        return { backgroundColor: 'var(--color-danger)', color: '#FFFFFF' };
-      case 'medium':
-        return { backgroundColor: 'var(--color-warning)', color: '#FFFFFF' };
-      default:
-        return { backgroundColor: 'var(--color-textMuted)', color: '#FFFFFF' };
-    }
+  const priorityClasses: Record<string, string> = {
+    high: 'bg-red-500 text-white',
+    medium: 'bg-amber-500 text-white',
+    low: 'bg-slate-400 text-white',
   };
 
-  const getStatusColor = (status: string): React.CSSProperties => {
-    switch (status) {
-      case 'done':
-        return { backgroundColor: 'var(--color-success)', color: '#FFFFFF' };
-      case 'in_progress':
-        return { backgroundColor: 'var(--color-primary)', color: '#FFFFFF' };
-      default:
-        return { backgroundColor: 'var(--color-background)', color: 'var(--color-textPrimary)' };
-    }
+  const statusClasses: Record<string, string> = {
+    done: 'bg-emerald-500 text-white',
+    in_progress: 'bg-teal-600 text-white',
+    open: 'bg-slate-100 text-slate-900',
   };
 
   return (
     <div className="space-y-6">
       {/* Header with filters */}
       <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-        <h1 className="text-h2 font-semibold" style={{ color: 'var(--color-textPrimary)' }}>Tasks & Follow-ups</h1>
+        <h1 className="text-h2 font-semibold text-slate-900">Tasks & Follow-ups</h1>
         <div className="flex gap-2">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-40" style={{ backgroundColor: 'var(--color-surface)' }}>
+            <SelectTrigger className="w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -85,7 +75,7 @@ export default function ClinicianTasksPage() {
             </SelectContent>
           </Select>
           <Select value={patientFilter} onValueChange={setPatientFilter}>
-            <SelectTrigger className="w-40" style={{ backgroundColor: 'var(--color-surface)' }}>
+            <SelectTrigger className="w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -95,7 +85,7 @@ export default function ClinicianTasksPage() {
             </SelectContent>
           </Select>
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-40" style={{ backgroundColor: 'var(--color-surface)' }}>
+            <SelectTrigger className="w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -108,31 +98,22 @@ export default function ClinicianTasksPage() {
       </div>
 
       {/* Tasks Table */}
-      <Card style={{ backgroundColor: 'var(--color-surface)' }}>
+      <Card className="bg-white">
         <CardContent className="p-0">
-          <div className="divide-y" style={{ borderColor: 'var(--color-border)' }}>
+          <div className="divide-y divide-slate-200">
             {tasks.map((task) => (
               <div
                 key={task.id}
-                className="flex items-center gap-4 p-4 transition-colors cursor-pointer"
-                style={{
-                  backgroundColor: 'transparent',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--color-background)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
+                className="flex items-center gap-4 p-4 transition-colors cursor-pointer hover:bg-slate-50"
                 onClick={() => setSelectedTask(task)}
               >
                 <Checkbox checked={task.status === 'done'} />
                 <div className="flex-1 grid grid-cols-6 gap-4">
                   <div className="col-span-2">
-                    <p className="font-medium text-body" style={{ color: 'var(--color-textPrimary)' }}>{task.title}</p>
+                    <p className="font-medium text-body text-slate-900">{task.title}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-body" style={{ color: 'var(--color-textPrimary)' }}>
+                    <p className="text-sm text-body text-slate-900">
                       {task.patientName || '—'}
                     </p>
                   </div>
@@ -142,20 +123,20 @@ export default function ClinicianTasksPage() {
                     </Badge>
                   </div>
                   <div>
-                    <Badge style={getPriorityColor(task.priority)}>
+                    <Badge className={priorityClasses[task.priority] ?? priorityClasses.low}>
                       {task.priority}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2">
                     {task.dueDate && (
-                      <span className="text-sm text-caption" style={{ color: 'var(--color-textSecondary)' }}>
+                      <span className="text-sm text-caption text-slate-600">
                         {new Date(task.dueDate).toLocaleDateString('en-US', {
                           month: 'short',
                           day: 'numeric',
                         })}
                       </span>
                     )}
-                    <Badge style={getStatusColor(task.status)}>
+                    <Badge className={statusClasses[task.status] ?? statusClasses.open}>
                       {task.status}
                     </Badge>
                   </div>
@@ -169,15 +150,14 @@ export default function ClinicianTasksPage() {
       {/* Task Detail Sheet */}
       {selectedTask && (
         <Sheet open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
-          <SheetContent style={{ backgroundColor: 'var(--color-surface)' }}>
+          <SheetContent className="bg-white">
             <SheetHeader>
-              <SheetTitle>{selectedTask.title}</SheetTitle>
-              <SheetDescription>
+              <SheetTitle className="text-slate-900">{selectedTask.title}</SheetTitle>
+              <SheetDescription className="text-slate-600">
                 {selectedTask.patientName && (
                   <Link
                     href={`/clinician/patients/${selectedTask.patientId}`}
-                    className="hover:underline"
-                    style={{ color: 'var(--color-primary)' }}
+                    className="text-teal-600 hover:underline"
                   >
                     {selectedTask.patientName}
                   </Link>
@@ -186,14 +166,14 @@ export default function ClinicianTasksPage() {
             </SheetHeader>
             <div className="mt-6 space-y-4">
               <div>
-                <p className="text-sm text-caption mb-1" style={{ color: 'var(--color-textSecondary)' }}>Description</p>
-                <p className="text-body" style={{ color: 'var(--color-textPrimary)' }}>
+                <p className="text-sm text-caption mb-1 text-slate-600">Description</p>
+                <p className="text-body text-slate-900">
                   {selectedTask.title} - Follow up required for this patient.
                 </p>
               </div>
               <div>
-                <p className="text-sm text-caption mb-1" style={{ color: 'var(--color-textSecondary)' }}>Created</p>
-                <p className="text-body" style={{ color: 'var(--color-textPrimary)' }}>
+                <p className="text-sm text-caption mb-1 text-slate-600">Created</p>
+                <p className="text-body text-slate-900">
                   {new Date().toLocaleDateString('en-US', {
                     month: 'long',
                     day: 'numeric',
@@ -203,8 +183,8 @@ export default function ClinicianTasksPage() {
               </div>
               {selectedTask.dueDate && (
                 <div>
-                  <p className="text-sm text-caption mb-1" style={{ color: 'var(--color-textSecondary)' }}>Due Date</p>
-                  <p className="text-body" style={{ color: 'var(--color-textPrimary)' }}>
+                  <p className="text-sm text-caption mb-1 text-slate-600">Due Date</p>
+                  <p className="text-body text-slate-900">
                     {new Date(selectedTask.dueDate).toLocaleDateString('en-US', {
                       month: 'long',
                       day: 'numeric',
@@ -217,7 +197,6 @@ export default function ClinicianTasksPage() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    // Handle mark done
                     setSelectedTask(null);
                   }}
                 >
@@ -226,14 +205,13 @@ export default function ClinicianTasksPage() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    // Handle move to in progress
                     setSelectedTask(null);
                   }}
                 >
                   Move to In Progress
                 </Button>
                 {selectedTask.patientId && (
-                  <Link href={`/clinician/patients/${selectedTask.patientId}`}>
+                  <Link href={`/clinician/chart/${selectedTask.patientId}`}>
                     <Button variant="outline">
                       <FileText className="w-4 h-4 mr-2" />
                       Open Chart

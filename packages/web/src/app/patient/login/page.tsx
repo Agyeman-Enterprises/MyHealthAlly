@@ -6,6 +6,8 @@ import { PrimaryButton } from '@/components/ui/primary-button';
 import { GlowCard } from '@/components/ui/glow-card';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
+import { QuickUnlockPanel } from '@/components/auth/QuickUnlockPanel';
+import { Logo } from '@/components/branding/Logo';
 
 export default function PatientLoginPage() {
   const router = useRouter();
@@ -25,9 +27,9 @@ export default function PatientLoginPage() {
   // Show loading state while checking auth
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--color-background)' }}>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-teal-50">
         <div className="text-center">
-          <p style={{ color: 'var(--color-textSecondary)' }}>Loading...</p>
+          <p className="text-slate-600">Loading...</p>
         </div>
       </div>
     );
@@ -59,17 +61,19 @@ export default function PatientLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--color-background)' }}>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-teal-50">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-4">
-          <h1 className="text-h1 font-semibold" style={{ color: 'var(--color-textPrimary)' }}>MYHEALTHALLY</h1>
-          <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>Your health, in one connected place.</p>
+          <div className="flex justify-center">
+            <Logo width={240} height={72} />
+          </div>
+          <p className="text-body text-slate-600">Your health, in one connected place.</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <GlowCard className="p-6 space-y-4">
             <div className="space-y-2">
-              <label htmlFor="email" className="text-small font-medium" style={{ color: 'var(--color-textPrimary)' }}>
+              <label htmlFor="email" className="text-small font-medium text-slate-900">
                 Email
               </label>
               <Input
@@ -79,15 +83,11 @@ export default function PatientLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                style={{
-                  backgroundColor: 'var(--color-surface)',
-                  borderColor: 'var(--color-border)',
-                  color: 'var(--color-textPrimary)',
-                }}
+                className="bg-white border-slate-200 text-slate-900"
               />
             </div>
             <div className="space-y-2">
-              <label htmlFor="password" className="text-small font-medium" style={{ color: 'var(--color-textPrimary)' }}>
+              <label htmlFor="password" className="text-small font-medium text-slate-900">
                 Password
               </label>
               <Input
@@ -97,23 +97,11 @@ export default function PatientLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                style={{
-                  backgroundColor: 'var(--color-surface)',
-                  borderColor: 'var(--color-border)',
-                  color: 'var(--color-textPrimary)',
-                }}
+                className="bg-white border-slate-200 text-slate-900"
               />
             </div>
             {error && (
-              <div 
-                className="text-small rounded-lg p-3"
-                style={{
-                  color: 'var(--color-danger)',
-                  backgroundColor: 'rgba(225, 85, 85, 0.1)',
-                  border: '1px solid rgba(225, 85, 85, 0.2)',
-                  borderRadius: 'var(--radius)',
-                }}
-              >
+              <div className="text-small rounded-lg p-3 text-red-600 bg-red-50 border border-red-200">
                 {error}
               </div>
             )}
@@ -128,7 +116,9 @@ export default function PatientLoginPage() {
           </PrimaryButton>
         </form>
 
-        <p className="text-center text-caption" style={{ color: 'var(--color-textSecondary)' }}>
+        <QuickUnlockPanel variant="patient" />
+
+        <p className="text-center text-caption text-slate-600">
           MyHealthAlly • Secure care connection
         </p>
       </div>

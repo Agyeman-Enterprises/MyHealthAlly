@@ -11,7 +11,7 @@ export default function SupportPage() {
       <div className="py-6 space-y-6">
         <div>
           <h1 className="text-h1 mb-2">Support</h1>
-          <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+          <p className="text-body text-slate-600">
             Get help and find answers to your questions
           </p>
         </div>
@@ -20,12 +20,12 @@ export default function SupportPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <HelpCircle className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+                <HelpCircle className="w-5 h-5 text-teal-600" />
                 Frequently Asked Questions
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-body mb-4" style={{ color: 'var(--color-textSecondary)' }}>
+              <p className="text-body mb-4 text-slate-600">
                 Find answers to common questions about using MyHealthAlly, managing your health data, and connecting with your care team.
               </p>
               <Button variant="outline">View FAQ</Button>
@@ -35,12 +35,12 @@ export default function SupportPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+                <MessageSquare className="w-5 h-5 text-teal-600" />
                 Contact Support
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-body mb-4" style={{ color: 'var(--color-textSecondary)' }}>
+              <p className="text-body mb-4 text-slate-600">
                 Need help? Reach out to our support team via message or email. We&apos;re here to assist you.
               </p>
               <div className="flex gap-2">
@@ -59,12 +59,12 @@ export default function SupportPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+                <FileText className="w-5 h-5 text-teal-600" />
                 Documentation
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-body mb-4" style={{ color: 'var(--color-textSecondary)' }}>
+              <p className="text-body mb-4 text-slate-600">
                 Access user guides, tutorials, and documentation to help you get the most out of MyHealthAlly.
               </p>
               <Button variant="outline">View Docs</Button>

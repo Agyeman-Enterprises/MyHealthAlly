@@ -60,7 +60,7 @@ export default function PatientAnalyticsPage() {
     return (
       <PageContainer>
         <div className="flex items-center justify-center min-h-screen">
-          <div className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+          <div className="text-body text-slate-600">
             Loading...
           </div>
         </div>
@@ -73,7 +73,7 @@ export default function PatientAnalyticsPage() {
       <div className="py-6 space-y-6">
         <div>
           <h1 className="text-h1 mb-2">Analytics</h1>
-          <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+          <p className="text-body text-slate-600">
             Track your health trends over time
           </p>
         </div>
@@ -111,7 +111,7 @@ export default function PatientAnalyticsPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+                  <TrendingUp className="w-5 h-5 text-teal-600" />
                   {selectedMetricConfig?.label || 'Trend'} Over Time
                 </CardTitle>
               </CardHeader>
@@ -119,28 +119,28 @@ export default function PatientAnalyticsPage() {
                 {chartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
                     <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                      <XAxis dataKey="date" stroke="var(--color-textSecondary)" />
-                      <YAxis stroke="var(--color-textSecondary)" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#DCE5E3" />
+                      <XAxis dataKey="date" stroke="#4E6F6A" />
+                      <YAxis stroke="#4E6F6A" />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: 'var(--color-surface)',
-                          border: '1px solid var(--color-border)',
-                          borderRadius: 'var(--radius)',
+                          backgroundColor: '#FFFFFF',
+                          border: '1px solid #DCE5E3',
+                          borderRadius: '12px',
                         }}
                       />
                       <Line
                         type="monotone"
                         dataKey="value"
-                        stroke="var(--color-primary)"
+                        stroke="#39C6B3"
                         strokeWidth={2}
-                        dot={{ fill: 'var(--color-primary)', r: 4 }}
+                        dot={{ fill: '#39C6B3', r: 4 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
                 ) : (
                   <div className="flex items-center justify-center h-64">
-                    <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+                    <p className="text-body text-slate-600">
                       No data available for this metric
                     </p>
                   </div>
@@ -157,24 +157,20 @@ export default function PatientAnalyticsPage() {
               <CardContent>
                 {analytics?.bmi ? (
                   <div className="space-y-4">
-                    <div className="p-4 border-radius" style={{
-                      backgroundColor: 'var(--color-background)',
-                      borderRadius: 'var(--radius)',
-                    }}>
+                    <div className="p-4 rounded-2xl bg-slate-50">
                       <div className="flex items-center justify-between">
-                        <span className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+                        <span className="text-body text-slate-600">
                           Current BMI
                         </span>
                         <div className="flex items-center gap-3">
-                          <span className="text-h2" style={{ color: 'var(--color-textPrimary)' }}>
+                          <span className="text-h2 text-slate-900">
                             {analytics.bmi.bmi.toFixed(1)}
                           </span>
                           <span
-                            className="px-3 py-1 text-caption border-radius"
+                            className="px-3 py-1 text-caption rounded-lg"
                             style={{
                               backgroundColor: getBMICategory(analytics.bmi.bmi).color + '20',
                               color: getBMICategory(analytics.bmi.bmi).color,
-                              borderRadius: 'var(--radius)',
                             }}
                           >
                             {getBMICategory(analytics.bmi.bmi).label}
@@ -182,12 +178,12 @@ export default function PatientAnalyticsPage() {
                         </div>
                       </div>
                     </div>
-                    <p className="text-caption" style={{ color: 'var(--color-textSecondary)' }}>
+                    <p className="text-caption text-slate-600">
                       Weight: {analytics.bmi.weightKg} kg | Height: {analytics.bmi.heightCm} cm
                     </p>
                   </div>
                 ) : (
-                  <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+                  <p className="text-body text-slate-600">
                     No BMI data available
                   </p>
                 )}
@@ -199,30 +195,27 @@ export default function PatientAnalyticsPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Activity className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+                  <Activity className="w-5 h-5 text-teal-600" />
                   HRV Recovery Trend
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {analytics?.hrvTrend && analytics.hrvTrend.length > 0 ? (
                   <div className="space-y-4">
-                    <div className="p-4 border-radius" style={{
-                      backgroundColor: 'var(--color-background)',
-                      borderRadius: 'var(--radius)',
-                    }}>
+                    <div className="p-4 rounded-2xl bg-slate-50">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+                        <span className="text-body text-slate-600">
                           Recovery Score
                         </span>
-                        <span className="text-h2" style={{ color: 'var(--color-primary)' }}>
+                        <span className="text-h2 text-teal-600">
                           {analytics.recoveryScore || 0}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+                        <span className="text-body text-slate-600">
                           Stress Level
                         </span>
-                        <span className="text-body font-medium" style={{ color: 'var(--color-textPrimary)' }}>
+                        <span className="text-body font-medium text-slate-900">
                           {analytics.stressLevel || 'moderate'}
                         </span>
                       </div>
@@ -232,28 +225,28 @@ export default function PatientAnalyticsPage() {
                         date: formatDate(p.timestamp),
                         value: p.rmssdMs,
                       }))}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                        <XAxis dataKey="date" stroke="var(--color-textSecondary)" />
-                        <YAxis stroke="var(--color-textSecondary)" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#DCE5E3" />
+                        <XAxis dataKey="date" stroke="#4E6F6A" />
+                        <YAxis stroke="#4E6F6A" />
                         <Tooltip
                           contentStyle={{
-                            backgroundColor: 'var(--color-surface)',
-                            border: '1px solid var(--color-border)',
-                            borderRadius: 'var(--radius)',
+                            backgroundColor: '#FFFFFF',
+                            border: '1px solid #DCE5E3',
+                            borderRadius: '12px',
                           }}
                         />
                         <Line
                           type="monotone"
                           dataKey="value"
-                          stroke="var(--color-primary)"
+                          stroke="#39C6B3"
                           strokeWidth={2}
-                          dot={{ fill: 'var(--color-primary)', r: 4 }}
+                          dot={{ fill: '#39C6B3', r: 4 }}
                         />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+                  <p className="text-body text-slate-600">
                     No HRV data available
                   </p>
                 )}

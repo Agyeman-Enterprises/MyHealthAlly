@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { fetchAPI } from '@/lib/utils';
+import { getStoredMetaSync } from '@/lib/auth-storage';
 import { Send, Paperclip, Image as ImageIcon } from 'lucide-react';
 
 interface MessageThread {
@@ -49,12 +50,12 @@ export default function MessagesPage() {
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
+    if (typeof window === 'undefined') return;
+    const meta = getStoredMetaSync();
+    if (!meta?.user) {
       router.push('/login');
       return;
     }
-
     loadThreads();
   }, [router]);
 
@@ -101,22 +102,13 @@ export default function MessagesPage() {
       const formData = new FormData();
       formData.append('content', newMessage);
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/messaging/threads/${selectedThread.id}/messages`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-          body: formData,
-        }
-      );
-
-      if (response.ok) {
-        setNewMessage('');
-        await loadMessages(selectedThread.id);
-        await loadThreads();
-      }
+      await fetchAPI(`/messaging/threads/${selectedThread.id}/messages`, {
+        method: 'POST',
+        body: formData,
+      });
+      setNewMessage('');
+      await loadMessages(selectedThread.id);
+      await loadThreads();
     } catch (error) {
       console.error('Failed to send message:', error);
     } finally {

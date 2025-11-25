@@ -72,7 +72,7 @@ export default function AppHomePage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-myh-bg pb-24 p-6">
+      <div className="min-h-screen pb-24 p-6 bg-gradient-to-br from-slate-50 to-teal-50">
         <Skeleton className="h-8 w-48 mb-4" />
         <Skeleton className="h-32 w-full mb-4" />
         <div className="grid grid-cols-2 gap-4">
@@ -87,29 +87,29 @@ export default function AppHomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-myh-bg pb-24">
+    <div className="min-h-screen pb-24 bg-gradient-to-br from-slate-50 to-teal-50">
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold text-myh-text">
+          <h1 className="text-2xl font-semibold text-slate-900">
             Welcome back, {patient?.firstName || 'there'}
           </h1>
-          <p className="text-myh-textSoft">Your health at a glance</p>
+          <p className="text-slate-600">Your health at a glance</p>
         </div>
 
         {/* Wellness Score Card */}
-        <GlowCard className="p-6 bg-gradient-to-br from-myh-primarySoft/50 to-myh-surface">
+        <GlowCard className="p-6 bg-gradient-to-br from-teal-50/50 to-white">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-sm text-myh-textSoft mb-1">Daily Wellness Score</p>
-              <p className="text-4xl font-bold text-myh-primary">
+              <p className="text-sm mb-1 text-slate-600">Daily Wellness Score</p>
+              <p className="text-4xl font-bold text-teal-600">
                 {wellnessScore !== null ? `${wellnessScore}%` : '—'}
               </p>
             </div>
-            <div className="w-20 h-20 rounded-full bg-myh-primary/10 flex items-center justify-center">
-              <Activity className="w-10 h-10 text-myh-primary" />
+            <div className="w-20 h-20 rounded-full flex items-center justify-center bg-teal-50">
+              <Activity className="w-10 h-10 text-teal-600" />
             </div>
           </div>
-          <p className="text-sm text-myh-textSoft">
+          <p className="text-sm text-slate-600">
             {wellnessScore !== null && wellnessScore >= 80
               ? 'You\'re doing great! Keep up the good work.'
               : 'Track your vitals to see your score improve.'}
@@ -120,32 +120,32 @@ export default function AppHomePage() {
         <div className="grid grid-cols-2 gap-4">
           <GlowCard className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Heart className="w-4 h-4 text-myh-primary" />
-              <p className="text-xs text-myh-textSoft">Heart Rate</p>
+              <Heart className="w-4 h-4 text-teal-600" />
+              <p className="text-xs text-slate-600">Heart Rate</p>
             </div>
-            <p className="text-2xl font-semibold text-myh-text">{vitals.heartRate}</p>
-            <p className="text-xs text-myh-textSoft">bpm</p>
+            <p className="text-2xl font-semibold text-slate-900">{vitals.heartRate}</p>
+            <p className="text-xs text-slate-600">bpm</p>
           </GlowCard>
 
           <GlowCard className="p-4">
-            <p className="text-xs text-myh-textSoft mb-2">Blood Pressure</p>
-            <p className="text-2xl font-semibold text-myh-text">{vitals.bloodPressure}</p>
-            <p className="text-xs text-myh-textSoft">mmHg</p>
+            <p className="text-xs mb-2 text-slate-600">Blood Pressure</p>
+            <p className="text-2xl font-semibold text-slate-900">{vitals.bloodPressure}</p>
+            <p className="text-xs text-slate-600">mmHg</p>
           </GlowCard>
 
           <GlowCard className="p-4">
-            <p className="text-xs text-myh-textSoft mb-2">O₂ Saturation</p>
-            <p className="text-2xl font-semibold text-myh-text">{vitals.oxygen}</p>
-            <p className="text-xs text-myh-textSoft">%</p>
+            <p className="text-xs mb-2 text-slate-600">O₂ Saturation</p>
+            <p className="text-2xl font-semibold text-slate-900">{vitals.oxygen}</p>
+            <p className="text-xs text-slate-600">%</p>
           </GlowCard>
 
           <GlowCard className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-myh-primary" />
-              <p className="text-xs text-myh-textSoft">Recovery</p>
+              <TrendingUp className="w-4 h-4 text-teal-600" />
+              <p className="text-xs text-slate-600">Recovery</p>
             </div>
-            <p className="text-2xl font-semibold text-myh-text">{vitals.recovery}</p>
-            <p className="text-xs text-myh-textSoft">HRV</p>
+            <p className="text-2xl font-semibold text-slate-900">{vitals.recovery}</p>
+            <p className="text-xs text-slate-600">HRV</p>
           </GlowCard>
         </div>
 
@@ -153,14 +153,14 @@ export default function AppHomePage() {
         <div className="grid grid-cols-2 gap-4">
           <Link href="/app/vitals">
             <GlowCard className="p-4 card-hover cursor-pointer">
-              <p className="font-medium text-myh-text mb-1">View All Vitals</p>
-              <p className="text-sm text-myh-textSoft">See detailed metrics</p>
+              <p className="font-medium mb-1 text-slate-900">View All Vitals</p>
+              <p className="text-sm text-slate-600">See detailed metrics</p>
             </GlowCard>
           </Link>
           <Link href="/app/care-plan">
             <GlowCard className="p-4 card-hover cursor-pointer">
-              <p className="font-medium text-myh-text mb-1">Your Care Plan</p>
-              <p className="text-sm text-myh-textSoft">Track your progress</p>
+              <p className="font-medium mb-1 text-slate-900">Your Care Plan</p>
+              <p className="text-sm text-slate-600">Track your progress</p>
             </GlowCard>
           </Link>
         </div>
@@ -170,4 +170,3 @@ export default function AppHomePage() {
     </div>
   );
 }
-

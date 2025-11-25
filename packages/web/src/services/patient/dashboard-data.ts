@@ -1,12 +1,12 @@
 import { fetchAPI } from '@/lib/utils';
+import { getStoredMetaSync } from '@/lib/auth-storage';
 
 export async function getPatientDashboardData() {
   try {
-    const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
-    if (!userStr) return {};
-    
-    const user = JSON.parse(userStr);
-    const patientId = user.patientId || user.id;
+    const meta = getStoredMetaSync();
+    if (!meta?.user) return {};
+
+    const patientId = meta.user.patientId || meta.user.id;
 
     if (!patientId) return {};
 

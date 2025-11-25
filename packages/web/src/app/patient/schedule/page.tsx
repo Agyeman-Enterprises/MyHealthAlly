@@ -35,7 +35,7 @@ export default function PatientSchedulePage() {
     return (
       <PageContainer>
         <div className="flex items-center justify-center min-h-screen">
-          <div className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+          <div className="text-body text-slate-600">
             Loading...
           </div>
         </div>
@@ -52,7 +52,7 @@ export default function PatientSchedulePage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-h1 mb-2">Schedule</h1>
-            <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+            <p className="text-body text-slate-600">
               Your appointments and visits
             </p>
           </div>
@@ -102,8 +102,8 @@ export default function PatientSchedulePage() {
         {appointments.length === 0 && (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <Calendar className="w-12 h-12 mb-4" style={{ color: 'var(--color-textSecondary)' }} />
-              <p className="text-body mb-4" style={{ color: 'var(--color-textSecondary)' }}>
+              <Calendar className="w-12 h-12 mb-4 text-slate-400" />
+              <p className="text-body mb-4 text-slate-600">
                 No appointments scheduled
               </p>
               <Button>

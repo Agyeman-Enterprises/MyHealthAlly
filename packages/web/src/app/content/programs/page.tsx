@@ -37,7 +37,7 @@ export default function ProgramsPage() {
       <div className="py-6 space-y-6">
         <div>
           <h1 className="text-h1 mb-2">Program Library</h1>
-          <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+          <p className="text-body text-slate-600">
             Explore our evidence-based health programs
           </p>
         </div>
@@ -47,26 +47,19 @@ export default function ProgramsPage() {
             <Card key={program.id} hover>
               <CardHeader>
                 <div className="flex items-start justify-between mb-2">
-                  <BookOpen className="w-6 h-6" style={{ color: 'var(--color-primary)' }} />
-                  <span
-                    className="px-2 py-1 text-caption border-radius"
-                    style={{
-                      backgroundColor: 'var(--color-primary)' + '20',
-                      color: 'var(--color-primary)',
-                      borderRadius: 'var(--radius)',
-                    }}
-                  >
+                  <BookOpen className="w-6 h-6 text-teal-600" />
+                  <span className="px-2 py-1 text-caption rounded-lg bg-teal-50 text-teal-600">
                     {program.category}
                   </span>
                 </div>
                 <CardTitle>{program.title}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-body mb-4" style={{ color: 'var(--color-textSecondary)' }}>
+                <p className="text-body mb-4 text-slate-600">
                   {program.description}
                 </p>
                 <div className="flex items-center justify-between">
-                  <span className="text-caption" style={{ color: 'var(--color-textSecondary)' }}>
+                  <span className="text-caption text-slate-600">
                     Duration: {program.duration}
                   </span>
                   <Link href={`/content/programs/${program.id}`}>

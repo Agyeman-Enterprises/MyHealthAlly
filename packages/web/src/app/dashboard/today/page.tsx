@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchAPI } from '@/lib/utils';
+import { getStoredMetaSync } from '@/lib/auth-storage';
 import { Alert } from '@myhealthally/shared';
 import Link from 'next/link';
 import { MessageSquare, Calendar, Clock, ArrowUp, ArrowDown, Minus } from 'lucide-react';
@@ -49,12 +50,12 @@ export default function TodayDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
+    if (typeof window === 'undefined') return;
+    const meta = getStoredMetaSync();
+    if (!meta?.user) {
       router.push('/login');
       return;
     }
-
     loadTodayData();
   }, [router]);
 

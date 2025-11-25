@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchAPI } from '@/lib/utils';
+import { getStoredMetaSync } from '@/lib/auth-storage';
 import { ClinicalRule } from '@myhealthally/shared';
 import { Settings, Plus, Edit, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -31,12 +32,12 @@ export default function ClinicsRulesPage() {
   });
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
+    if (typeof window === 'undefined') return;
+    const meta = getStoredMetaSync();
+    if (!meta?.user) {
       router.push('/login');
       return;
     }
-
     loadRules();
   }, [router]);
 
@@ -151,7 +152,7 @@ export default function ClinicsRulesPage() {
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-semibold text-myh-text">Clinical Rules Engine</h1>
+            <h1 className="text-3xl font-semibold text-slate-900">Clinical Rules Engine</h1>
             <p className="text-muted-foreground mt-2">
               Configure automated alerts and actions based on patient metrics
             </p>
@@ -194,7 +195,7 @@ export default function ClinicsRulesPage() {
                         onClick={() => toggleRule(rule)}
                       >
                         {rule.enabled ? (
-                          <ToggleRight className="w-5 h-5 text-myh-primary" />
+                          <ToggleRight className="w-5 h-5 text-teal-600" />
                         ) : (
                           <ToggleLeft className="w-5 h-5 text-muted-foreground" />
                         )}

@@ -8,8 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { fetchAPI } from '@/lib/utils';
 import { calculateBMI, getBMICategory } from '@/utils/bmi';
-import { Smartphone, Activity, FileText, User, CreditCard, Building2 } from 'lucide-react';
+import { Smartphone, Activity, FileText, User, CreditCard, Building2, Languages } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { LanguagePreference } from './LanguagePreference';
+import { SecurityPreferences } from '@/components/patient/SecurityPreferences';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
@@ -87,7 +89,7 @@ export default function PatientProfilePage() {
     return (
       <PageContainer>
         <div className="flex items-center justify-center min-h-screen">
-          <div className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+          <div className="text-body text-slate-600">
             Loading...
           </div>
         </div>
@@ -100,7 +102,7 @@ export default function PatientProfilePage() {
       <div className="py-6 space-y-6">
         <div>
           <h1 className="text-h1 mb-2">Profile</h1>
-          <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+          <p className="text-body text-slate-600">
             Manage your account and health information
           </p>
         </div>
@@ -108,6 +110,8 @@ export default function PatientProfilePage() {
         <Tabs defaultValue="profile">
           <TabsList>
             <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="language">Language</TabsTrigger>
+            <TabsTrigger value="security">Security</TabsTrigger>
             <TabsTrigger value="referrals">Referrals</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
           </TabsList>
@@ -118,7 +122,7 @@ export default function PatientProfilePage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <User className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+                    <User className="w-5 h-5 text-teal-600" />
                     Personal Information
                   </CardTitle>
                 </CardHeader>
@@ -171,24 +175,20 @@ export default function PatientProfilePage() {
                     />
                   </div>
                   {bmi && (
-                    <div className="p-4 border-radius" style={{
-                      backgroundColor: 'var(--color-background)',
-                      borderRadius: 'var(--radius)',
-                    }}>
+                    <div className="p-4 rounded-2xl bg-slate-50">
                       <div className="flex items-center justify-between">
-                        <span className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+                        <span className="text-body text-slate-600">
                           BMI
                         </span>
                         <div className="flex items-center gap-3">
-                          <span className="text-h2" style={{ color: 'var(--color-textPrimary)' }}>
+                          <span className="text-h2 text-slate-900">
                             {bmi}
                           </span>
                           <span
-                            className="px-3 py-1 text-caption border-radius"
+                            className="px-3 py-1 text-caption rounded-lg"
                             style={{
                               backgroundColor: bmiCategory?.color + '20',
                               color: bmiCategory?.color,
-                              borderRadius: 'var(--radius)',
                             }}
                           >
                             {bmiCategory?.label}
@@ -210,17 +210,25 @@ export default function PatientProfilePage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Smartphone className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+                    <Smartphone className="w-5 h-5 text-teal-600" />
                     Connected Devices
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+                  <p className="text-body text-slate-600">
                     No devices connected
                   </p>
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="language">
+            <LanguagePreference />
+          </TabsContent>
+
+          <TabsContent value="security">
+            <SecurityPreferences />
           </TabsContent>
 
           <TabsContent value="referrals">
@@ -234,45 +242,40 @@ export default function PatientProfilePage() {
                     {referrals.map((ref: any) => (
                       <div
                         key={ref.id}
-                        className="p-4 border-radius"
-                        style={{
-                          backgroundColor: 'var(--color-background)',
-                          borderRadius: 'var(--radius)',
-                        }}
+                        className="p-4 rounded-2xl bg-slate-50"
                       >
                         <div className="flex items-start justify-between mb-2">
                           <div>
-                            <p className="text-body font-medium" style={{ color: 'var(--color-textPrimary)' }}>
+                            <p className="text-body font-medium text-slate-900">
                               {ref.specialistName || 'Specialist'}
                             </p>
-                            <p className="text-caption" style={{ color: 'var(--color-textSecondary)' }}>
+                            <p className="text-caption text-slate-600">
                               {ref.specialty}
                             </p>
                           </div>
                           <span
-                            className="px-2 py-1 text-caption border-radius"
-                            style={{
-                              backgroundColor: ref.status === 'COMPLETED' ? 'var(--color-success)' + '20' : 'var(--color-warning)' + '20',
-                              color: ref.status === 'COMPLETED' ? 'var(--color-success)' : 'var(--color-warning)',
-                              borderRadius: 'var(--radius)',
-                            }}
+                            className={`px-2 py-1 text-caption rounded-lg ${
+                              ref.status === 'COMPLETED'
+                                ? 'bg-emerald-100 text-emerald-600'
+                                : 'bg-amber-100 text-amber-600'
+                            }`}
                           >
                             {ref.status}
                           </span>
                         </div>
                         {ref.reason && (
-                          <p className="text-body mt-2" style={{ color: 'var(--color-textSecondary)' }}>
+                          <p className="text-body mt-2 text-slate-600">
                             {ref.reason}
                           </p>
                         )}
-                        <p className="text-caption mt-2" style={{ color: 'var(--color-textSecondary)' }}>
+                        <p className="text-caption mt-2 text-slate-600">
                           {new Date(ref.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+                  <p className="text-body text-slate-600">
                     No referrals
                   </p>
                 )}
@@ -293,18 +296,14 @@ export default function PatientProfilePage() {
                       {documents.excuseNotes.map((note: any) => (
                         <div
                           key={note.id}
-                          className="p-4 border-radius"
-                          style={{
-                            backgroundColor: 'var(--color-background)',
-                            borderRadius: 'var(--radius)',
-                          }}
+                          className="p-4 rounded-2xl bg-slate-50"
                         >
                           <div className="flex items-start justify-between mb-2">
                             <div>
-                              <p className="text-body font-medium" style={{ color: 'var(--color-textPrimary)' }}>
+                              <p className="text-body font-medium text-slate-900">
                                 {note.type === 'WORK' ? 'Work Excuse' : note.type === 'SCHOOL' ? 'School Excuse' : 'Medical Note'}
                               </p>
-                              <p className="text-caption" style={{ color: 'var(--color-textSecondary)' }}>
+                              <p className="text-caption text-slate-600">
                                 {new Date(note.createdAt).toLocaleDateString()}
                               </p>
                             </div>
@@ -317,7 +316,7 @@ export default function PatientProfilePage() {
                             )}
                           </div>
                           {note.reason && (
-                            <p className="text-body mt-2" style={{ color: 'var(--color-textSecondary)' }}>
+                            <p className="text-body mt-2 text-slate-600">
                               {note.reason}
                             </p>
                           )}
@@ -325,7 +324,7 @@ export default function PatientProfilePage() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+                  <p className="text-body text-slate-600">
                       No excuse notes
                     </p>
                   )}

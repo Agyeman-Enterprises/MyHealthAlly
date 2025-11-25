@@ -25,26 +25,25 @@ export default function ClinicianLabsPage() {
     labs = labs.filter((l) => l.flag === flagFilter);
   }
 
-  const getFlagColor = (flag: string): React.CSSProperties => {
-    return flag === 'abnormal'
-      ? { backgroundColor: 'var(--color-danger)', color: '#FFFFFF' }
-      : { backgroundColor: 'var(--color-success)', color: '#FFFFFF' };
+  const flagClasses: Record<string, string> = {
+    abnormal: 'bg-red-500 text-white',
+    normal: 'bg-emerald-500 text-white',
   };
 
-  const getStatusColor = (status: string): React.CSSProperties => {
-    return status === 'unreviewed'
-      ? { backgroundColor: 'var(--color-warning)', color: '#FFFFFF' }
-      : { backgroundColor: 'var(--color-background)', color: 'var(--color-textPrimary)' };
+  const statusClasses: Record<string, string> = {
+    unreviewed: 'bg-amber-500 text-white',
+    abnormal: 'bg-red-500 text-white',
+    reviewed: 'bg-slate-100 text-slate-900',
   };
 
   return (
     <div className="space-y-6">
       {/* Header with filters */}
       <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-        <h1 className="text-h2 font-semibold" style={{ color: 'var(--color-textPrimary)' }}>Labs & Results</h1>
+        <h1 className="text-h2 font-semibold text-slate-900">Labs & Results</h1>
         <div className="flex gap-2">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-40" style={{ backgroundColor: 'var(--color-surface)' }}>
+            <SelectTrigger className="w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -55,7 +54,7 @@ export default function ClinicianLabsPage() {
             </SelectContent>
           </Select>
           <Select value={flagFilter} onValueChange={setFlagFilter}>
-            <SelectTrigger className="w-40" style={{ backgroundColor: 'var(--color-surface)' }}>
+            <SelectTrigger className="w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -68,51 +67,44 @@ export default function ClinicianLabsPage() {
       </div>
 
       {/* Labs Table */}
-      <Card style={{ backgroundColor: 'var(--color-surface)' }}>
+      <Card className="bg-white">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead style={{ backgroundColor: 'var(--color-background)' }}>
+              <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium" style={{ color: 'var(--color-textPrimary)' }}>Date</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium" style={{ color: 'var(--color-textPrimary)' }}>Patient</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium" style={{ color: 'var(--color-textPrimary)' }}>Test</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium" style={{ color: 'var(--color-textPrimary)' }}>Result</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium" style={{ color: 'var(--color-textPrimary)' }}>Flag</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium" style={{ color: 'var(--color-textPrimary)' }}>Status</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium" style={{ color: 'var(--color-textPrimary)' }}>Action</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-900">Date</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-900">Patient</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-900">Test</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-900">Result</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-900">Flag</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-900">Status</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-900">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y" style={{ borderColor: 'var(--color-border)' }}>
+              <tbody className="divide-y divide-slate-200">
                 {labs.map((lab: LabResult) => (
                   <tr
                     key={lab.id}
-                    className="transition-colors"
-                    style={{ backgroundColor: 'transparent' }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--color-background)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
+                    className="transition-colors hover:bg-slate-50"
                   >
-                    <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-textPrimary)' }}>
+                    <td className="px-4 py-3 text-sm text-slate-900">
                       {new Date(lab.date).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric',
                       })}
                     </td>
-                    <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-textPrimary)' }}>{lab.patientName}</td>
-                    <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-textPrimary)' }}>{lab.test}</td>
-                    <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-textPrimary)' }}>{lab.result}</td>
+                    <td className="px-4 py-3 text-sm text-slate-900">{lab.patientName}</td>
+                    <td className="px-4 py-3 text-sm text-slate-900">{lab.test}</td>
+                    <td className="px-4 py-3 text-sm text-slate-900">{lab.result}</td>
                     <td className="px-4 py-3">
-                      <Badge style={getFlagColor(lab.flag)}>
+                      <Badge className={flagClasses[lab.flag] ?? flagClasses.normal}>
                         {lab.flag}
                       </Badge>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge style={getStatusColor(lab.status)}>
+                      <Badge className={statusClasses[lab.status] ?? statusClasses.reviewed}>
                         {lab.status}
                       </Badge>
                     </td>
@@ -136,11 +128,12 @@ export default function ClinicianLabsPage() {
       {/* Lab Detail Sheet */}
       {selectedLab && (
         <Sheet open={!!selectedLab} onOpenChange={(open) => !open && setSelectedLab(null)}>
-          <SheetContent style={{ backgroundColor: 'var(--color-surface)' }}>
+          <SheetContent className="bg-white">
             <SheetHeader>
-              <SheetTitle>{selectedLab.test}</SheetTitle>
-              <SheetDescription>
-                {selectedLab.patientName} • {new Date(selectedLab.date).toLocaleDateString('en-US', {
+              <SheetTitle className="text-slate-900">{selectedLab.test}</SheetTitle>
+              <SheetDescription className="text-slate-600">
+                {selectedLab.patientName} •{' '}
+                {new Date(selectedLab.date).toLocaleDateString('en-US', {
                   month: 'long',
                   day: 'numeric',
                   year: 'numeric',
@@ -149,18 +142,18 @@ export default function ClinicianLabsPage() {
             </SheetHeader>
             <div className="mt-6 space-y-4">
               <div>
-                <p className="text-sm text-caption mb-1" style={{ color: 'var(--color-textSecondary)' }}>Result</p>
-                <p className="text-body text-lg" style={{ color: 'var(--color-textPrimary)' }}>{selectedLab.result}</p>
+                <p className="text-sm text-caption mb-1 text-slate-600">Result</p>
+                <p className="text-body text-lg text-slate-900">{selectedLab.result}</p>
               </div>
               <div>
-                <p className="text-sm text-caption mb-1" style={{ color: 'var(--color-textSecondary)' }}>Flag</p>
-                <Badge style={getFlagColor(selectedLab.flag)}>
+                <p className="text-sm text-caption mb-1 text-slate-600">Flag</p>
+                <Badge className={flagClasses[selectedLab.flag] ?? flagClasses.normal}>
                   {selectedLab.flag}
                 </Badge>
               </div>
               <div>
-                <p className="text-sm text-caption mb-1" style={{ color: 'var(--color-textSecondary)' }}>Status</p>
-                <Badge style={getStatusColor(selectedLab.status)}>
+                <p className="text-sm text-caption mb-1 text-slate-600">Status</p>
+                <Badge className={statusClasses[selectedLab.status] ?? statusClasses.reviewed}>
                   {selectedLab.status}
                 </Badge>
               </div>
@@ -169,14 +162,13 @@ export default function ClinicianLabsPage() {
                   <Button
                     variant="primary"
                     onClick={() => {
-                      // Handle mark as reviewed
                       setSelectedLab(null);
                     }}
                   >
                     Mark as Reviewed
                   </Button>
                 )}
-                <Link href={`/clinician/patients/${selectedLab.patientId}`}>
+                <Link href={`/clinician/chart/${selectedLab.patientId}`}>
                   <Button variant="outline">
                     <FileText className="w-4 h-4 mr-2" />
                     Open Chart

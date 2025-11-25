@@ -20,7 +20,7 @@ export default function PatientLabsPage() {
     return (
       <PageContainer>
         <div className="flex items-center justify-center min-h-screen">
-          <div className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+          <div className="text-body text-slate-600">
             Loading...
           </div>
         </div>
@@ -33,7 +33,7 @@ export default function PatientLabsPage() {
       <div className="py-6 space-y-6">
         <div>
           <h1 className="text-h1 mb-2">Labs</h1>
-          <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+          <p className="text-body text-slate-600">
             Lab orders and results
           </p>
         </div>
@@ -58,26 +58,17 @@ export default function PatientLabsPage() {
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <CardTitle className="flex items-center gap-2">
-                          <FlaskConical className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+                          <FlaskConical className="w-5 h-5 text-teal-600" />
                           {order.testName || 'Lab Test'}
                         </CardTitle>
                         <span
-                          className="px-3 py-1 text-caption border-radius"
-                          style={{
-                            backgroundColor:
-                              order.status === 'COMPLETED'
-                                ? 'var(--color-success)' + '20'
-                                : order.status === 'PENDING'
-                                ? 'var(--color-warning)' + '20'
-                                : 'var(--color-textSecondary)' + '20',
-                            color:
-                              order.status === 'COMPLETED'
-                                ? 'var(--color-success)'
-                                : order.status === 'PENDING'
-                                ? 'var(--color-warning)'
-                                : 'var(--color-textSecondary)',
-                            borderRadius: 'var(--radius)',
-                          }}
+                          className={`px-3 py-1 text-caption rounded-lg ${
+                            order.status === 'COMPLETED'
+                              ? 'bg-emerald-100 text-emerald-600'
+                              : order.status === 'PENDING'
+                              ? 'bg-amber-100 text-amber-600'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}
                         >
                           {order.status}
                         </span>
@@ -85,16 +76,16 @@ export default function PatientLabsPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
-                        <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+                        <p className="text-body text-slate-600">
                           Ordered: {formatDate(order.orderedAt || order.createdAt)}
                         </p>
                         {order.orderedBy && (
-                          <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+                          <p className="text-body text-slate-600">
                             Ordered by: {order.orderedBy}
                           </p>
                         )}
                         {order.instructions && (
-                          <p className="text-body mt-4" style={{ color: 'var(--color-textPrimary)' }}>
+                          <p className="text-body mt-4 text-slate-900">
                             {order.instructions}
                           </p>
                         )}
@@ -105,8 +96,8 @@ export default function PatientLabsPage() {
               ) : (
                 <Card>
                   <CardContent className="flex flex-col items-center justify-center py-12">
-                    <FlaskConical className="w-12 h-12 mb-4" style={{ color: 'var(--color-textSecondary)' }} />
-                    <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+                    <FlaskConical className="w-12 h-12 mb-4 text-slate-400" />
+                    <p className="text-body text-slate-600">
                       No lab orders
                     </p>
                   </CardContent>
@@ -138,8 +129,8 @@ export default function PatientLabsPage() {
               ) : (
                 <Card>
                   <CardContent className="flex flex-col items-center justify-center py-12">
-                    <CheckCircle className="w-12 h-12 mb-4" style={{ color: 'var(--color-textSecondary)' }} />
-                    <p className="text-body" style={{ color: 'var(--color-textSecondary)' }}>
+                    <CheckCircle className="w-12 h-12 mb-4 text-slate-400" />
+                    <p className="text-body text-slate-600">
                       No lab results available
                     </p>
                   </CardContent>
