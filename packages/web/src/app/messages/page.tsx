@@ -202,7 +202,7 @@ export default function MessagesPage() {
                                 {message.attachments.map((att, idx) => (
                                   <a
                                     key={idx}
-                                    href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}${att.url}`}
+                                    href={`${process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${att.url}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="block text-xs underline"

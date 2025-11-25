@@ -6,7 +6,12 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Use environment variable for API URL, with fallback for local development
+// In production (Vercel), set NEXT_PUBLIC_API_BASE_URL to your backend URL
+export const API_URL = 
+  typeof window !== 'undefined' 
+    ? (process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001')
+    : (process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001');
 
 interface FetchOptions extends RequestInit {
   skipAuth?: boolean;
