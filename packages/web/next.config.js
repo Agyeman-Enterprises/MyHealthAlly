@@ -8,6 +8,13 @@ const nextConfig = {
       bodySizeLimit: '2mb',
     },
   },
+  // Don't fail build on ESLint warnings, only errors
+  eslint: {
+    ignoreDuringBuilds: false,
+  },
+  typescript: {
+    ignoreBuildErrors: false,
+  },
   // Ensure proper handling of client components
   webpack: (config, { isServer }) => {
     if (!isServer) {
