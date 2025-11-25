@@ -1,85 +1,103 @@
-# Troubleshooting Guide
+# Troubleshooting Internal Server Errors
 
-## Current Status
+## Quick Checks
 
-**Services Running:**
-- Web Dashboard: Port 3001 (LISTENING)
-- Prisma Studio: Port 5555 (LISTENING)
-- Backend: Port 3000 (NOT RUNNING)
+1. **Backend Server Status**
+   - Backend should be running on port **3001**
+   - Check: `http://localhost:3001/`
+   - Should return: `{ "message": "MyHealthAlly API", ... }`
 
-**Issue:** Browser not loading, can't see files
+2. **Frontend Server Status**
+   - Frontend should be running on port **3000**
+   - Check: `http://localhost:3000/`
+   - Should redirect to `/marketing`
 
-## Quick Fixes
+3. **Common Issues**
 
-### 1. Restart Web Server
-
+### Backend Not Running
+If you see "Unable to connect to the server" errors:
 ```powershell
-# Kill existing process
-Get-Process -Id 198324 | Stop-Process -Force
-
-# Restart web server
-cd packages\web
-pnpm dev
+cd packages/backend
+npm run dev
 ```
 
-### 2. Check Browser Console
+### Port Conflicts
+- Backend: Port 3001
+- Frontend: Port 3000
+- If ports are in use, check with: `netstat -ano | findstr :3001`
 
-Open browser DevTools (F12) and check:
-- Console for errors
-- Network tab for failed requests
-- Check if http://localhost:3001 is accessible
+### Database Connection
+If health check fails:
+- Ensure PostgreSQL is running
+- Check `.env` file has correct `DATABASE_URL`
+- Run migrations: `npx prisma migrate dev`
 
-### 3. Verify Files Exist
+## Error Logging
 
-All files are present:
-- ✅ `packages/web/src/app/page.tsx` - Home page (redirects to /dashboard)
-- ✅ `packages/web/src/app/login/page.tsx` - Login page
-- ✅ `packages/web/src/app/dashboard/page.tsx` - Dashboard
-- ✅ All components in `packages/web/src/components/`
+The backend now has a global exception filter that logs all errors:
+- Check terminal output for detailed error messages
+- 500 errors are logged with full stack traces
+- 400 errors are logged as warnings
 
-### 4. Try Direct URLs
+## Testing Endpoints
 
-- http://localhost:3001/login
-- http://localhost:3001/dashboard
-- http://localhost:5555 (Prisma Studio)
-
-### 5. Check Next.js Build
-
+### Backend Health
 ```powershell
-cd packages\web
-pnpm run build
+Invoke-WebRequest -Uri "http://localhost:3001/health" -UseBasicParsing
 ```
 
-If build fails, fix errors first.
-
-### 6. Clear Next.js Cache
-
+### Backend Root
 ```powershell
-cd packages\web
-Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
-pnpm dev
+Invoke-WebRequest -Uri "http://localhost:3001/" -UseBasicParsing
 ```
 
-## File Locations
+### Frontend
+```powershell
+Invoke-WebRequest -Uri "http://localhost:3000/" -UseBasicParsing
+```
 
-**Web Dashboard Files:**
-- Main app: `packages/web/src/app/`
-- Components: `packages/web/src/components/`
-- Styles: `packages/web/src/app/globals.css`
+## Common API Errors
 
-**Backend Files:**
-- API: `packages/backend/src/`
-- Database: `packages/backend/prisma/schema.prisma`
+### 401 Unauthorized
+- Token expired or invalid
+- Check `AuthContext` for token refresh logic
+- Verify JWT_SECRET in backend `.env`
 
-**iOS Files:**
-- App: `packages/ios/MyHealthAlly/`
+### 404 Not Found
+- Endpoint doesn't exist
+- Check route path matches controller
+- Verify module is imported in `app.module.ts`
 
-**Android Files:**
-- App: `packages/android/app/src/main/`
+### 500 Internal Server Error
+- Check backend terminal for stack trace
+- Verify database connection
+- Check Prisma schema matches database
+- Verify all required environment variables are set
 
-## Access Points
+## Restarting Servers
 
-- Web Dashboard: http://localhost:3001
-- Prisma Studio: http://localhost:5555
-- Backend API: http://localhost:3000 (when running)
+### Backend
+```powershell
+cd packages/backend
+npm run dev
+```
 
+### Frontend
+```powershell
+cd packages/web
+npm run dev
+```
+
+## Environment Variables
+
+Ensure both `.env` files are configured:
+- `packages/backend/.env`
+- `packages/web/.env`
+
+Required backend variables:
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `PORT` (optional, defaults to 3001)
+
+Required frontend variables:
+- `NEXT_PUBLIC_API_URL` (optional, defaults to http://localhost:3001)

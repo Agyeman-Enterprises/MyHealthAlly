@@ -46,7 +46,7 @@ export class MessagingController {
   async sendMessage(
     @Param('threadId') threadId: string,
     @Request() req: any,
-    @Body() data: { content: string },
+    @Body() data: { content: string; source?: 'voice' | 'text' },
     @UploadedFiles() files?: Express.Multer.File[],
   ) {
     const attachments = files?.map((file) => ({
@@ -61,6 +61,7 @@ export class MessagingController {
       req.user.id,
       data.content,
       attachments,
+      data.source || 'text',
     );
   }
 

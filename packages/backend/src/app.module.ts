@@ -26,8 +26,15 @@ import { LabOrdersModule } from './lab-orders/lab-orders.module';
 import { ReferralsModule } from './referrals/referrals.module';
 import { ExcuseNotesModule } from './excuse-notes/excuse-notes.module';
 import { AppConfigModule } from './config/config.module';
+import { TranslationModule } from './translation/translation.module';
+import { AdviceModule } from './advice/advice.module';
+import { ClinicalNotesModule } from './clinical-notes/clinical-notes.module';
+import { VoiceMessagesModule } from './voice-messages/voice-messages.module';
+import { TriageModule } from './triage/triage.module';
+import { AppController } from './app.controller';
 
 @Module({
+  controllers: [AppController],
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
@@ -61,6 +68,11 @@ import { AppConfigModule } from './config/config.module';
     ReferralsModule,
     ExcuseNotesModule,
     AppConfigModule,
+    TranslationModule,
+    AdviceModule,
+    ClinicalNotesModule,
+    VoiceMessagesModule,
+    TriageModule,
   ],
   providers: [
     {

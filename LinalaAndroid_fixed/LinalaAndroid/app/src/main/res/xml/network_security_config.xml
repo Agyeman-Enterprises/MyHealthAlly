@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    
+    <!-- Allow debug builds to use localhost -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="user" />
+            <certificates src="system" />
+        </trust-anchors>
+    </debug-overrides>
+    
+    <!-- Domain-specific config -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">ohimaa.gu</domain>
+        <domain includeSubdomains="true">myhealthally.com</domain>
+    </domain-config>
+</network-security-config>

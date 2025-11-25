@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Lina'la Brand Colors -->
+    <color name="primary">#1B4D3E</color>
+    <color name="primary_light">#2D6B5A</color>
+    <color name="primary_dark">#0D3328</color>
+    
+    <color name="secondary">#45B5AA</color>
+    <color name="secondary_light">#6BC7BE</color>
+    
+    <color name="accent">#FF8B7A</color>
+    <color name="accent_light">#FFA799</color>
+    <color name="accent_dark">#E57262</color>
+    
+    <!-- Text Colors -->
+    <color name="text_primary">#1A2E28</color>
+    <color name="text_secondary">#4A635C</color>
+    <color name="text_tertiary">#7A918A</color>
+    
+    <!-- Background Colors -->
+    <color name="background">#F5F9F8</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_variant">#E8F0EE</color>
+    
+    <!-- Status Colors -->
+    <color name="success">#10B981</color>
+    <color name="warning">#F59E0B</color>
+    <color name="error">#EF4444</color>
+    <color name="info">#3B82F6</color>
+    
+    <!-- Record Button -->
+    <color name="record_red">#E63946</color>
+</resources>

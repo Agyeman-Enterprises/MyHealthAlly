@@ -6,6 +6,8 @@ import {
   Body,
   Param,
   UseGuards,
+  Request,
+  Query,
 } from '@nestjs/common';
 import { CarePlansService } from './care-plans.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -17,23 +19,31 @@ export class CarePlansController {
   constructor(private carePlansService: CarePlansService) {}
 
   @Get()
-  findByPatient(@Param('patientId') patientId: string) {
-    return this.carePlansService.findByPatient(patientId);
+  findByPatient(
+    @Param('patientId') patientId: string,
+    @Request() req: any,
+    @Query('forPatient') forPatient?: string,
+  ) {
+    // If requesting user is the patient, return translated version
+    const isPatient = req.user.role === 'PATIENT';
+    const shouldReturnForPatient = forPatient === 'true' || isPatient;
+    
+    return this.carePlansService.findByPatient(patientId, shouldReturnForPatient);
   }
 
   @Post()
   create(
     @Param('patientId') patientId: string,
-    @Body('phases') phases: CarePlanPhase[],
+    @Body() body: { phases: CarePlanPhase[]; title?: string },
   ) {
-    return this.carePlansService.create(patientId, phases);
+    return this.carePlansService.create(patientId, body.phases, body.title);
   }
 
   @Put()
   update(
     @Param('patientId') patientId: string,
-    @Body('phases') phases: CarePlanPhase[],
+    @Body() body: { phases: CarePlanPhase[]; title?: string },
   ) {
-    return this.carePlansService.update(patientId, phases);
+    return this.carePlansService.update(patientId, body.phases, body.title);
   }
 }

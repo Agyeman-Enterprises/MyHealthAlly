@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { MessagingController } from './messaging.controller';
 import { MessagingService } from './messaging.service';
 import { PrismaModule } from '../prisma/prisma.module';
+import { TranslationModule } from '../translation/translation.module';
+import { PatientsLanguageService } from '../patients/patients-language.service';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
@@ -16,6 +18,7 @@ if (!existsSync(uploadsDir)) {
 @Module({
   imports: [
     PrismaModule,
+    TranslationModule,
     MulterModule.register({
       storage: diskStorage({
         destination: uploadsDir,
@@ -33,7 +36,7 @@ if (!existsSync(uploadsDir)) {
     }),
   ],
   controllers: [MessagingController],
-  providers: [MessagingService],
+  providers: [MessagingService, PatientsLanguageService],
   exports: [MessagingService],
 })
 export class MessagingModule {}

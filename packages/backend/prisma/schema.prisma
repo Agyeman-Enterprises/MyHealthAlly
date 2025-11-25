@@ -27,6 +27,8 @@ model User {
   patient       Patient?       @relation("PatientToUser")
   provider      Provider?      @relation("ProviderToUser")
   refreshTokens RefreshToken[]
+  devices       UserDevice[]
+  sessions      UserSession[]
 
   @@map("users")
 }
@@ -46,17 +48,20 @@ model Clinic {
 }
 
 model Patient {
-  id           String    @id @default(uuid())
-  userId       String    @unique @map("user_id")
-  clinicId     String    @map("clinic_id")
-  firstName    String?   @map("first_name")
-  lastName     String?   @map("last_name")
-  dateOfBirth  DateTime? @map("date_of_birth")
-  heightCm     Float?    @map("height_cm")
-  demographics Json?
-  flags        String[]
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  id                 String    @id @default(uuid())
+  userId             String    @unique @map("user_id")
+  clinicId           String    @map("clinic_id")
+  firstName          String?   @map("first_name")
+  lastName           String?   @map("last_name")
+  dateOfBirth        DateTime? @map("date_of_birth")
+  heightCm           Float?    @map("height_cm")
+  demographics       Json?
+  flags              String[]
+  preferredLanguage  String?   @map("preferred_language") // ISO language code (e.g., 'en', 'es', 'ja', 'zh', 'tl', 'sm')
+  lastDetectedLanguage String? @map("last_detected_language") // Last detected language from messages
+  regionCode         String?   @map("region_code") // e.g., 'US', 'GUAM', 'HI', 'DEFAULT'
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
 
   user            User              @relation("PatientToUser", fields: [userId], references: [id])
   clinic          Clinic            @relation(fields: [clinicId], references: [id])
@@ -75,6 +80,10 @@ model Patient {
   labOrders       LabOrder[]
   referrals       Referral[]
   excuseNotes     ExcuseNote[]
+  clinicalNotes   ClinicalNote[]
+  voiceMessages   VoiceMessage[]
+  voiceMessageAuditLogs VoiceMessageAuditLog[]
+  triageTasks     TriageTask[]
 
   @@map("patients")
 }
@@ -119,6 +128,12 @@ model CarePlan {
   id        String   @id @default(uuid())
   patientId String   @map("patient_id")
   phases    Json // Array of CarePlanPhase
+  // Multilingual fields
+  planEnglishTitle  String? @map("plan_english_title")
+  planEnglishBody   Json?   @map("plan_english_body") // English canonical version of phases
+  planTranslatedTitle String? @map("plan_translated_title")
+  planTranslatedBody  Json?   @map("plan_translated_body") // Translated version
+  planTranslatedLanguage String? @map("plan_translated_language") // Language code for translation
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -217,20 +232,178 @@ model MessageThread {
 }
 
 model Message {
-  id          String    @id @default(uuid())
-  threadId    String    @map("thread_id")
-  senderId    String    @map("sender_id")
-  content     String
-  attachments Json? // Array of { type, url, filename, size }
-  read        Boolean   @default(false)
-  readAt      DateTime? @map("read_at")
-  createdAt   DateTime  @default(now()) @map("created_at")
+  id                    String    @id @default(uuid())
+  threadId              String    @map("thread_id")
+  senderId              String    @map("sender_id")
+  content               String
+  attachments           Json? // Array of { type, url, filename, size }
+  read                  Boolean   @default(false)
+  readAt                DateTime? @map("read_at")
+  // Multilingual fields
+  originalText          String?   @map("original_text") // Original patient text in their language
+  originalLanguage      String?   @map("original_language") // ISO language code
+  englishText           String?   @map("english_text") // Translated to English for processing
+  processedLanguage     String?   @default("en") @map("processed_language") // Language used for triage (always 'en')
+  // For assistant responses
+  englishTitle          String?   @map("english_title")
+  englishBody           String?   @map("english_body")
+  translatedTitle       String?   @map("translated_title")
+  translatedBody        String?   @map("translated_body")
+  patientLanguageUsedForReply String? @map("patient_language_used_for_reply")
+  createdAt             DateTime  @default(now()) @map("created_at")
 
   thread MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
 
   @@index([threadId, createdAt])
   @@index([senderId])
   @@map("messages")
+}
+
+model VoiceMessage {
+  id                        String   @id @default(uuid())
+  patientId                 String   @map("patient_id")
+  triageTaskId              String?  @map("triage_task_id")
+  intentType                String   @map("intent_type")
+  severity                  String   @map("severity")
+  audioUrl                  String?  @map("audio_url")
+  audioRetentionExpiresAt   DateTime? @map("audio_retention_expires_at")
+  originalTranscript        String   @map("original_transcript")
+  originalLanguage          String   @map("original_language")
+  englishTranscript         String   @map("english_transcript")
+  aiSummary                 String?  @map("ai_summary")
+  riskFlags                 Json?    @map("risk_flags")
+  isAccessibleToPatient     Boolean  @default(true) @map("is_accessible_to_patient")
+  hasAudioAvailableToPatient Boolean @default(false) @map("has_audio_available_to_patient")
+  audioDownloadCount        Int      @default(0) @map("audio_download_count")
+  lastAudioDownloadAt       DateTime? @map("last_audio_download_at")
+  intentConfidence          Float?   @map("intent_confidence")
+  createdAt                 DateTime @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+
+  patient    Patient    @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  triageTask TriageTask? @relation(fields: [triageTaskId], references: [id], onDelete: SetNull)
+  auditLogs  VoiceMessageAuditLog[]
+
+  @@index([patientId, createdAt])
+  @@index([triageTaskId])
+  @@map("voice_messages")
+}
+
+model VoiceMessageAuditLog {
+  id            String   @id @default(uuid())
+  voiceMessageId String  @map("voice_message_id")
+  patientId     String   @map("patient_id")
+  actorType     String   @map("actor_type") // PATIENT | CLINICIAN | SYSTEM
+  actionType    String   @map("action_type") // AUDIO_DOWNLOADED | AUDIO_PLAYED | AUDIO_EXPIRED
+  timestamp     DateTime @default(now()) @map("timestamp")
+  details       Json?    @map("details")
+
+  voiceMessage VoiceMessage @relation(fields: [voiceMessageId], references: [id], onDelete: Cascade)
+  patient      Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([voiceMessageId, timestamp])
+  @@index([patientId, timestamp])
+  @@map("voice_message_audit_logs")
+}
+
+model TriageTask {
+  id                   String   @id @default(uuid())
+  patientId            String   @map("patient_id")
+  createdBy            String   @map("created_by")
+  createdByRole        String?  @map("created_by_role")
+  intentType           String   @map("intent_type")
+  severity             String   @map("severity")
+  status               String   @default("OPEN") @map("status")
+  assigneeRole         String?  @map("assignee_role")
+  supervisingClinicianId String? @map("supervising_clinician_id")
+  assignedMAId         String?  @map("assigned_ma_id")
+  sourceMessage        String?  @map("source_message")
+  sourceOriginalText   String?  @map("source_original_text")
+  sourceType           String?  @map("source_type") // voice, text, check-in
+  symptomId            String?  @map("symptom_id")
+  refillId             String?  @map("refill_id")
+  appointmentId        String?  @map("appointment_id")
+  adminTaskId          String?  @map("admin_task_id")
+  actionNote           String?  @map("action_note")
+  openedAt             DateTime @default(now()) @map("opened_at")
+  firstActionAt        DateTime? @map("first_action_at")
+  lastActionAt         DateTime? @map("last_action_at")
+  closedAt             DateTime? @map("closed_at")
+  handledByUserId      String?  @map("handled_by_user_id")
+  handledByRole        String?  @map("handled_by_role")
+  isOverdue            Boolean  @default(false) @map("is_overdue")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  patient      Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  voiceMessages VoiceMessage[]
+  logs         TriageTaskLog[]
+
+  @@index([patientId, status])
+  @@index([status, severity])
+  @@map("triage_tasks")
+}
+
+model TriageTaskLog {
+  id         String   @id @default(uuid())
+  taskId     String   @map("task_id")
+  actorId    String?  @map("actor_id")
+  actorRole  String   @map("actor_role")
+  actionType String   @map("action_type")
+  details    Json?    @map("details")
+  timestamp  DateTime @default(now()) @map("timestamp")
+
+  task TriageTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, timestamp])
+  @@map("triage_task_logs")
+}
+
+enum DevicePlatform {
+  IOS
+  ANDROID
+  WEB
+}
+
+model UserDevice {
+  id                 String         @id @default(uuid())
+  userId             String         @map("user_id")
+  deviceId           String         @map("device_id")
+  deviceName         String?        @map("device_name")
+  platform           DevicePlatform @map("platform")
+  biometricEnabled   Boolean        @default(false) @map("biometric_enabled")
+  biometricKey       String?        @map("biometric_key")
+  pinEnabled         Boolean        @default(false) @map("pin_enabled")
+  pinHash            String?        @map("pin_hash")
+  encryptedKeyBlob   String?        @map("encrypted_key_blob")
+  lastUnlockAt       DateTime?      @map("last_unlock_at")
+  idleTimeoutSeconds Int            @default(900) @map("idle_timeout_seconds")
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions UserSession[]
+
+  @@unique([userId, deviceId])
+  @@index([userId, platform])
+  @@map("user_devices")
+}
+
+model UserSession {
+  id            String    @id @default(uuid())
+  userId        String    @map("user_id")
+  deviceId      String    @map("device_id")
+  sessionToken  String    @unique @map("session_token")
+  lastActiveAt  DateTime  @map("last_active_at")
+  expiresAt     DateTime  @map("expires_at")
+  revokedAt     DateTime? @map("revoked_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device UserDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([userId, deviceId])
+  @@map("user_sessions")
 }
 
 model ClinicalRule {
@@ -321,6 +494,12 @@ model Visit {
   visitMode  VisitMode   @map("visit_mode")
   reasonText String      @map("reason_text")
   status     VisitStatus @default(PLANNED)
+  // Multilingual visit summary fields
+  summaryEnglish          String? @map("summary_english") // English canonical summary
+  summaryTranslated       String? @map("summary_translated") // Translated summary
+  summaryTranslatedLanguage String? @map("summary_translated_language") // Language code
+  dischargeInstructionsEnglish String? @map("discharge_instructions_english") // English discharge instructions
+  dischargeInstructionsTranslated String? @map("discharge_instructions_translated") // Translated discharge instructions
   createdAt  DateTime    @default(now()) @map("created_at")
   updatedAt  DateTime    @updatedAt @map("updated_at")
 
@@ -328,6 +507,7 @@ model Visit {
   labOrders      LabOrder[]
   referrals      Referral[]
   excuseNotes    ExcuseNote[]
+  clinicalNotes  ClinicalNote[] @relation("VisitClinicalNotes")
 
   @@index([patientId, status])
   @@index([providerId, status])
@@ -565,6 +745,32 @@ model ExcuseNote {
   @@index([providerId, status])
   @@index([status, createdAt])
   @@map("excuse_notes")
+}
+
+model ClinicalNote {
+  id                    String   @id @default(cuid())
+  patientId             String   @map("patient_id")
+  encounterId           String?  @map("encounter_id")
+  providerId            String?  @map("provider_id")
+  type                  String   // SOAP, H&P, Consult, Discharge, Progress, Symptom Note
+  title                 String
+  content               String
+  source                String?  // voice, text, check-in
+  // Multilingual fields for clinician dictation
+  noteOriginalText      String?  @map("note_original_text") // Original dictation text
+  noteOriginalLanguage  String?  @map("note_original_language") // ISO language code
+  noteCanonicalText     String?  @map("note_canonical_text") // English canonical version
+  noteLanguageForDisplay String? @default("en") @map("note_language_for_display") // Language to display (en or original)
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  visit   Visit?  @relation("VisitClinicalNotes", fields: [encounterId], references: [id], onDelete: SetNull)
+
+  @@index([patientId, createdAt])
+  @@index([encounterId])
+  @@index([providerId])
+  @@map("clinical_notes")
 }
 
 enum LabOrderStatus {

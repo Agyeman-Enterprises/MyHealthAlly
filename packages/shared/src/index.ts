@@ -6,6 +6,12 @@ export enum UserRole {
   ADMIN = 'ADMIN',
 }
 
+export enum DevicePlatform {
+  IOS = 'IOS',
+  ANDROID = 'ANDROID',
+  WEB = 'WEB',
+}
+
 export interface User {
   id: string;
   email: string;
@@ -139,9 +145,38 @@ export interface PaginatedResponse<T> {
 }
 
 // Auth types
+export interface DeviceRegistrationInput {
+  deviceId: string;
+  deviceName?: string;
+  platform: DevicePlatform | keyof typeof DevicePlatform | 'IOS' | 'ANDROID' | 'WEB';
+  appVersion?: string;
+  idleTimeoutSeconds?: number;
+}
+
+export interface DeviceSummary {
+  id: string;
+  deviceId: string;
+  deviceName?: string;
+  platform: DevicePlatform | keyof typeof DevicePlatform | 'IOS' | 'ANDROID' | 'WEB';
+  biometricEnabled: boolean;
+  pinEnabled: boolean;
+  idleTimeoutSeconds: number;
+  lastUnlockAt?: Date | string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+}
+
+export interface SessionSummary {
+  id: string;
+  lastActiveAt: Date | string;
+  expiresAt: Date | string;
+  idleTimeoutSeconds: number;
+}
+
 export interface LoginDto {
   email: string;
   password: string;
+  device?: Partial<DeviceRegistrationInput>;
 }
 
 export interface RegisterDto {
@@ -157,6 +192,8 @@ export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
   user: User;
+  device?: DeviceSummary;
+  session?: SessionSummary;
 }
 
 // Visit Request types

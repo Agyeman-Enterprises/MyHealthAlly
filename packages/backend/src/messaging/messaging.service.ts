@@ -1,12 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
+import { TranslationService } from '../translation/translation.service';
+import { PatientsLanguageService } from '../patients/patients-language.service';
 
 @Injectable()
 export class MessagingService {
   constructor(
     private prisma: PrismaService,
     private config: ConfigService,
+    private translationService: TranslationService,
+    private patientsLanguageService: PatientsLanguageService,
   ) {}
 
   async createThread(patientId: string, clinicId: string, subject?: string) {
@@ -129,22 +133,63 @@ export class MessagingService {
     senderId: string,
     content: string,
     attachments?: any[],
+    source?: 'voice' | 'text',
   ) {
     const thread = await this.prisma.messageThread.findUnique({
       where: { id: threadId },
+      include: { patient: true },
     });
 
     if (!thread) {
       throw new Error('Thread not found');
     }
 
+    // Check if sender is a patient
+    const sender = await this.prisma.user.findUnique({
+      where: { id: senderId },
+    });
+
+    const isPatientMessage = sender?.role === 'PATIENT' && thread.patientId;
+
+    let messageData: any = {
+      threadId,
+      senderId,
+      content,
+      attachments: attachments || null,
+    };
+
+    // For patient messages, detect language and normalize to English
+    if (isPatientMessage && thread.patientId) {
+      try {
+        // Normalize to English for internal processing
+        const { english, detectedLang } = await this.translationService.normalizeToEnglish(content);
+
+        // Update patient's last detected language
+        await this.patientsLanguageService.setLastDetectedLanguage(
+          thread.patientId,
+          detectedLang,
+        );
+
+        // Store multilingual data
+        messageData = {
+          ...messageData,
+          originalText: content,
+          originalLanguage: detectedLang,
+          englishText: english,
+          processedLanguage: 'en', // Always process in English
+        };
+
+        // Use English text as the canonical content for triage/processing
+        // But display original to patient
+        messageData.content = content; // Keep original for display
+      } catch (error) {
+        // If translation fails, continue with original content
+        console.error('Failed to process multilingual message:', error);
+      }
+    }
+
     const message = await this.prisma.message.create({
-      data: {
-        threadId,
-        senderId,
-        content,
-        attachments: attachments || null,
-      },
+      data: messageData,
     });
 
     // Update thread last message time

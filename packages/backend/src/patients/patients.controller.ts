@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Request, Query } from '@nestjs/common';
 import { PatientsService } from './patients.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -102,5 +102,79 @@ export class PatientsController {
       throw new Error('Patient record not found');
     }
     return this.patientsService.getDocuments(patient.id);
+  }
+
+  @Get('me/language')
+  async getMyLanguage(@Request() req) {
+    if (req.user.role !== 'PATIENT') {
+      throw new Error('Unauthorized');
+    }
+    const patient = await this.patientsService.findByUserId(req.user.id);
+    if (!patient) {
+      throw new Error('Patient record not found');
+    }
+    return this.patientsService.getLanguagePreferences(patient.id);
+  }
+
+  @Post('me/language')
+  async setMyLanguage(@Request() req, @Body() data: { preferredLanguage: string }) {
+    if (req.user.role !== 'PATIENT') {
+      throw new Error('Unauthorized');
+    }
+    const patient = await this.patientsService.findByUserId(req.user.id);
+    if (!patient) {
+      throw new Error('Patient record not found');
+    }
+    return this.patientsService.setPreferredLanguage(patient.id, data.preferredLanguage);
+  }
+
+  @Get('me/language/prompt')
+  async checkLanguagePrompt(@Request() req) {
+    if (req.user.role !== 'PATIENT') {
+      throw new Error('Unauthorized');
+    }
+    const patient = await this.patientsService.findByUserId(req.user.id);
+    if (!patient) {
+      throw new Error('Patient record not found');
+    }
+    return this.patientsService.checkLanguagePrompt(patient.id);
+  }
+
+  @Get('me/appointments')
+  async getMyAppointments(@Request() req, @Query('upcoming') upcoming?: string) {
+    if (req.user.role !== 'PATIENT') {
+      throw new Error('Unauthorized');
+    }
+    const patient = await this.patientsService.findByUserId(req.user.id);
+    if (!patient) {
+      throw new Error('Patient record not found');
+    }
+    return this.patientsService.getAppointments(patient.id, upcoming === 'true');
+  }
+
+  @Get('me/messages')
+  async getMyMessages(@Request() req, @Query('limit') limit?: string) {
+    if (req.user.role !== 'PATIENT') {
+      throw new Error('Unauthorized');
+    }
+    const patient = await this.patientsService.findByUserId(req.user.id);
+    if (!patient) {
+      throw new Error('Patient record not found');
+    }
+    const limitNum = limit ? parseInt(limit, 10) : undefined;
+    return this.patientsService.getRecentMessages(patient.id, limitNum);
+  }
+
+  @Get('me/measurements')
+  async getMyMeasurements(@Request() req, @Query('type') type?: string, @Query('limit') limit?: string) {
+    if (req.user.role !== 'PATIENT') {
+      throw new Error('Unauthorized');
+    }
+    const patient = await this.patientsService.findByUserId(req.user.id);
+    if (!patient) {
+      throw new Error('Patient record not found');
+    }
+    const limitNum = limit ? parseInt(limit, 10) : undefined;
+    return this.patientsService.getMeasurements(patient.id, type, limitNum);
   }
 }
