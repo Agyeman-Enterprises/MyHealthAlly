@@ -15,11 +15,22 @@ export default function ProviderLayout({
   const { isAuthenticated, role, logout } = useAuthStore();
 
   useEffect(() => {
-    if (!isAuthenticated || (role !== 'provider' && role !== 'admin')) {
-      router.push('/auth/login?redirect=' + encodeURIComponent(pathname));
+    // Strong security: Check authentication and role
+    if (!isAuthenticated) {
+      router.push('/provider/login?redirect=' + encodeURIComponent(pathname));
+      return;
+    }
+    
+    // Strong security: Enforce role-based access control
+    if (role !== 'provider' && role !== 'admin') {
+      // User is authenticated but doesn't have provider/admin role
+      // This prevents patients from accessing provider routes
+      router.push('/provider/login?redirect=' + encodeURIComponent(pathname));
+      return;
     }
   }, [isAuthenticated, role, router, pathname]);
 
+  // Strong security: Don't render anything if not authorized
   if (!isAuthenticated || (role !== 'provider' && role !== 'admin')) {
     return null;
   }

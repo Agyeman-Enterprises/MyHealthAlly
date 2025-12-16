@@ -28,7 +28,8 @@ android {
                 "proguard-rules.pro"
             )
             // Solopractice API base URL (production)
-            buildConfigField("String", "API_BASE_URL", "\"https://your-solopractice-domain.com\"")
+            // CONFIGURATION REQUIRED: Replace with your actual production API URL
+            buildConfigField("String", "API_BASE_URL", "\"https://api.your-production-domain.com\"")
         }
         debug {
             isMinifyEnabled = false

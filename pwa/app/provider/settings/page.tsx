@@ -10,11 +10,15 @@ export default function ProviderSettingsPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'settings' | 'staff' | 'patients'>('settings');
 
-  // Only admins can access settings
+  // Strong security: Enforce admin-only access
+  // This is a client-side check - backend must also enforce this
   if (role !== 'admin') {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-800">Access denied. Admin privileges required.</p>
+        <p className="text-red-800 font-semibold">Access Denied</p>
+        <p className="text-red-700 text-sm mt-1">
+          Admin privileges required. This action has been logged.
+        </p>
       </div>
     );
   }

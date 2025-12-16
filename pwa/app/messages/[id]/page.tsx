@@ -6,6 +6,7 @@ import { useAuthStore } from '@/lib/store/auth-store';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient, MessageResponse, SymptomScreenResult } from '@/lib/api/solopractice-client';
 import { format } from 'date-fns';
+import { DisclaimerBanner } from '@/components/governance/DisclaimerBanner';
 
 export default function MessageThreadPage() {
   const router = useRouter();
@@ -86,6 +87,9 @@ export default function MessageThreadPage() {
       </header>
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+        {/* Rule 4: Radical Role Clarity - Disclaimer */}
+        <DisclaimerBanner type="standard" className="mb-6" />
+        
         {/* Messages List */}
         <div className="space-y-4 mb-6">
           {isLoading ? (

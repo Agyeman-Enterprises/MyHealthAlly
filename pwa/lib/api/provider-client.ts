@@ -194,6 +194,30 @@ export class ProviderApiClient {
     );
   }
 
+  // Authentication
+  async login(email: string, password: string): Promise<{
+    access_token: string;
+    refresh_token: string;
+    practice_id: string;
+    user_id: string;
+    role: 'provider' | 'admin';
+  }> {
+    // Create a separate client for login (no auth token required)
+    const loginClient = axios.create({
+      baseURL: API_BASE_URL,
+      timeout: 60000,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    const response = await loginClient.post('/api/provider/auth/login', {
+      email,
+      password,
+    });
+    return response.data;
+  }
+
   // Dashboard
   async getDashboardStats(): Promise<DashboardStats> {
     const response = await this.client.get<DashboardStats>('/api/provider/dashboard/stats');

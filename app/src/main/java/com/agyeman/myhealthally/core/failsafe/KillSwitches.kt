@@ -6,9 +6,16 @@ import java.util.concurrent.atomic.AtomicReference
 
 /**
  * CG-2B: Kill Switches & Degraded Modes
+ * Rule 3: Kill Switch Is Mandatory
  *
  * Goal: unsafe operations can be stopped instantly; system can enter read-only / limited modes.
  * No UI, no integrations. Server-side policy guard only.
+ * 
+ * Founder-controlled kill switches for:
+ * - Feature kill switch
+ * - API shutoff
+ * - Region-based disable
+ * - Model rollback
  */
 object KillSwitches {
 

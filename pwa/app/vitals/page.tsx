@@ -6,6 +6,12 @@ import { useAuthStore } from '@/lib/store/auth-store';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/solopractice-client';
 import { format } from 'date-fns';
+import { Header } from '@/components/layout/Header';
+import { BottomNav } from '@/components/layout/BottomNav';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { DisclaimerBanner } from '@/components/governance/DisclaimerBanner';
 
 export default function VitalsPage() {
   const router = useRouter();
@@ -74,61 +80,60 @@ export default function VitalsPage() {
   const weightMeasurements = measurements?.filter((m) => m.type === 'weight') || [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => router.back()}
-              className="text-primary-600 hover:text-primary-700"
-            >
-              ← Back
-            </button>
-            <h1 className="text-2xl font-bold text-gray-900">Vital Signs</h1>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary-50/30 pb-20 md:pb-8">
+      <Header title="Vital Signs" showBack />
+      
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
+        {/* Rule 4: Radical Role Clarity - Disclaimer */}
+        <DisclaimerBanner type="standard" className="mb-6" />
+        
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold mb-4">Blood Pressure</h2>
+          {/* Blood Pressure Card */}
+          <Card variant="elevated" className="border-l-4 border-l-red-500">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 mb-1">Blood Pressure</h2>
+                <p className="text-sm text-gray-500">Track your BP readings</p>
+              </div>
+              <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+            </div>
+            
             {!showBPForm ? (
-              <button
+              <Button
+                variant="primary"
+                size="md"
                 onClick={() => setShowBPForm(true)}
-                className="w-full bg-primary-600 text-white py-2 rounded-md hover:bg-primary-700"
+                className="w-full"
               >
                 Record Blood Pressure
-              </button>
+              </Button>
             ) : (
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Systolic
-                  </label>
-                  <input
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Systolic"
                     type="number"
+                    placeholder="120"
                     value={systolic}
                     onChange={(e) => setSystolic(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-4 py-2"
-                    placeholder="120"
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Diastolic
-                  </label>
-                  <input
+                  <Input
+                    label="Diastolic"
                     type="number"
+                    placeholder="80"
                     value={diastolic}
                     onChange={(e) => setDiastolic(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-4 py-2"
-                    placeholder="80"
                   />
                 </div>
-                <div className="flex space-x-2">
-                  <button
+                <div className="flex space-x-3">
+                  <Button
+                    variant="primary"
+                    size="md"
                     onClick={() => {
                       if (systolic && diastolic) {
                         recordBPMutation.mutate({
@@ -137,135 +142,174 @@ export default function VitalsPage() {
                         });
                       }
                     }}
-                    disabled={recordBPMutation.isPending}
-                    className="flex-1 bg-primary-600 text-white py-2 rounded-md hover:bg-primary-700 disabled:opacity-50"
+                    isLoading={recordBPMutation.isPending}
+                    className="flex-1"
                   >
                     Save
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="md"
                     onClick={() => {
                       setShowBPForm(false);
                       setSystolic('');
                       setDiastolic('');
                     }}
-                    className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-50"
+                    className="flex-1"
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
-          </div>
+          </Card>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold mb-4">Weight</h2>
+          {/* Weight Card */}
+          <Card variant="elevated" className="border-l-4 border-l-blue-500">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 mb-1">Weight</h2>
+                <p className="text-sm text-gray-500">Track your weight</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                </svg>
+              </div>
+            </div>
+            
             {!showWeightForm ? (
-              <button
+              <Button
+                variant="primary"
+                size="md"
                 onClick={() => setShowWeightForm(true)}
-                className="w-full bg-primary-600 text-white py-2 rounded-md hover:bg-primary-700"
+                className="w-full"
               >
                 Record Weight
-              </button>
+              </Button>
             ) : (
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Weight (lbs)
-                  </label>
-                  <input
-                    type="number"
-                    value={weight}
-                    onChange={(e) => setWeight(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-4 py-2"
-                    placeholder="150"
-                  />
-                </div>
-                <div className="flex space-x-2">
-                  <button
+                <Input
+                  label="Weight (lbs)"
+                  type="number"
+                  placeholder="150"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                />
+                <div className="flex space-x-3">
+                  <Button
+                    variant="primary"
+                    size="md"
                     onClick={() => {
                       if (weight) {
                         recordWeightMutation.mutate(parseFloat(weight));
                       }
                     }}
-                    disabled={recordWeightMutation.isPending}
-                    className="flex-1 bg-primary-600 text-white py-2 rounded-md hover:bg-primary-700 disabled:opacity-50"
+                    isLoading={recordWeightMutation.isPending}
+                    className="flex-1"
                   >
                     Save
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="md"
                     onClick={() => {
                       setShowWeightForm(false);
                       setWeight('');
                     }}
-                    className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-50"
+                    className="flex-1"
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
-          </div>
+          </Card>
         </div>
 
         {/* Recent Measurements */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Measurements</h2>
-          </div>
-          <div className="p-6">
-            {isLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
-              </div>
-            ) : measurements && measurements.length > 0 ? (
-              <div className="space-y-4">
-                {measurements.slice(0, 10).map((measurement) => (
-                  <div
-                    key={measurement.id}
-                    className="flex justify-between items-center p-4 border border-gray-200 rounded-lg"
-                  >
+        <Card variant="elevated">
+          <h2 className="text-xl font-bold text-gray-900 mb-6">Recent Measurements</h2>
+          
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary-200 border-t-primary-600 mb-4"></div>
+              <p className="text-gray-500">Loading measurements...</p>
+            </div>
+          ) : measurements && measurements.length > 0 ? (
+            <div className="space-y-4">
+              {measurements.slice(0, 10).map((measurement) => (
+                <div
+                  key={measurement.id}
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                      measurement.type === 'blood_pressure' ? 'bg-red-100' : 'bg-blue-100'
+                    }`}>
+                      {measurement.type === 'blood_pressure' ? (
+                        <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                        </svg>
+                      ) : (
+                        <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                        </svg>
+                      )}
+                    </div>
                     <div>
-                      <p className="font-medium text-gray-900 capitalize">
+                      <p className="font-semibold text-gray-900 capitalize">
                         {measurement.type.replace('_', ' ')}
                       </p>
                       <p className="text-sm text-gray-500">
-                        {format(new Date(measurement.timestamp), 'PPp')}
+                        {format(new Date(measurement.timestamp), 'MMM d, yyyy • h:mm a')}
                       </p>
                     </div>
-                    <div className="text-right">
-                      {measurement.type === 'blood_pressure' && (
-                        <p className="font-semibold">
-                          {measurement.value.systolic}/{measurement.value.diastolic} mmHg
-                        </p>
-                      )}
-                      {measurement.type === 'weight' && (
-                        <p className="font-semibold">
-                          {measurement.value.value} {measurement.value.unit}
-                        </p>
-                      )}
-                      {measurement.urgency && (
-                        <span
-                          className={`text-xs px-2 py-1 rounded ${
-                            measurement.urgency === 'red'
-                              ? 'bg-red-100 text-red-800'
-                              : measurement.urgency === 'yellow'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-green-100 text-green-800'
-                          }`}
-                        >
-                          {measurement.urgency.toUpperCase()}
-                        </span>
-                      )}
-                    </div>
                   </div>
-                ))}
+                  <div className="text-right">
+                    {measurement.type === 'blood_pressure' && (
+                      <p className="text-lg font-bold text-gray-900">
+                        {measurement.value.systolic}/{measurement.value.diastolic}
+                        <span className="text-sm font-normal text-gray-500 ml-1">mmHg</span>
+                      </p>
+                    )}
+                    {measurement.type === 'weight' && (
+                      <p className="text-lg font-bold text-gray-900">
+                        {measurement.value.value}
+                        <span className="text-sm font-normal text-gray-500 ml-1">{measurement.value.unit}</span>
+                      </p>
+                    )}
+                    {measurement.urgency && (
+                      <span
+                        className={`inline-block mt-1 text-xs font-medium px-2 py-1 rounded-full ${
+                          measurement.urgency === 'red'
+                            ? 'bg-red-100 text-red-800'
+                            : measurement.urgency === 'yellow'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-green-100 text-green-800'
+                        }`}
+                      >
+                        {measurement.urgency.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
               </div>
-            ) : (
-              <p className="text-gray-500 text-center py-8">No measurements yet</p>
-            )}
-          </div>
-        </div>
+              <p className="text-gray-500">No measurements recorded yet</p>
+            </div>
+          )}
+        </Card>
       </main>
+
+      <BottomNav />
     </div>
   );
 }

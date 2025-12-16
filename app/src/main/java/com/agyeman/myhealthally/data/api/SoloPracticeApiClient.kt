@@ -39,17 +39,26 @@ class SoloPracticeApiClient(private val context: Context) {
         }
 
         // Certificate pinning for production security
-        // Note: In production, replace with actual certificate pin
-        // Get pin using: openssl s_client -connect your-domain.com:443 -showcerts | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
+        // 
+        // To get your certificate pin, run:
+        // openssl s_client -connect your-domain.com:443 -showcerts | \
+        //   openssl x509 -pubkey -noout | \
+        //   openssl pkey -pubin -outform der | \
+        //   openssl dgst -sha256 -binary | \
+        //   openssl enc -base64
+        //
+        // Then replace PRODUCTION_DOMAIN and CERTIFICATE_PIN below
         val certificatePinner = if (BuildConfig.DEBUG) {
             // No pinning in debug mode for development
             CertificatePinner.DEFAULT
         } else {
             // Production: Pin the certificate
-            // TODO: Replace with actual certificate pin from your production server
+            // CONFIGURATION REQUIRED: Replace these values with your production domain and certificate pin
+            val productionDomain = "your-production-domain.com" // TODO: Replace with your actual domain
+            val certificatePin = "sha256/YOUR_CERTIFICATE_PIN_HERE" // TODO: Replace with actual pin from command above
+            
             CertificatePinner.Builder()
-                // Example format - replace with actual pin
-                // .add("your-solopractice-domain.com", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
+                .add(productionDomain, certificatePin)
                 .build()
         }
 
