@@ -9,13 +9,19 @@ export const metadata: Metadata = {
   title: 'MyHealth Ally',
   description: 'Patient engagement platform for continuous care',
   manifest: '/manifest.json',
-  themeColor: '#00bcd4',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'MyHealth Ally',
   },
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#00bcd4',
 };
 
 export default function RootLayout({

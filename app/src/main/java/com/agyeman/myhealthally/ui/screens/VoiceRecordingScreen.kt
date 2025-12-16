@@ -1,6 +1,8 @@
 package com.agyeman.myhealthally.ui.screens
 
 import android.Manifest
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -18,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.agyeman.myhealthally.data.models.solopractice.SymptomScreenResult
+import com.agyeman.myhealthally.data.repositories.AuthRepository
 import com.agyeman.myhealthally.data.repositories.MessagesRepository
 import com.agyeman.myhealthally.managers.AudioRecordingManager
 import com.agyeman.myhealthally.managers.PINManager
@@ -38,6 +41,7 @@ fun VoiceRecordingScreen(navController: NavController) {
     val context = LocalContext.current
     val audioManager = remember { AudioRecordingManager(context) }
     val messagesRepository = remember { MessagesRepository(context) }
+    val authRepository = remember { AuthRepository(context) }
     val pinManager = remember { PINManager(context) }
     val scope = rememberCoroutineScope()
     
@@ -199,7 +203,7 @@ fun VoiceRecordingScreen(navController: NavController) {
             onComplete = { symptomScreen ->
                 showSymptomScreen = false
                 isSending = true
-                sendMessage(recordedFile!!, recordedDuration, symptomScreen, scope, messagesRepository, pinManager) { result ->
+                sendMessage(recordedFile!!, recordedDuration, symptomScreen, scope, messagesRepository, authRepository) { result ->
                     isSending = false
                     result.onSuccess { message ->
                         when (message.status) {
@@ -317,7 +321,11 @@ fun VoiceRecordingScreen(navController: NavController) {
                 Button(
                     onClick = {
                         showEmergencyDialog = false
-                        // TODO: Implement call 911 functionality
+                        // Call 911
+                        val intent = Intent(Intent.ACTION_DIAL).apply {
+                            data = Uri.parse("tel:911")
+                        }
+                        context.startActivity(intent)
                         navController.popBackStack()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = StatusError)
@@ -369,35 +377,55 @@ private fun sendMessage(
     symptomScreen: SymptomScreenResult,
     scope: CoroutineScope,
     messagesRepository: MessagesRepository,
-    pinManager: PINManager,
+    authRepository: AuthRepository,
     onComplete: (Result<com.agyeman.myhealthally.data.models.solopractice.MessageResponse>) -> Unit
 ) {
     scope.launch(Dispatchers.IO) {
-        // Get or create thread (for now, we'll need a default thread ID)
-        // TODO: Get thread ID from navigation args or create/get default thread
-        // For now, get the first thread or create one
-        val threadsResult = messagesRepository.getPatientThreads("patient-id-placeholder")
-        val threadId = threadsResult.getOrNull()?.firstOrNull()?.id 
-            ?: "default-thread-id" // Fallback - should create thread if none exists
-        
-        // Get user ID from stored auth token (or from patient profile)
-        val userId = pinManager.getAuthToken()?.let { 
-            // Extract user ID from token or get from patient profile
-            // For now, using a placeholder - this should be properly implemented
-            "user-id-placeholder"
-        } ?: "user-id-placeholder"
-        
-        // Use the method that returns API response with status
-        val result = messagesRepository.sendVoiceMessageWithStatus(
-            threadId = threadId,
-            senderId = userId,
-            audioFile = audioFile,
-            durationSeconds = durationSeconds,
-            transcript = null,
-            symptomScreen = symptomScreen
-        )
-        
-        onComplete(result)
+        try {
+            // Get user context from JWT token
+            val userContext = authRepository.getUserContext()
+            
+            if (!userContext.isAuthenticated) {
+                onComplete(Result.failure(Exception("User not authenticated")))
+                return@launch
+            }
+            
+            val patientId = userContext.patientId
+                ?: run {
+                    onComplete(Result.failure(Exception("Patient ID not found in token")))
+                    return@launch
+                }
+            
+            val userId = userContext.userId
+                ?: run {
+                    onComplete(Result.failure(Exception("User ID not found in token")))
+                    return@launch
+                }
+            
+            val practiceId = userContext.practiceId
+            
+            // Get or create default thread
+            val threadResult = messagesRepository.getOrCreateDefaultThread(patientId, practiceId)
+            val threadId = threadResult.getOrNull()
+                ?: run {
+                    onComplete(Result.failure(Exception("Failed to get or create thread")))
+                    return@launch
+                }
+            
+            // Use the method that returns API response with status
+            val result = messagesRepository.sendVoiceMessageWithStatus(
+                threadId = threadId,
+                senderId = userId,
+                audioFile = audioFile,
+                durationSeconds = durationSeconds,
+                transcript = null,
+                symptomScreen = symptomScreen
+            )
+            
+            onComplete(result)
+        } catch (e: Exception) {
+            onComplete(Result.failure(e))
+        }
     }
 }
 

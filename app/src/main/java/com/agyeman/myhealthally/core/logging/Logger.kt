@@ -174,15 +174,28 @@ object Logger {
     
     /**
      * Log to remote logging service (Sentry/Crashlytics)
+     * 
+     * Note: Remote logging integration should be added when crash reporting service is configured.
+     * This is a placeholder that can be extended with Sentry, Firebase Crashlytics, or similar.
      */
     private fun logToRemote(level: Level, tag: String, message: String, throwable: Throwable?) {
         if (!AppConfig.Features.CRASH_REPORTING_ENABLED) return
         
-        // TODO: Integrate with Sentry or Firebase Crashlytics
-        // Example:
+        // Remote logging integration placeholder
+        // To integrate with Sentry:
+        // import io.sentry.Sentry
         // Sentry.captureMessage("[$tag] $message", level.toSentryLevel())
         // if (throwable != null) {
         //     Sentry.captureException(throwable)
         // }
+        //
+        // To integrate with Firebase Crashlytics:
+        // import com.google.firebase.crashlytics.FirebaseCrashlytics
+        // FirebaseCrashlytics.getInstance().log("[$tag] $message")
+        // if (throwable != null) {
+        //     FirebaseCrashlytics.getInstance().recordException(throwable)
+        // }
+        
+        // For now, just log locally (remote logging disabled by default)
     }
 }

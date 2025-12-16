@@ -405,3 +405,4 @@ apiClient.sendMessage(...)  // Via Solopractice API
 **Bottom Line:** Keep your native app, fix the integration issues, and add a web provider portal. This gives you the best of both worlds and supports your full business model (native practice + SaaS).
 
 
+

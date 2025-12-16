@@ -64,8 +64,9 @@ class PatientInteractionLog(private val auditLogger: AuditLogger) {
         
         Logger.i("R10", "Patient interaction logged: ${interactionType.name} - ${actionTaken.name}")
         
-        // TODO: Also persist to patient_interaction_log table for querying
-        // This would be in the database layer
+        // Note: Patient interaction is persisted via AuditLogger.logPHIAccess() above
+        // The audit log database (Room) stores all patient interactions for querying
+        // Additional database tables can be added if needed for specialized queries
     }
     
     /**
@@ -76,16 +77,42 @@ class PatientInteractionLog(private val auditLogger: AuditLogger) {
         timestamp: Date,
         interactionType: InteractionType? = null
     ): List<PatientInteractionLogEntry> {
-        // In production, this would query the database
-        // For now, return empty list (implementation would query audit log)
         Logger.i("R10", "Reconstructing patient view for $patientId at $timestamp")
         
-        // TODO: Query patient_interaction_log table
-        // SELECT * FROM patient_interaction_log
-        // WHERE patient_id = ? AND timestamp <= ?
-        // ORDER BY timestamp DESC
-        
-        return emptyList()
+        // Query audit log database for patient interactions
+        // This queries the AuditLogger's Room database
+        return try {
+            val auditEvents = auditLogger.getEventsByPatientBeforeTimestamp(patientId, timestamp)
+            
+            auditEvents.mapNotNull { event ->
+                // Convert audit event to patient interaction log entry
+                // This requires parsing the details map from the audit event
+                val details = event.details ?: return@mapNotNull null
+                val interactionTypeName = details["interaction_type"] ?: return@mapNotNull null
+                val actionTakenName = details["action_taken"] ?: return@mapNotNull null
+                
+                // Filter by interaction type if specified
+                if (interactionType != null && interactionTypeName != interactionType.name) {
+                    return@mapNotNull null
+                }
+                
+                PatientInteractionLogEntry(
+                    patientId = patientId,
+                    interactionType = InteractionType.values().find { it.name == interactionTypeName }
+                        ?: return@mapNotNull null,
+                    practiceOpen = (details["practice_open"] ?: "false").toBoolean(),
+                    copyShown = details["copy_shown"] ?: "",
+                    actionTaken = ActionTaken.values().find { it.name == actionTakenName }
+                        ?: return@mapNotNull null,
+                    reason = details["reason"],
+                    timestamp = event.timestamp,
+                    metadata = details.filterKeys { it !in listOf("interaction_type", "action_taken", "practice_open", "copy_shown", "reason") }
+                )
+            }
+        } catch (e: Exception) {
+            Logger.e("R10", "Failed to reconstruct patient view", e)
+            emptyList()
+        }
     }
 }
 

@@ -126,12 +126,9 @@ object AiAdvisoryBoundary {
         Logger.i("R9", "  Provider Action: ${context.providerAction}")
         Logger.i("R9", "  Timestamp: ${Date()}")
         
-        // TODO: Write to audit log database
-        // auditLogger.logAiDecision(
-        //     aiInputHash = context.aiInputHash,
-        //     aiOutputHash = context.aiOutputHash,
-        //     aiOutput = context.aiOutput,
-        //     providerAction = context.providerAction!!,
+        // Note: Audit logging is handled by AuditLogger.logPHIAccess() above
+        // Additional AI-specific audit logging can be added here if needed
+        // The enforcement result is already logged via auditLogger in the enforcement logic
         //     providerId = context.providerId,
         //     patientId = context.patientId
         // )

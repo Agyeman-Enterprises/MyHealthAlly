@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- No PHI data should be backed up -->
+    <!-- Only app preferences that don't contain sensitive data -->
+</full-backup-content>

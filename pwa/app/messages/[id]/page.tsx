@@ -44,8 +44,12 @@ export default function MessageThreadPage() {
   const handleSend = () => {
     if (!messageText.trim()) return;
 
-    // Check if after hours (simplified - in production, check actual time)
-    const isAfterHours = false; // TODO: Check practice hours
+    // Check if after hours (9 AM - 5 PM Monday-Friday is typical practice hours)
+    // Server will enforce this, but we check client-side to show symptom screen proactively
+    const now = new Date();
+    const hour = now.getHours();
+    const day = now.getDay(); // 0 = Sunday, 6 = Saturday
+    const isAfterHours = day === 0 || day === 6 || hour < 9 || hour >= 17;
 
     if (isAfterHours) {
       setShowSymptomScreen(true);

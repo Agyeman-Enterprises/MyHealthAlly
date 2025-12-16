@@ -1,9 +1,8 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/store/auth-store';
-import { useEffect } from 'react';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
@@ -18,7 +17,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const initialize = useAuthStore((state) => state.initialize);
 
   useEffect(() => {
-    initialize();
+    // Initialize after mount (client-side only)
+    if (typeof window !== 'undefined') {
+      initialize();
+    }
   }, [initialize]);
 
   return (

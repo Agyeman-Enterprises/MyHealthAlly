@@ -52,6 +52,37 @@ class MessagesRepository(private val context: Context) {
                 Result.failure(e)
             }
         }
+    
+    /**
+     * Get or create default thread for current patient
+     * If no threads exist, creates one via Supabase (threads are auto-created by API on first message)
+     */
+    suspend fun getOrCreateDefaultThread(patientId: String, practiceId: String?): Result<String> =
+        withContext(Dispatchers.IO) {
+            try {
+                // Try to get existing threads
+                val threadsResult = getPatientThreads(patientId)
+                val threads = threadsResult.getOrNull()
+                
+                if (threads != null && threads.isNotEmpty()) {
+                    return@withContext Result.success(threads.first().id)
+                }
+                
+                // If no threads exist, create one via Supabase
+                // The API will handle thread creation on first message, but we need a thread ID
+                // So we create it here as a fallback
+                val threadResult = getOrCreateThread(
+                    patientId = patientId,
+                    clinicId = practiceId ?: "default",
+                    participantIds = listOf(patientId),
+                    subject = "Main Conversation"
+                )
+                
+                threadResult.map { it.id }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
 
     /**
      * Get a single message by ID

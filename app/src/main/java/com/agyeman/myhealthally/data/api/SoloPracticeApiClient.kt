@@ -9,6 +9,7 @@ import com.agyeman.myhealthally.data.models.solopractice.*
 import com.agyeman.myhealthally.managers.PINManager
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
+import okhttp3.CertificatePinner
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.HttpException
@@ -37,7 +38,23 @@ class SoloPracticeApiClient(private val context: Context) {
             }
         }
 
+        // Certificate pinning for production security
+        // Note: In production, replace with actual certificate pin
+        // Get pin using: openssl s_client -connect your-domain.com:443 -showcerts | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
+        val certificatePinner = if (BuildConfig.DEBUG) {
+            // No pinning in debug mode for development
+            CertificatePinner.DEFAULT
+        } else {
+            // Production: Pin the certificate
+            // TODO: Replace with actual certificate pin from your production server
+            CertificatePinner.Builder()
+                // Example format - replace with actual pin
+                // .add("your-solopractice-domain.com", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
+                .build()
+        }
+
         val client = OkHttpClient.Builder()
+            .certificatePinner(certificatePinner)
             // Add retry interceptor first (outermost)
             .addInterceptor(RetryInterceptor())
             // Add auth interceptor

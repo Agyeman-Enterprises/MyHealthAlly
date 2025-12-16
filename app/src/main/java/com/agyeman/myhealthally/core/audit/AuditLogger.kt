@@ -138,6 +138,13 @@ class AuditLogger(private val context: Context) {
     }
     
     /**
+     * Get events by patient before a specific timestamp
+     */
+    suspend fun getEventsByPatientBeforeTimestamp(patientId: String, timestamp: Date): List<AuditEvent> {
+        return dao.getEventsByPatientBeforeTimestamp(patientId, timestamp)
+    }
+    
+    /**
      * Clean up old audit logs (older than max age)
      */
     suspend fun cleanupOldLogs() {
@@ -237,6 +244,9 @@ interface AuditDao {
     
     @Query("SELECT * FROM audit_events WHERE user_id = :userId ORDER BY timestamp DESC LIMIT :limit")
     fun getEventsByUser(userId: String, limit: Int): Flow<List<AuditEvent>>
+    
+    @Query("SELECT * FROM audit_events WHERE patient_id = :patientId AND timestamp <= :timestamp ORDER BY timestamp DESC")
+    suspend fun getEventsByPatientBeforeTimestamp(patientId: String, timestamp: Date): List<AuditEvent>
     
     @Query("DELETE FROM audit_events WHERE timestamp < :cutoffDate")
     suspend fun deleteOlderThan(cutoffDate: Date)
