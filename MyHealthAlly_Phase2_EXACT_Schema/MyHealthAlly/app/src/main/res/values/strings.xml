@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MyHealthAlly</string>
+    <string name="tagline">Your Health Ally</string>
+    <string name="provider_name">Ohimaa Medical</string>
+</resources>
