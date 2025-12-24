@@ -209,9 +209,9 @@
 2. ✅ Test and verify all disclaimers (added to all pages)
 3. ✅ Add disclaimer acknowledgment logging (function available)
 
-### **Phase 3: Feature Gaps (Can Defer if Not in MVP)**
-1. ⚠️ Telehealth feature (if not in MVP) - Can defer
-2. ⚠️ Discharge summary feature (if not in MVP) - Can defer
+### **Phase 3: Required Features (Must Implement)**
+1. ❌ Telehealth feature - **REQUIRED** (not deferred)
+2. ❌ Discharge summary feature - **REQUIRED** (not deferred)
 
 ---
 
