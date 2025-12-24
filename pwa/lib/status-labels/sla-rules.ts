@@ -152,7 +152,7 @@ export function getSLAStatusMessage(
       message: `Critical: Exceeded ${formatTimeWindow(rules.maxResponseTimeMs)} maximum response time`,
       isOverdue: true,
       requiresEscalation: true,
-      escalateTo: rules.escalateTo,
+      escalateTo: [...rules.escalateTo],
     };
   }
 
@@ -164,7 +164,7 @@ export function getSLAStatusMessage(
         message: `No response within ${formatTimeWindow(rules.initialResponseWindowMs)}. Escalation required.`,
         isOverdue: true,
         requiresEscalation: true,
-        escalateTo: rules.escalateTo,
+        escalateTo: [...rules.escalateTo],
       };
     }
     
@@ -197,7 +197,7 @@ export function getSLAStatusMessage(
         message: `Overdue: Exceeded ${formatTimeWindow(rules.maxResponseTimeMs)} to respond and close out`,
         isOverdue: true,
         requiresEscalation: true,
-        escalateTo: rules.escalateTo,
+        escalateTo: [...rules.escalateTo],
       };
     }
     
@@ -219,7 +219,7 @@ export function getSLAStatusMessage(
         message: `Overdue: Exceeded ${formatTimeWindow(rules.maxResponseTimeMs)} to close out`,
         isOverdue: true,
         requiresEscalation: true,
-        escalateTo: rules.escalateTo,
+        escalateTo: [...rules.escalateTo],
       };
     }
     
@@ -273,7 +273,7 @@ export function requiresEscalation(
   if (elapsedSinceUpdate >= rules.requiresEscalationAfter) {
     return {
       requires: true,
-      escalateTo: rules.escalateTo,
+      escalateTo: [...rules.escalateTo],
       reason: `Exceeded ${formatTimeWindow(rules.requiresEscalationAfter)} maximum response time`,
     };
   }

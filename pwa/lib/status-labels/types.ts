@@ -98,6 +98,8 @@ export enum UrgencyFlag {
  * Combined status for a submission/item
  */
 export interface SubmissionStatus {
+  isUrgent?: boolean;
+  requiresEscalation?: boolean;
   processingStatus: ProcessingStatus;
   reviewOwnership: ReviewOwnership;
   clinicalActionState: ClinicalActionState;

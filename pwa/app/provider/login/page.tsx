@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { providerApiClient } from '@/lib/api/provider-client';
-import { signInWithSupabase } from '@/lib/supabase/auth';
 import Link from 'next/link';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';

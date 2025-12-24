@@ -132,8 +132,8 @@ export const useAuthStore = create<AuthState>()(
       },
 
       signInWithSupabase: async (email: string, password: string) => {
-        const { data, error } = await signIn(email, password);
-        if (error || !data.session) throw error || new Error('Sign in failed');
+        const result = await signIn(email, password);
+        if (!result.session) throw new Error('Sign in failed');
 
         const user = await getCurrentUser();
         if (!user) throw new Error('User record not found');
@@ -142,8 +142,8 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: true,
           userId: user.id,
           role: user.role as UserRole,
-          accessToken: data.session.access_token,
-          refreshToken: data.session.refresh_token,
+          accessToken: result.session.access_token,
+          refreshToken: result.session.refresh_token,
         });
       },
 
