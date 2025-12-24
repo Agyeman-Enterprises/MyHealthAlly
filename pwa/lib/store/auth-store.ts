@@ -2,11 +2,13 @@
  * Authentication Store
  * 
  * Manages authentication state using Zustand
+ * Now integrates with Supabase Auth
  */
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { apiClient } from '../api/solopractice-client';
+import { signIn, signOut, getCurrentUser, onAuthStateChange } from '../supabase/auth';
 
 export type UserRole = 'patient' | 'provider' | 'admin';
 
@@ -24,6 +26,10 @@ interface AuthState {
   loginProvider: (accessToken: string, refreshToken: string, practiceId: string, userId: string, role: 'provider' | 'admin') => void;
   logout: () => void;
   initialize: () => void;
+  // Supabase Auth methods
+  signInWithSupabase: (email: string, password: string) => Promise<void>;
+  signOutFromSupabase: () => Promise<void>;
+  syncSupabaseAuth: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -62,8 +68,14 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-      logout: () => {
+      logout: async () => {
         apiClient.clearTokens();
+        // Also sign out from Supabase if signed in
+        try {
+          await signOut();
+        } catch (e) {
+          // Ignore if not signed in to Supabase
+        }
         set({
           isAuthenticated: false,
           accessToken: null,
@@ -82,6 +94,80 @@ export const useAuthStore = create<AuthState>()(
         const accessToken = apiClient.getAccessToken();
         if (accessToken) {
           set({ isAuthenticated: true, accessToken });
+        }
+
+        // Also check Supabase auth
+        getCurrentUser().then((user) => {
+          if (user) {
+            set({
+              isAuthenticated: true,
+              userId: user.id,
+              role: user.role as UserRole,
+            });
+          }
+        });
+
+        // Listen to auth changes
+        onAuthStateChange((event, session) => {
+          if (event === 'SIGNED_OUT') {
+            set({
+              isAuthenticated: false,
+              accessToken: null,
+              refreshToken: null,
+              userId: null,
+              role: null,
+            });
+          } else if (event === 'SIGNED_IN' && session) {
+            getCurrentUser().then((user) => {
+              if (user) {
+                set({
+                  isAuthenticated: true,
+                  userId: user.id,
+                  role: user.role as UserRole,
+                });
+              }
+            });
+          }
+        });
+      },
+
+      signInWithSupabase: async (email: string, password: string) => {
+        const { data, error } = await signIn(email, password);
+        if (error || !data.session) throw error || new Error('Sign in failed');
+
+        const user = await getCurrentUser();
+        if (!user) throw new Error('User record not found');
+
+        set({
+          isAuthenticated: true,
+          userId: user.id,
+          role: user.role as UserRole,
+          accessToken: data.session.access_token,
+          refreshToken: data.session.refresh_token,
+        });
+      },
+
+      signOutFromSupabase: async () => {
+        await signOut();
+        set({
+          isAuthenticated: false,
+          accessToken: null,
+          refreshToken: null,
+          userId: null,
+          role: null,
+          patientId: null,
+          practiceId: null,
+        });
+      },
+
+      syncSupabaseAuth: async () => {
+        const user = await getCurrentUser();
+        if (user) {
+          set({
+            isAuthenticated: true,
+            userId: user.id,
+            role: user.role as UserRole,
+          });
         }
       },
     }),

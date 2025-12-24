@@ -2,35 +2,51 @@
 
 import { useRouter, useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { providerApiClient, Patient } from '@/lib/api/provider-client';
+import { getPatient, getMessageThreads, getPatientVitals } from '@/lib/supabase/queries';
+import { getPatientMedications } from '@/lib/supabase/queries-medications';
+import { getPatientLabOrders } from '@/lib/supabase/queries-labs';
+import { getPatientCarePlans } from '@/lib/supabase/queries-careplans';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import type { MessageThread } from '@/lib/supabase/types';
 
 export default function ProviderPatientDetailPage() {
   const router = useRouter();
   const params = useParams();
   const patientId = params.id as string;
 
-  const { data: patient, isLoading } = useQuery<Patient>({
+  const { data: patient, isLoading } = useQuery({
     queryKey: ['provider-patient', patientId],
-    queryFn: () => providerApiClient.getPatient(patientId),
+    queryFn: () => getPatient(patientId),
   });
 
-  const { data: messages } = useQuery({
+  const { data: messageThreads } = useQuery({
     queryKey: ['provider-patient-messages', patientId],
-    queryFn: () => providerApiClient.getPatientMessages(patientId),
+    queryFn: () => getMessageThreads({ patientId, limit: 5 }),
     enabled: !!patientId,
   });
 
   const { data: vitals } = useQuery({
     queryKey: ['provider-patient-vitals', patientId],
-    queryFn: () => providerApiClient.getPatientVitals(patientId),
+    queryFn: () => getPatientVitals(patientId, { limit: 5 }),
     enabled: !!patientId,
   });
 
   const { data: medications } = useQuery({
     queryKey: ['provider-patient-medications', patientId],
-    queryFn: () => providerApiClient.getPatientMedications(patientId),
+    queryFn: () => getPatientMedications(patientId),
+    enabled: !!patientId,
+  });
+
+  const { data: labOrders } = useQuery({
+    queryKey: ['provider-patient-labs', patientId],
+    queryFn: () => getPatientLabOrders(patientId, { limit: 5 }),
+    enabled: !!patientId,
+  });
+
+  const { data: carePlans } = useQuery({
+    queryKey: ['provider-patient-careplans', patientId],
+    queryFn: () => getPatientCarePlans(patientId),
     enabled: !!patientId,
   });
 
@@ -63,15 +79,17 @@ export default function ProviderPatientDetailPage() {
 
       {/* Patient Info */}
       <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">{patient.name}</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          {patient.first_name} {patient.last_name}
+        </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="text-sm font-medium text-gray-500">Email</label>
-            <p className="text-sm text-gray-900">{patient.email || '-'}</p>
+            <p className="text-sm text-gray-900">{patient.users?.email || '-'}</p>
           </div>
           <div>
             <label className="text-sm font-medium text-gray-500">Phone</label>
-            <p className="text-sm text-gray-900">{patient.phone || '-'}</p>
+            <p className="text-sm text-gray-900">{patient.users?.phone || '-'}</p>
           </div>
           {patient.date_of_birth && (
             <div>
@@ -79,20 +97,16 @@ export default function ProviderPatientDetailPage() {
               <p className="text-sm text-gray-900">{format(new Date(patient.date_of_birth), 'PP')}</p>
             </div>
           )}
-          {patient.mrn && (
+          {patient.medical_record_number && (
             <div>
               <label className="text-sm font-medium text-gray-500">MRN</label>
-              <p className="text-sm text-gray-900">{patient.mrn}</p>
+              <p className="text-sm text-gray-900">{patient.medical_record_number}</p>
             </div>
           )}
           <div>
             <label className="text-sm font-medium text-gray-500">Status</label>
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              patient.active
-                ? 'bg-green-100 text-green-800'
-                : 'bg-gray-100 text-gray-800'
-            }`}>
-              {patient.active ? 'Active' : 'Inactive'}
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              Active
             </span>
           </div>
         </div>
@@ -109,14 +123,14 @@ export default function ProviderPatientDetailPage() {
             View All
           </Link>
         </div>
-        {messages && messages.length > 0 ? (
+        {messageThreads && messageThreads.length > 0 ? (
           <ul className="space-y-3">
-            {messages.slice(0, 5).map((message) => (
-              <li key={message.id} className="border-b border-gray-200 pb-3 last:border-0 last:pb-0">
-                <Link href={`/provider/messages/${message.id}`}>
-                  <p className="text-sm text-gray-900">{message.content}</p>
+            {messageThreads.slice(0, 5).map((thread: MessageThread & { patients?: { first_name: string; last_name: string; preferred_name: string | null } }) => (
+              <li key={thread.id} className="border-b border-gray-200 pb-3 last:border-0 last:pb-0">
+                <Link href={`/provider/messages/${thread.id}`}>
+                  <p className="text-sm text-gray-900">{thread.last_message_preview || thread.subject || 'No preview'}</p>
                   <p className="text-xs text-gray-500 mt-1">
-                    {format(new Date(message.created_at), 'PPpp')}
+                    {thread.last_message_at ? format(new Date(thread.last_message_at), 'PPpp') : 'No messages'}
                   </p>
                 </Link>
               </li>
@@ -167,14 +181,53 @@ export default function ProviderPatientDetailPage() {
             {medications.map((med: any) => (
               <li key={med.id} className="border-b border-gray-200 pb-3 last:border-0 last:pb-0">
                 <p className="text-sm font-medium text-gray-900">{med.name}</p>
-                {med.dosage && (
-                  <p className="text-xs text-gray-500">{med.dosage} - {med.frequency}</p>
+                <p className="text-xs text-gray-500">{med.dosage} {med.dosage_unit} - {med.frequency}</p>
+                {!med.is_active && (
+                  <p className="text-xs text-red-500">Discontinued</p>
                 )}
               </li>
             ))}
           </ul>
         ) : (
           <p className="text-sm text-gray-500">No medications</p>
+        )}
+      </div>
+
+      {/* Lab Orders */}
+      <div className="bg-white shadow rounded-lg p-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Lab Orders</h3>
+        {labOrders && labOrders.length > 0 ? (
+          <ul className="space-y-3">
+            {labOrders.map((lab: any) => (
+              <li key={lab.id} className="border-b border-gray-200 pb-3 last:border-0 last:pb-0">
+                <p className="text-sm font-medium text-gray-900">
+                  {lab.lab_tests?.[0]?.test_name || 'Lab Order'}
+                </p>
+                <p className="text-xs text-gray-500">
+                  Status: {lab.status} | Ordered: {format(new Date(lab.ordered_at), 'MMM d, yyyy')}
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-gray-500">No lab orders</p>
+        )}
+      </div>
+
+      {/* Care Plans */}
+      <div className="bg-white shadow rounded-lg p-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Care Plans</h3>
+        {carePlans && carePlans.length > 0 ? (
+          <ul className="space-y-3">
+            {carePlans.map((plan: any) => (
+              <li key={plan.id} className="border-b border-gray-200 pb-3 last:border-0 last:pb-0">
+                <p className="text-sm font-medium text-gray-900">{plan.title}</p>
+                <p className="text-xs text-gray-500">Status: {plan.status}</p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-gray-500">No care plans</p>
         )}
       </div>
     </div>

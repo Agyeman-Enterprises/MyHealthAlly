@@ -2,16 +2,16 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { providerApiClient, Patient } from '@/lib/api/provider-client';
+import { getPatients } from '@/lib/supabase/queries';
 import { format } from 'date-fns';
 import Link from 'next/link';
 
 export default function ProviderPatientsPage() {
   const [search, setSearch] = useState('');
 
-  const { data: patients, isLoading } = useQuery<Patient[]>({
+  const { data: patients, isLoading } = useQuery({
     queryKey: ['provider-patients', search],
-    queryFn: () => providerApiClient.getPatients({
+    queryFn: () => getPatients({
       search: search || undefined,
       limit: 100,
     }),
@@ -73,36 +73,25 @@ export default function ProviderPatientsPage() {
                 <tr key={patient.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{patient.name}</div>
-                      {patient.mrn && (
-                        <div className="text-sm text-gray-500">MRN: {patient.mrn}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {patient.first_name} {patient.last_name}
+                      </div>
+                      {patient.medical_record_number && (
+                        <div className="text-sm text-gray-500">MRN: {patient.medical_record_number}</div>
                       )}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{patient.email || '-'}</div>
-                    <div className="text-sm text-gray-500">{patient.phone || '-'}</div>
+                    <div className="text-sm text-gray-900">{patient.users?.email || '-'}</div>
+                    <div className="text-sm text-gray-500">{patient.users?.phone || '-'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      patient.active
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {patient.active ? 'Active' : 'Inactive'}
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Active
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {patient.last_message_at ? (
-                      <div>
-                        <div>Message: {format(new Date(patient.last_message_at), 'MMM d, yyyy')}</div>
-                        {patient.last_vital_at && (
-                          <div>Vital: {format(new Date(patient.last_vital_at), 'MMM d, yyyy')}</div>
-                        )}
-                      </div>
-                    ) : (
-                      <span>No activity</span>
-                    )}
+                    <span>Last updated: {format(new Date(patient.updated_at), 'MMM d, yyyy')}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <Link

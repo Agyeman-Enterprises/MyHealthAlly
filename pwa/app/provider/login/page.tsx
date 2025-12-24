@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { providerApiClient } from '@/lib/api/provider-client';
+import { signInWithSupabase } from '@/lib/supabase/auth';
 import Link from 'next/link';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -26,6 +27,18 @@ export default function ProviderLoginPage() {
     setLoading(true);
 
     try {
+      // Try Supabase Auth first
+      try {
+        const { signInWithSupabase } = useAuthStore.getState();
+        await signInWithSupabase(email, password);
+        router.push(redirectTo);
+        return;
+      } catch (supabaseError: any) {
+        // If Supabase fails, try SoloPractice API (for backward compatibility)
+        console.log('Supabase auth failed, trying SoloPractice API...', supabaseError);
+      }
+
+      // Fallback to SoloPractice API
       const response = await providerApiClient.login(email, password);
       loginProvider(
         response.access_token,

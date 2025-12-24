@@ -1,15 +1,15 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { providerApiClient, DashboardStats } from '@/lib/api/provider-client';
+import { getDashboardStats } from '@/lib/supabase/queries';
 import { format } from 'date-fns';
 import { Header } from '@/components/layout/Header';
 import { Card } from '@/components/ui/Card';
 
 export default function ProviderDashboardPage() {
-  const { data: stats, isLoading, error } = useQuery<DashboardStats>({
+  const { data: stats, isLoading, error } = useQuery({
     queryKey: ['provider-dashboard-stats'],
-    queryFn: () => providerApiClient.getDashboardStats(),
+    queryFn: () => getDashboardStats(),
     refetchInterval: 30000,
   });
 

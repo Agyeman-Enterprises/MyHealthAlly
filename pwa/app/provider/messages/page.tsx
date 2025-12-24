@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { providerApiClient, ProviderMessage } from '@/lib/api/provider-client';
+import { getMessageThreads, updateMessageStatus } from '@/lib/supabase/queries';
 import { format } from 'date-fns';
 import Link from 'next/link';
 
@@ -10,14 +10,14 @@ export default function ProviderMessagesPage() {
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState({
     status: 'all' as string,
-    urgency: 'all' as string,
+    priority: 'all' as string,
   });
 
-  const { data: messages, isLoading } = useQuery<ProviderMessage[]>({
+  const { data: threads, isLoading } = useQuery({
     queryKey: ['provider-messages', filters],
-    queryFn: () => providerApiClient.getMessages({
+    queryFn: () => getMessageThreads({
       status: filters.status !== 'all' ? filters.status : undefined,
-      urgency: filters.urgency !== 'all' ? filters.urgency : undefined,
+      priority: filters.priority !== 'all' ? filters.priority : undefined,
       limit: 100,
     }),
     refetchInterval: 30000,
@@ -25,32 +25,30 @@ export default function ProviderMessagesPage() {
 
   const updateStatusMutation = useMutation({
     mutationFn: ({ messageId, status }: { messageId: string; status: string }) =>
-      providerApiClient.updateMessageStatus(messageId, status),
+      updateMessageStatus(messageId, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['provider-messages'] });
     },
   });
 
-  const getUrgencyColor = (urgency: string) => {
-    switch (urgency) {
-      case 'red':
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'urgent':
         return 'bg-red-100 text-red-800';
-      case 'yellow':
+      case 'normal':
         return 'bg-yellow-100 text-yellow-800';
-      case 'green':
-        return 'bg-green-100 text-green-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-green-100 text-green-800';
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'new':
+      case 'open':
         return 'bg-blue-100 text-blue-800';
       case 'in_progress':
         return 'bg-yellow-100 text-yellow-800';
-      case 'resolved':
+      case 'closed':
         return 'bg-green-100 text-green-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -70,7 +68,7 @@ export default function ProviderMessagesPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Message Queue</h1>
         <div className="text-sm text-gray-500">
-          {messages?.length || 0} messages
+          {threads?.length || 0} threads
         </div>
       </div>
 
@@ -87,24 +85,23 @@ export default function ProviderMessagesPage() {
               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
             >
               <option value="all">All</option>
-              <option value="new">New</option>
+              <option value="open">Open</option>
               <option value="in_progress">In Progress</option>
-              <option value="resolved">Resolved</option>
+              <option value="closed">Closed</option>
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Urgency
+              Priority
             </label>
             <select
-              value={filters.urgency}
-              onChange={(e) => setFilters({ ...filters, urgency: e.target.value })}
+              value={filters.priority}
+              onChange={(e) => setFilters({ ...filters, priority: e.target.value })}
               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
             >
               <option value="all">All</option>
-              <option value="red">Red (Urgent)</option>
-              <option value="yellow">Yellow (Moderate)</option>
-              <option value="green">Green (Routine)</option>
+              <option value="urgent">Urgent</option>
+              <option value="normal">Normal</option>
             </select>
           </div>
         </div>
@@ -113,51 +110,52 @@ export default function ProviderMessagesPage() {
       {/* Messages List */}
       <div className="bg-white shadow rounded-lg overflow-hidden">
         <ul className="divide-y divide-gray-200">
-          {messages && messages.length > 0 ? (
-            messages.map((message) => (
-              <li key={message.id} className="hover:bg-gray-50">
-                <Link href={`/provider/messages/${message.id}`}>
-                  <div className="px-4 py-4 sm:px-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        {!message.read && (
-                          <div className="w-2 h-2 bg-primary-500 rounded-full"></div>
-                        )}
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            {message.patient_name || `Patient ${message.patient_id.slice(0, 8)}`}
-                          </p>
-                          <p className="text-sm text-gray-500 truncate max-w-md">
-                            {message.content}
-                          </p>
+          {threads && threads.length > 0 ? (
+            threads.map((thread) => {
+              const patientName = thread.patients
+                ? `${thread.patients.first_name} ${thread.patients.last_name}`
+                : `Patient ${thread.patient_id.slice(0, 8)}`;
+              
+              return (
+                <li key={thread.id} className="hover:bg-gray-50">
+                  <Link href={`/provider/messages/${thread.id}`}>
+                    <div className="px-4 py-4 sm:px-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          {thread.clinician_unread_count > 0 && (
+                            <div className="w-2 h-2 bg-primary-500 rounded-full"></div>
+                          )}
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {patientName}
+                            </p>
+                            <p className="text-sm text-gray-500 truncate max-w-md">
+                              {thread.last_message_preview || thread.subject || 'No preview'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(thread.priority)}`}>
+                            {thread.priority.toUpperCase()}
+                          </span>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(thread.status)}`}>
+                            {thread.status}
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            {thread.last_message_at ? format(new Date(thread.last_message_at), 'MMM d, h:mm a') : 'No messages'}
+                          </span>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getUrgencyColor(message.urgency)}`}>
-                          {message.urgency.toUpperCase()}
-                        </span>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(message.status)}`}>
-                          {message.status.replace('_', ' ')}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          {format(new Date(message.created_at), 'MMM d, h:mm a')}
-                        </span>
-                      </div>
+                      {thread.clinician_unread_count > 0 && (
+                        <div className="mt-2 text-xs text-gray-500">
+                          {thread.clinician_unread_count} unread message{thread.clinician_unread_count !== 1 ? 's' : ''}
+                        </div>
+                      )}
                     </div>
-                    {message.assigned_to_name && (
-                      <div className="mt-2 text-xs text-gray-500">
-                        Assigned to: {message.assigned_to_name}
-                      </div>
-                    )}
-                    {message.due_at && (
-                      <div className="mt-1 text-xs text-gray-500">
-                        Due: {format(new Date(message.due_at), 'MMM d, h:mm a')}
-                      </div>
-                    )}
-                  </div>
-                </Link>
-              </li>
-            ))
+                  </Link>
+                </li>
+              );
+            })
           ) : (
             <li className="px-4 py-8 text-center text-gray-500">
               No messages found
