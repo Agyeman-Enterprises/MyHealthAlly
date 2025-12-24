@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getMessageThreads, updateMessageStatus } from '@/lib/supabase/queries';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import { DisclaimerBanner } from '@/components/governance/DisclaimerBanner';
 
 export default function ProviderMessagesPage() {
   const queryClient = useQueryClient();
@@ -65,6 +66,7 @@ export default function ProviderMessagesPage() {
 
   return (
     <div className="space-y-6">
+      <DisclaimerBanner type="standard" className="mb-6" />
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Message Queue</h1>
         <div className="text-sm text-gray-500">

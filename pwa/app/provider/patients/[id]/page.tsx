@@ -9,6 +9,7 @@ import { getPatientCarePlans } from '@/lib/supabase/queries-careplans';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import type { MessageThread } from '@/lib/supabase/types';
+import { DisclaimerBanner } from '@/components/governance/DisclaimerBanner';
 
 export default function ProviderPatientDetailPage() {
   const router = useRouter();
@@ -68,6 +69,7 @@ export default function ProviderPatientDetailPage() {
 
   return (
     <div className="space-y-6">
+      <DisclaimerBanner type="standard" className="mb-6" />
       <div className="flex items-center justify-between">
         <button
           onClick={() => router.back()}

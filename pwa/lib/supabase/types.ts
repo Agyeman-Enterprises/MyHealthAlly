@@ -217,6 +217,12 @@ export interface MessageThread {
   last_message_preview: string | null;
   patient_unread_count: number;
   clinician_unread_count: number;
+  // SLA tracking fields
+  sla_started_at: string | null;
+  sla_deadline: string | null;
+  sla_status: 'pending' | 'active' | 'completed' | 'overdue' | null;
+  sla_initial_response_at: string | null;
+  sla_completed_at: string | null;
   created_at: string;
   updated_at: string;
 }

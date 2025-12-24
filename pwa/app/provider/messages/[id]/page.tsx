@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { providerApiClient, ProviderMessage } from '@/lib/api/provider-client';
 import { format } from 'date-fns';
+import { DisclaimerBanner } from '@/components/governance/DisclaimerBanner';
 
 export default function ProviderMessageDetailPage() {
   const router = useRouter();
@@ -66,8 +67,14 @@ export default function ProviderMessageDetailPage() {
     }
   };
 
+  const handleExport = async (format: 'json' | 'csv') => {
+    const url = `/api/provider/messages/${messageId}/export?format=${format}`;
+    window.open(url, '_blank');
+  };
+
   return (
     <div className="space-y-6">
+      <DisclaimerBanner type="standard" className="mb-6" />
       <div className="flex items-center justify-between">
         <button
           onClick={() => router.back()}
@@ -76,6 +83,20 @@ export default function ProviderMessageDetailPage() {
           ← Back to Messages
         </button>
         <div className="flex items-center space-x-2">
+          <button
+            onClick={() => handleExport('json')}
+            className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+            title="Export timeline for legal defense"
+          >
+            Export JSON
+          </button>
+          <button
+            onClick={() => handleExport('csv')}
+            className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+            title="Export timeline for legal defense"
+          >
+            Export CSV
+          </button>
           <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getUrgencyColor(message.urgency)}`}>
             {message.urgency.toUpperCase()} PRIORITY
           </span>
