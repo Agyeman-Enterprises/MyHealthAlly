@@ -105,18 +105,31 @@
 
 ---
 
-### **BLOCKER #5: Missing Discharge Summary Feature** ❌ MEDIUM
+### **BLOCKER #5: Missing Discharge Summary Feature** ❌ CRITICAL
 
 **CANON Rule:** RT-6  
-**Status:** ❌ **FAIL** (Feature not implemented)  
+**Status:** ❌ **REQUIRED** (Feature not implemented)  
 **Impact:** Cannot test medication reconciliation scenarios
 
 **What's Missing:**
 - ❌ Discharge summary not implemented
 - ❌ Medication reconciliation not tested
 - ❌ Post-discharge care coordination missing
+- ❌ Document upload functionality
+- ❌ Medication conflict detection
+- ❌ Reconciliation work item creation
+- ❌ Provider diff view
+- ❌ Patient communication (no auto-changes)
 
-**Note:** This is a feature gap, not a blocker for initial launch if discharge summaries are not in MVP.
+**Required Implementation:**
+- Document upload for discharge summaries
+- Medication conflict detection
+- Reconciliation work item creation
+- Provider diff view for medication changes
+- Patient communication (no automatic changes)
+- Post-discharge care coordination
+
+**Priority:** 🔴 **CRITICAL** - Must be implemented
 
 ---
 
@@ -178,8 +191,8 @@
 | Client-Side Audit Logging | 🟡 HIGH | ✅ **FIXED** | Incomplete audit trail |
 | Patient Disclaimers | 🟡 HIGH | ✅ **FIXED** | Legal liability |
 | Regulatory Mode | 🟠 MEDIUM | ⚠️ PARTIAL | Regulatory compliance |
-| Telehealth Feature | 🟠 MEDIUM | ❌ FAIL | Feature gap (not in MVP) |
-| Discharge Summary | 🟠 MEDIUM | ❌ FAIL | Feature gap (not in MVP) |
+| Telehealth Feature | 🔴 CRITICAL | ❌ **REQUIRED** | Feature must be implemented |
+| Discharge Summary | 🔴 CRITICAL | ❌ **REQUIRED** | Feature must be implemented |
 
 ---
 
@@ -222,9 +235,20 @@
    ```
 3. **Next:** Test export functionality in message detail pages
 4. **Next:** Integrate audit logging into message sending flows
-5. **Optional:** Complete regulatory mode testing (if needed for launch)
+5. **REQUIRED:** Implement Telehealth feature (RT-4)
+   - Video/audio calls
+   - Scheduling
+   - Kill switch
+   - Failure handling
+   - Terminal state management
+6. **REQUIRED:** Implement Discharge Summary feature (RT-6)
+   - Document upload
+   - Medication conflict detection
+   - Reconciliation work items
+   - Provider diff view
+   - Patient communication
 
-**Status:** ✅ **Critical blockers resolved** - Ready for migration and testing
+**Status:** ✅ **Phase 1 blockers resolved** - Telehealth and Discharge Summary still required
 
-**Recommendation:** Run migration 004, then test export and audit logging functionality before production deployment.
+**Recommendation:** Run migration 004, then implement Telehealth and Discharge Summary features before production deployment.
 
