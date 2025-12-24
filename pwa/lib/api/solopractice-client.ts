@@ -36,6 +36,8 @@ export interface SendMessageRequest {
   body: string;
   symptom_screen?: SymptomScreenResult;
   attachments?: Record<string, any>;
+  detected_language?: string; // Language detected from voice/text (e.g., 'ko', 'es', 'ch')
+  preferred_language?: string; // Patient's preferred language for responses
 }
 
 export interface MessageResponse {

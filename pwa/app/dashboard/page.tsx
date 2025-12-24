@@ -156,6 +156,78 @@ export default function DashboardPage() {
 
           <Link href="/appointments" className="group">
             <Card hover className="text-center p-6 h-full">
+              <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-1">Appointments</h3>
+              <p className="text-xs text-gray-500">Schedule & view</p>
+            </Card>
+          </Link>
+
+          <Link href="/documents" className="group">
+            <Card hover className="text-center p-6 h-full">
+              <div className="w-12 h-12 bg-gradient-success rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-1">Documents</h3>
+              <p className="text-xs text-gray-500">Upload & view</p>
+            </Card>
+          </Link>
+
+          <Link href="/referrals" className="group">
+            <Card hover className="text-center p-6 h-full">
+              <div className="w-12 h-12 bg-gradient-warning rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-1">Referrals</h3>
+              <p className="text-xs text-gray-500">Request specialist</p>
+            </Card>
+          </Link>
+
+          <Link href="/payments" className="group">
+            <Card hover className="text-center p-6 h-full">
+              <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-1">Payments</h3>
+              <p className="text-xs text-gray-500">Make payment</p>
+            </Card>
+          </Link>
+
+          <Link href="/invoices" className="group">
+            <Card hover className="text-center p-6 h-full">
+              <div className="w-12 h-12 bg-gradient-warning rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-1">Invoices</h3>
+              <p className="text-xs text-gray-500">View & pay</p>
+            </Card>
+          </Link>
+
+          <Link href="/intake" className="group">
+            <Card hover className="text-center p-6 h-full">
+              <div className="w-12 h-12 bg-gradient-success rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-1">Intake Forms</h3>
+              <p className="text-xs text-gray-500">Complete paperwork</p>
+            </Card>
+          </Link>
+
+          <Link href="/appointments" className="group">
+            <Card hover className="text-center p-6 h-full">
               <div className="w-12 h-12 bg-gradient-warm rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
                 <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />

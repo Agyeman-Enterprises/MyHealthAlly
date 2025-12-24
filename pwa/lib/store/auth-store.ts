@@ -9,6 +9,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { apiClient } from '../api/solopractice-client';
 import { signIn, signOut, getCurrentUser, onAuthStateChange } from '../supabase/auth';
+import { FirefoxAuthStorage, restoreSession, rotateRefreshToken, logAuthFailure } from '../auth/firefox-fix';
+import { supabase } from '../supabase/client';
 
 export type UserRole = 'patient' | 'provider' | 'admin';
 
@@ -45,6 +47,8 @@ export const useAuthStore = create<AuthState>()(
 
       login: (accessToken, refreshToken, patientId, practiceId, role = 'patient') => {
         apiClient.setTokens(accessToken, refreshToken);
+        // Store in Firefox-safe storage
+        FirefoxAuthStorage.setTokens(accessToken, refreshToken);
         set({
           isAuthenticated: true,
           accessToken,
@@ -70,6 +74,7 @@ export const useAuthStore = create<AuthState>()(
 
       logout: async () => {
         apiClient.clearTokens();
+        FirefoxAuthStorage.clearTokens();
         // Also sign out from Supabase if signed in
         try {
           await signOut();

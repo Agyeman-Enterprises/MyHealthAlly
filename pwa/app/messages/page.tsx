@@ -24,7 +24,45 @@ export default function MessagesPage() {
 
   const { data: threads, isLoading } = useQuery({
     queryKey: ['threads'],
-    queryFn: () => apiClient.getThreads(),
+    queryFn: async () => {
+      // Try Supabase first, fallback to SoloPractice API
+      try {
+        const { data: { user } } = await (await import('@/lib/supabase/client')).supabase.auth.getUser();
+        if (!user) return [];
+
+        const { data: userRecord } = await (await import('@/lib/supabase/client')).supabase
+          .from('users')
+          .select('id, patients(id)')
+          .eq('supabase_auth_id', user.id)
+          .single();
+
+        if (!userRecord || !userRecord.patients) return [];
+
+        const patientId = (userRecord.patients as any).id;
+
+        const { data, error } = await (await import('@/lib/supabase/client')).supabase
+          .from('message_threads')
+          .select('*')
+          .eq('patient_id', patientId)
+          .order('last_message_at', { ascending: false });
+
+        if (error) throw error;
+        if (data && data.length > 0) {
+          return data.map((thread: any) => ({
+            id: thread.id,
+            patient_id: thread.patient_id,
+            subject: thread.subject,
+            last_message_at: thread.last_message_at,
+            created_at: thread.created_at,
+          }));
+        }
+      } catch (e) {
+        console.log('Supabase query failed, trying SoloPractice API...', e);
+      }
+
+      // Fallback to SoloPractice API
+      return apiClient.getThreads();
+    },
     enabled: isAuthenticated,
   });
 

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { apiClient } from '@/lib/api/solopractice-client';
+import { setupPasswordManagerCompatibility, restoreSession, logAuthFailure } from '@/lib/auth/firefox-fix';
 import Link from 'next/link';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -12,9 +13,24 @@ import { Card } from '@/components/ui/Card';
 export default function LoginPage() {
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
+  const signInWithSupabase = useAuthStore((state) => state.signInWithSupabase);
   const [token, setToken] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Setup password manager compatibility
+  useEffect(() => {
+    setupPasswordManagerCompatibility('login-form');
+    
+    // Try to restore session
+    restoreSession().then((restored) => {
+      if (restored) {
+        router.push('/dashboard');
+      }
+    });
+  }, [router]);
 
   const handleActivate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +85,27 @@ export default function LoginPage() {
         </div>
 
         <Card variant="elevated" className="p-8">
-          <form onSubmit={handleActivate} className="space-y-6">
+          <form id="login-form" onSubmit={handleActivate} className="space-y-6" method="post" action="/auth/login">
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="username"
+              label="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your@email.com"
+            />
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              label="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+            />
             <Input
               label="Activation Token"
               type="text"

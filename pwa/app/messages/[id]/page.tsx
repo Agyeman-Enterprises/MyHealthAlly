@@ -27,13 +27,94 @@ export default function MessageThreadPage() {
 
   const { data: messages, isLoading } = useQuery({
     queryKey: ['messages', threadId],
-    queryFn: () => apiClient.getThreadMessages(threadId),
+    queryFn: async () => {
+      // Try Supabase first, fallback to SoloPractice API
+      try {
+        const { data, error } = await (await import('@/lib/supabase/client')).supabase
+          .from('messages')
+          .select('*')
+          .eq('thread_id', threadId)
+          .order('sent_at', { ascending: true });
+
+        if (error) throw error;
+        if (data && data.length > 0) {
+          return data.map((msg: any) => ({
+            id: msg.id,
+            thread_id: msg.thread_id,
+            sender_id: msg.sender_user_id,
+            content: msg.content,
+            created_at: msg.created_at,
+            status: 'sent',
+            read: !!msg.read_at,
+          }));
+        }
+      } catch (e) {
+        console.log('Supabase query failed, trying SoloPractice API...', e);
+      }
+
+      // Fallback to SoloPractice API
+      return apiClient.getThreadMessages(threadId);
+    },
     enabled: isAuthenticated && !!threadId,
   });
 
   const sendMessageMutation = useMutation({
-    mutationFn: (request: { body: string; symptom_screen?: SymptomScreenResult }) =>
-      apiClient.sendMessage(threadId, request),
+    mutationFn: async (request: { body: string; symptom_screen?: SymptomScreenResult }) => {
+      // Add language information for translation
+      const { getLanguageForAPI, getDetectedLanguage } = await import('@/lib/i18n/language-store');
+      const languageRequest = {
+        ...request,
+        preferred_language: getLanguageForAPI(),
+        detected_language: getDetectedLanguage() || undefined,
+      };
+      // Try Supabase first, fallback to SoloPractice API
+      try {
+        const { data: { user } } = await (await import('@/lib/supabase/client')).supabase.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        const { data: userRecord } = await (await import('@/lib/supabase/client')).supabase
+          .from('users')
+          .select('id')
+          .eq('supabase_auth_id', user.id)
+          .single();
+
+        if (!userRecord) throw new Error('User record not found');
+
+        const { data: message, error } = await (await import('@/lib/supabase/client')).supabase
+          .from('messages')
+          .insert({
+            thread_id: threadId,
+            sender_user_id: userRecord.id,
+            sender_role: 'patient',
+            type: 'text',
+            content: request.body,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Update thread last_message_at
+        await (await import('@/lib/supabase/client')).supabase
+          .from('message_threads')
+          .update({ last_message_at: new Date().toISOString() })
+          .eq('id', threadId);
+
+        return {
+          id: message.id,
+          thread_id: message.thread_id,
+          sender_id: message.sender_user_id,
+          content: message.content,
+          created_at: message.created_at,
+          status: 'sent',
+          read: false,
+        };
+      } catch (e) {
+        console.log('Supabase insert failed, trying SoloPractice API...', e);
+        // Fallback to SoloPractice API
+        return apiClient.sendMessage(threadId, languageRequest);
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['messages', threadId] });
       queryClient.invalidateQueries({ queryKey: ['threads'] });
