@@ -254,17 +254,17 @@ export async function getAlerts(options?: {
 // ============================================
 
 export async function getDashboardStats(clinicianId?: string) {
-  // Get message counts
+  // Get message counts with last_message_at for SLA calculations
   const { data: messages, error: messagesError } = await supabase
     .from('message_threads')
-    .select('status, priority, clinician_unread_count');
+    .select('status, priority, clinician_unread_count, last_message_at');
 
   if (messagesError) throw messagesError;
 
   // Get task counts
   const { data: tasks, error: tasksError } = await supabase
     .from('tasks')
-    .select('status, priority, category, due_at');
+    .select('status, priority, category, due_at, patient_id, created_at');
 
   if (tasksError) throw tasksError;
 
@@ -274,6 +274,15 @@ export async function getDashboardStats(clinicianId?: string) {
     .select('id, created_at');
 
   if (patientsError) throw patientsError;
+
+  // Get recent vitals for active patient calculation
+  const { data: vitals, error: vitalsError } = await supabase
+    .from('vitals')
+    .select('patient_id, measured_at')
+    .order('measured_at', { ascending: false })
+    .limit(1000);
+
+  if (vitalsError) throw vitalsError;
 
   // Calculate stats
   // Calculate overdue messages based on last_message_at and SLA rules
@@ -318,16 +327,22 @@ export async function getDashboardStats(clinicianId?: string) {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   
+  // Get messages with patient_id for active patient calculation
+  const { data: messagesWithPatients } = await supabase
+    .from('message_threads')
+    .select('patient_id, last_message_at')
+    .limit(1000);
+  
   const activePatients = patients?.filter((p) => {
     // Check if patient has recent activity
-    const hasRecentMessages = messages?.some((m) => 
-      m.patient_id === p.id && new Date(m.last_message_at) > thirtyDaysAgo
+    const hasRecentMessages = messagesWithPatients?.some((m) => 
+      m.patient_id === p.id && m.last_message_at && new Date(m.last_message_at) > thirtyDaysAgo
     );
     const hasRecentVitals = vitals?.some((v) => 
       v.patient_id === p.id && new Date(v.measured_at) > thirtyDaysAgo
     );
     const hasRecentTasks = tasks?.some((t) => 
-      t.patient_id === p.id && new Date(t.created_at) > thirtyDaysAgo
+      t.patient_id === p.id && t.created_at && new Date(t.created_at) > thirtyDaysAgo
     );
     return hasRecentMessages || hasRecentVitals || hasRecentTasks;
   }).length || 0;
