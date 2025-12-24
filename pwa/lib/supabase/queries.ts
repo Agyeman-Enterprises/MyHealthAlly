@@ -276,11 +276,24 @@ export async function getDashboardStats(clinicianId?: string) {
   if (patientsError) throw patientsError;
 
   // Calculate stats
+  // Calculate overdue messages based on last_message_at and SLA rules
+  const now = new Date();
+  const overdueMessages = messages?.filter((m) => {
+    if (!m.last_message_at || m.status === 'closed') return false;
+    const lastMessageDate = new Date(m.last_message_at);
+    const hoursSinceLastMessage = (now.getTime() - lastMessageDate.getTime()) / (1000 * 60 * 60);
+    
+    // Simple SLA: urgent > 4 hours, normal > 24 hours
+    if (m.priority === 'urgent' && hoursSinceLastMessage > 4) return true;
+    if (m.priority === 'normal' && hoursSinceLastMessage > 24) return true;
+    return false;
+  }).length || 0;
+
   const messageStats = {
     total: messages?.length || 0,
     new: messages?.filter((m) => m.status === 'open' && m.clinician_unread_count > 0).length || 0,
     in_progress: messages?.filter((m) => m.status === 'in_progress').length || 0,
-    overdue: 0, // Calculate based on due dates if available
+    overdue: overdueMessages,
     by_urgency: {
       red: messages?.filter((m) => m.priority === 'urgent').length || 0,
       yellow: messages?.filter((m) => m.priority === 'normal').length || 0,
@@ -301,9 +314,27 @@ export async function getDashboardStats(clinicianId?: string) {
     },
   };
 
+  // Active patients: have activity in last 30 days (messages, vitals, or tasks)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  const activePatients = patients?.filter((p) => {
+    // Check if patient has recent activity
+    const hasRecentMessages = messages?.some((m) => 
+      m.patient_id === p.id && new Date(m.last_message_at) > thirtyDaysAgo
+    );
+    const hasRecentVitals = vitals?.some((v) => 
+      v.patient_id === p.id && new Date(v.measured_at) > thirtyDaysAgo
+    );
+    const hasRecentTasks = tasks?.some((t) => 
+      t.patient_id === p.id && new Date(t.created_at) > thirtyDaysAgo
+    );
+    return hasRecentMessages || hasRecentVitals || hasRecentTasks;
+  }).length || 0;
+
   const patientStats = {
     total: patients?.length || 0,
-    active: patients?.length || 0, // TODO: Define active criteria
+    active: activePatients,
     new_this_month: patients?.filter((p) => {
       const created = new Date(p.created_at);
       const now = new Date();
@@ -311,10 +342,29 @@ export async function getDashboardStats(clinicianId?: string) {
     }).length || 0,
   };
 
+  // Calculate actual SLA metrics
+  const totalItems = (messages?.length || 0) + (tasks?.length || 0);
+  const overdueItems = overdueMessages + (tasks?.filter((t) => 
+    t.due_at && new Date(t.due_at) < now && t.status !== 'completed'
+  ).length || 0);
+  
+  // At risk: items due within next 2 hours
+  const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+  const atRiskItems = tasks?.filter((t) => 
+    t.due_at && 
+    new Date(t.due_at) > now && 
+    new Date(t.due_at) <= twoHoursFromNow &&
+    t.status !== 'completed'
+  ).length || 0;
+
+  const onTimePercentage = totalItems > 0 
+    ? Math.round(((totalItems - overdueItems) / totalItems) * 100)
+    : 100;
+
   const slaStats = {
-    on_time: 95, // TODO: Calculate actual SLA
-    at_risk: 3,
-    overdue: 2,
+    on_time: onTimePercentage,
+    at_risk: atRiskItems,
+    overdue: overdueItems,
   };
 
   return {
