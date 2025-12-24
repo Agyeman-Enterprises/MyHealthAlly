@@ -254,10 +254,10 @@ export async function getAlerts(options?: {
 // ============================================
 
 export async function getDashboardStats(clinicianId?: string) {
-  // Get message counts with last_message_at for SLA calculations
+  // Get message counts with last_message_at and patient_id for SLA calculations
   const { data: messages, error: messagesError } = await supabase
     .from('message_threads')
-    .select('status, priority, clinician_unread_count, last_message_at');
+    .select('status, priority, clinician_unread_count, last_message_at, patient_id');
 
   if (messagesError) throw messagesError;
 
@@ -327,15 +327,9 @@ export async function getDashboardStats(clinicianId?: string) {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   
-  // Get messages with patient_id for active patient calculation
-  const { data: messagesWithPatients } = await supabase
-    .from('message_threads')
-    .select('patient_id, last_message_at')
-    .limit(1000);
-  
   const activePatients = patients?.filter((p) => {
     // Check if patient has recent activity
-    const hasRecentMessages = messagesWithPatients?.some((m) => 
+    const hasRecentMessages = messages?.some((m) => 
       m.patient_id === p.id && m.last_message_at && new Date(m.last_message_at) > thirtyDaysAgo
     );
     const hasRecentVitals = vitals?.some((v) => 
