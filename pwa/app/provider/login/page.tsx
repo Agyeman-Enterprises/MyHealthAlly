@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { providerApiClient } from '@/lib/api/provider-client';
@@ -12,6 +12,7 @@ import { Card } from '@/components/ui/Card';
 export default function ProviderLoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { isAuthenticated, role } = useAuthStore();
   const loginProvider = useAuthStore((state) => state.loginProvider);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,6 +20,25 @@ export default function ProviderLoginPage() {
   const [loading, setLoading] = useState(false);
 
   const redirectTo = searchParams.get('redirect') || '/provider/dashboard';
+
+  // If already authenticated, redirect away from login page
+  useEffect(() => {
+    if (isAuthenticated && (role === 'provider' || role === 'admin')) {
+      router.push(redirectTo);
+    }
+  }, [isAuthenticated, role, router, redirectTo]);
+
+  // Don't render login form if already authenticated
+  if (isAuthenticated && (role === 'provider' || role === 'admin')) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,8 +74,10 @@ export default function ProviderLoginPage() {
     }
   };
 
-  const handleTestProviderLogin = () => {
-    if (process.env.NODE_ENV === 'development') {
+  const handleTestProviderLogin = async () => {
+    console.log('Test Provider Login clicked');
+    try {
+      // Update auth state
       loginProvider(
         'dev-test-provider-access-token',
         'dev-test-provider-refresh-token',
@@ -63,12 +85,51 @@ export default function ProviderLoginPage() {
         'dev-test-provider-user-id',
         'provider'
       );
-      router.push(redirectTo);
+      console.log('Auth state updated');
+      
+      // Wait a moment for Zustand persist to save to localStorage
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Verify auth state was saved
+      const authState = useAuthStore.getState();
+      console.log('Auth state after update:', {
+        isAuthenticated: authState.isAuthenticated,
+        role: authState.role,
+        userId: authState.userId
+      });
+      
+      console.log('Redirecting to:', redirectTo);
+      
+      // Double-check localStorage was saved
+      const stored = localStorage.getItem('auth-storage');
+      console.log('LocalStorage auth-storage:', stored);
+      
+      // Force immediate redirect - don't wait
+      console.log('Executing redirect immediately...');
+      // Use window.location.href with full URL to ensure it works
+      const fullUrl = window.location.origin + redirectTo;
+      console.log('Full redirect URL:', fullUrl);
+      console.log('About to set window.location.href...');
+      
+      // Force redirect - try multiple methods
+      try {
+        window.location.href = fullUrl;
+        console.log('window.location.href set successfully');
+      } catch (e) {
+        console.error('Failed to set window.location.href:', e);
+        // Fallback
+        window.location.replace(fullUrl);
+      }
+    } catch (error) {
+      console.error('Test login error:', error);
+      setError('Failed to login. Please try again.');
     }
   };
 
-  const handleTestAdminLogin = () => {
-    if (process.env.NODE_ENV === 'development') {
+  const handleTestAdminLogin = async () => {
+    console.log('Test Admin Login clicked');
+    try {
+      // Update auth state
       loginProvider(
         'dev-test-admin-access-token',
         'dev-test-admin-refresh-token',
@@ -76,7 +137,44 @@ export default function ProviderLoginPage() {
         'dev-test-admin-user-id',
         'admin'
       );
-      router.push(redirectTo);
+      console.log('Auth state updated');
+      
+      // Wait a moment for Zustand persist to save to localStorage
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Verify auth state was saved
+      const authState = useAuthStore.getState();
+      console.log('Auth state after update:', {
+        isAuthenticated: authState.isAuthenticated,
+        role: authState.role,
+        userId: authState.userId
+      });
+      
+      console.log('Redirecting to:', redirectTo);
+      
+      // Double-check localStorage was saved
+      const stored = localStorage.getItem('auth-storage');
+      console.log('LocalStorage auth-storage:', stored);
+      
+      // Force immediate redirect - don't wait
+      console.log('Executing redirect immediately...');
+      // Use window.location.href with full URL to ensure it works
+      const fullUrl = window.location.origin + redirectTo;
+      console.log('Full redirect URL:', fullUrl);
+      console.log('About to set window.location.href...');
+      
+      // Force redirect - try multiple methods
+      try {
+        window.location.href = fullUrl;
+        console.log('window.location.href set successfully');
+      } catch (e) {
+        console.error('Failed to set window.location.href:', e);
+        // Fallback
+        window.location.replace(fullUrl);
+      }
+    } catch (error) {
+      console.error('Test login error:', error);
+      setError('Failed to login. Please try again.');
     }
   };
 
@@ -101,6 +199,8 @@ export default function ProviderLoginPage() {
         <Card variant="elevated" className="p-8">
           <form onSubmit={handleLogin} className="space-y-6">
             <Input
+              id="provider-email"
+              name="email"
               label="Email Address"
               type="email"
               placeholder="provider@example.com"
@@ -116,6 +216,8 @@ export default function ProviderLoginPage() {
             />
 
             <Input
+              id="provider-password"
+              name="password"
               label="Password"
               type="password"
               placeholder="Enter your password"
@@ -153,29 +255,27 @@ export default function ProviderLoginPage() {
           </form>
 
           {/* DEV ONLY: Test login buttons */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mt-6 pt-6 border-t border-gray-200 space-y-3">
-              <Button
-                variant="outline"
-                size="md"
-                onClick={handleTestProviderLogin}
-                className="w-full"
-              >
-                🧪 Test Provider Login (Dev Only)
-              </Button>
-              <Button
-                variant="outline"
-                size="md"
-                onClick={handleTestAdminLogin}
-                className="w-full"
-              >
-                🧪 Test Admin Login (Dev Only)
-              </Button>
-              <p className="text-xs text-center text-gray-500">
-                Development mode only - bypasses authentication
-              </p>
-            </div>
-          )}
+          <div className="mt-6 pt-6 border-t border-gray-200 space-y-3">
+            <Button
+              variant="outline"
+              size="md"
+              onClick={handleTestProviderLogin}
+              className="w-full"
+            >
+              🧪 Test Provider Login (Dev Only)
+            </Button>
+            <Button
+              variant="outline"
+              size="md"
+              onClick={handleTestAdminLogin}
+              className="w-full"
+            >
+              🧪 Test Admin Login (Dev Only)
+            </Button>
+            <p className="text-xs text-center text-gray-500">
+              Development mode only - bypasses authentication
+            </p>
+          </div>
 
           {/* Patient login link */}
           <div className="mt-6 text-center">

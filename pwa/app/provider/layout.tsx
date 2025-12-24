@@ -15,24 +15,39 @@ export default function ProviderLayout({
   const { isAuthenticated, role, logout } = useAuthStore();
 
   useEffect(() => {
-    // Strong security: Check authentication and role
-    if (!isAuthenticated) {
-      router.push('/provider/login?redirect=' + encodeURIComponent(pathname));
+    // Skip auth check on login page
+    if (pathname === '/provider/login') {
       return;
     }
-    
-    // Strong security: Enforce role-based access control
-    if (role !== 'provider' && role !== 'admin') {
-      // User is authenticated but doesn't have provider/admin role
-      // This prevents patients from accessing provider routes
-      router.push('/provider/login?redirect=' + encodeURIComponent(pathname));
-      return;
-    }
+
+    // Wait a moment for Zustand to hydrate from localStorage
+    const checkAuth = setTimeout(() => {
+      // Strong security: Check authentication and role
+      if (!isAuthenticated) {
+        router.push('/provider/login?redirect=' + encodeURIComponent(pathname));
+        return;
+      }
+      
+      // Strong security: Enforce role-based access control
+      if (role !== 'provider' && role !== 'admin') {
+        // User is authenticated but doesn't have provider/admin role
+        // This prevents patients from accessing provider routes
+        router.push('/provider/login?redirect=' + encodeURIComponent(pathname));
+        return;
+      }
+    }, 100); // Small delay to allow Zustand hydration
+
+    return () => clearTimeout(checkAuth);
   }, [isAuthenticated, role, router, pathname]);
 
-  // Strong security: Don't render anything if not authorized
-  if (!isAuthenticated || (role !== 'provider' && role !== 'admin')) {
+  // Strong security: Don't render anything if not authorized (except login page)
+  if (pathname !== '/provider/login' && (!isAuthenticated || (role !== 'provider' && role !== 'admin'))) {
     return null;
+  }
+
+  // Don't show layout header/nav on login page
+  if (pathname === '/provider/login') {
+    return <>{children}</>;
   }
 
   const isActive = (path: string) => pathname === path;

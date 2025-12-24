@@ -19,7 +19,7 @@ export function Input({
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor={props.id} className="block text-sm font-medium text-gray-700 mb-2">
           {label}
         </label>
       )}
@@ -30,6 +30,8 @@ export function Input({
           </div>
         )}
         <input
+          id={props.id}
+          name={props.name}
           className={cn(
             'w-full px-4 py-3 border-2 rounded-xl transition-all duration-200 outline-none',
             'focus:border-primary-500 focus:ring-4 focus:ring-primary-100',
