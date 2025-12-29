@@ -4,7 +4,7 @@
  */
 
 // Enums
-export type UserRole = 'patient' | 'clinician' | 'care_coordinator' | 'admin';
+export type UserRole = 'patient' | 'clinician' | 'provider' | 'care_coordinator' | 'admin';
 export type UserStatus = 'active' | 'inactive' | 'pending_verification' | 'suspended';
 export type Language = 'en' | 'ch' | 'chu' | 'mh' | 'es' | 'fil';
 export type Gender = 'male' | 'female' | 'other' | 'prefer_not_to_say';

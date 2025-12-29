@@ -1,294 +1,96 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useAuthStore } from '@/lib/store/auth-store';
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api/solopractice-client';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { DisclaimerBanner } from '@/components/governance/DisclaimerBanner';
-import { format } from 'date-fns';
+import { DisclaimerBanner } from '@/components/ui/DisclaimerBanner';
+
+const quickActions = [
+  { name: 'Messages', description: 'Contact care team', href: '/messages', icon: '💬', color: 'from-primary-400 to-primary-500' },
+  { name: 'Vitals', description: 'Record health data', href: '/vitals', icon: '📊', color: 'from-sky-400 to-sky-500' },
+  { name: 'Medications', description: 'View prescriptions', href: '/medications', icon: '💊', color: 'from-pink-400 to-pink-500' },
+  { name: 'Appointments', description: 'Schedule & view', href: '/appointments', icon: '📅', color: 'from-amber-400 to-amber-500' },
+  { name: 'Lab Results', description: 'View test results', href: '/labs', icon: '🔬', color: 'from-green-400 to-green-500' },
+  { name: 'Care Plan', description: 'Goals & activities', href: '/care-plan', icon: '📋', color: 'from-purple-400 to-purple-500' },
+  { name: 'Documents', description: 'Upload & view', href: '/documents', icon: '📄', color: 'from-blue-400 to-blue-500' },
+  { name: 'Referrals', description: 'Request specialist', href: '/referrals', icon: '🏥', color: 'from-red-400 to-red-500' },
+  { name: 'Billing', description: 'Invoices & payments', href: '/billing', icon: '💳', color: 'from-emerald-400 to-emerald-500' },
+  { name: 'Intake Forms', description: 'Complete paperwork', href: '/intake', icon: '📝', color: 'from-orange-400 to-orange-500' },
+  { name: 'Education', description: 'Health resources', href: '/education', icon: '📚', color: 'from-indigo-400 to-indigo-500' },
+  { name: 'Settings', description: 'Preferences', href: '/settings', icon: '⚙️', color: 'from-gray-400 to-gray-500' },
+];
 
 export default function DashboardPage() {
   const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const role = useAuthStore((state) => state.role);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/auth/login');
-      return;
-    }
-    
-    if (role === 'provider' || role === 'admin') {
-      router.push('/provider/dashboard');
-      return;
-    }
-  }, [isAuthenticated, role, router]);
-
-  const { data: threads } = useQuery({
-    queryKey: ['threads'],
-    queryFn: () => apiClient.getThreads(),
-    enabled: isAuthenticated,
-  });
-
-  const { data: medications } = useQuery({
-    queryKey: ['medications'],
-    queryFn: () => apiClient.getMedications(),
-    enabled: isAuthenticated,
-  });
+  const { isAuthenticated, user } = useAuthStore();
 
   if (!isAuthenticated) {
+    router.push('/auth/login');
     return null;
   }
 
-  const messageCount = threads?.length || 0;
-  const medicationCount = medications?.length || 0;
-  const recentThreads = threads?.slice(0, 3) || [];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary-50/30 pb-20 md:pb-8">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
       <Header />
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
-        {/* Rule 4: Radical Role Clarity - Disclaimer */}
-        <DisclaimerBanner type="standard" className="mb-6" />
-        
-        {/* Welcome Section */}
+
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <DisclaimerBanner />
+
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl font-bold text-navy-600">
             Welcome back! 👋
-          </h2>
-          <p className="text-gray-600">
-            Here's what's happening with your health today
-          </p>
+          </h1>
+          <p className="text-gray-600">What would you like to do today?</p>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card variant="gradient" hover className="border-l-4 border-l-primary-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-primary-700 mb-1">Messages</p>
-                <p className="text-3xl font-bold text-primary-900">{messageCount}</p>
-                <p className="text-xs text-primary-600 mt-1">Active conversations</p>
+        {/* Quick Actions Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+          {quickActions.map((action) => (
+            <Card
+              key={action.name}
+              hover
+              className="text-center p-4 cursor-pointer"
+              onClick={() => router.push(action.href)}
+            >
+              <div className={`w-12 h-12 bg-gradient-to-br ${action.color} rounded-xl flex items-center justify-center mx-auto mb-3 text-2xl shadow-sm`}>
+                {action.icon}
               </div>
-              <div className="w-12 h-12 bg-white/50 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-              </div>
-            </div>
-          </Card>
-
-          <Card variant="elevated" hover className="border-l-4 border-l-success-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Medications</p>
-                <p className="text-3xl font-bold text-gray-900">{medicationCount}</p>
-                <p className="text-xs text-gray-500 mt-1">Active prescriptions</p>
-              </div>
-              <div className="w-12 h-12 bg-success-50 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-success-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                </svg>
-              </div>
-            </div>
-          </Card>
-
-          <Card variant="elevated" hover className="border-l-4 border-l-warning-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Tasks</p>
-                <p className="text-3xl font-bold text-gray-900">0</p>
-                <p className="text-xs text-gray-500 mt-1">Pending items</p>
-              </div>
-              <div className="w-12 h-12 bg-warning-50 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-warning-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-              </div>
-            </div>
-          </Card>
+              <h3 className="font-semibold text-navy-600">{action.name}</h3>
+              <p className="text-xs text-gray-500 mt-1">{action.description}</p>
+            </Card>
+          ))}
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Link href="/messages" className="group">
-            <Card hover className="text-center p-6 h-full">
-              <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-1">Messages</h3>
-              <p className="text-xs text-gray-500">View conversations</p>
-            </Card>
-          </Link>
-
-          <Link href="/vitals" className="group">
-            <Card hover className="text-center p-6 h-full">
-              <div className="w-12 h-12 bg-gradient-success rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-1">Vitals</h3>
-              <p className="text-xs text-gray-500">Record health data</p>
-            </Card>
-          </Link>
-
-          <Link href="/medications" className="group">
-            <Card hover className="text-center p-6 h-full">
-              <div className="w-12 h-12 bg-gradient-purple rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                </svg>
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-1">Medications</h3>
-              <p className="text-xs text-gray-500">Manage prescriptions</p>
-            </Card>
-          </Link>
-
-          <Link href="/appointments" className="group">
-            <Card hover className="text-center p-6 h-full">
-              <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-1">Appointments</h3>
-              <p className="text-xs text-gray-500">Schedule & view</p>
-            </Card>
-          </Link>
-
-          <Link href="/documents" className="group">
-            <Card hover className="text-center p-6 h-full">
-              <div className="w-12 h-12 bg-gradient-success rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-1">Documents</h3>
-              <p className="text-xs text-gray-500">Upload & view</p>
-            </Card>
-          </Link>
-
-          <Link href="/referrals" className="group">
-            <Card hover className="text-center p-6 h-full">
-              <div className="w-12 h-12 bg-gradient-warning rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-1">Referrals</h3>
-              <p className="text-xs text-gray-500">Request specialist</p>
-            </Card>
-          </Link>
-
-          <Link href="/payments" className="group">
-            <Card hover className="text-center p-6 h-full">
-              <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-1">Payments</h3>
-              <p className="text-xs text-gray-500">Make payment</p>
-            </Card>
-          </Link>
-
-          <Link href="/invoices" className="group">
-            <Card hover className="text-center p-6 h-full">
-              <div className="w-12 h-12 bg-gradient-warning rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-1">Invoices</h3>
-              <p className="text-xs text-gray-500">View & pay</p>
-            </Card>
-          </Link>
-
-          <Link href="/intake" className="group">
-            <Card hover className="text-center p-6 h-full">
-              <div className="w-12 h-12 bg-gradient-success rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-1">Intake Forms</h3>
-              <p className="text-xs text-gray-500">Complete paperwork</p>
-            </Card>
-          </Link>
-
-          <Link href="/appointments" className="group">
-            <Card hover className="text-center p-6 h-full">
-              <div className="w-12 h-12 bg-gradient-warm rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-1">Appointments</h3>
-              <p className="text-xs text-gray-500">Schedule visits</p>
-            </Card>
-          </Link>
-        </div>
-
-        {/* Recent Messages */}
-        <Card variant="elevated">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900">Recent Messages</h2>
-            <Link href="/messages">
-              <Button variant="ghost" size="sm">View All</Button>
-            </Link>
+        {/* Emergency Banner */}
+        <Card className="bg-red-50 border-red-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-red-800">Need Emergency Help?</h3>
+              <p className="text-sm text-red-600">For medical emergencies, call 911 immediately</p>
+            </div>
+            <a
+              href="tel:911"
+              className="px-4 py-2 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+              Call 911
+            </a>
           </div>
-          
-          {recentThreads.length > 0 ? (
-            <div className="space-y-4">
-              {recentThreads.map((thread) => (
-                <Link
-                  key={thread.id}
-                  href={`/messages/${thread.id}`}
-                  className="block"
-                >
-                  <Card hover className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 mb-1">
-                          {thread.subject || 'Message Thread'}
-                        </h3>
-                        {thread.last_message_at && (
-                          <p className="text-sm text-gray-500">
-                            {format(new Date(thread.last_message_at), 'MMM d, h:mm a')}
-                          </p>
-                        )}
-                      </div>
-                      <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </div>
-                  </Card>
-                </Link>
-              ))}
+        </Card>
+
+        {/* Office Hours */}
+        <Card className="mt-4 bg-primary-50 border-primary-200">
+          <div className="flex items-start gap-3">
+            <div className="text-xl">🕐</div>
+            <div>
+              <h3 className="font-semibold text-navy-600">Office Hours: Mon-Fri 9AM-5PM (ChST)</h3>
+              <p className="text-sm text-gray-600">Messages sent outside office hours will be responded to on the next business day.</p>
             </div>
-          ) : (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-              </div>
-              <p className="text-gray-500 mb-4">No messages yet</p>
-              <Link href="/messages">
-                <Button variant="primary" size="sm">Send your first message</Button>
-              </Link>
-            </div>
-          )}
+          </div>
         </Card>
       </main>
 

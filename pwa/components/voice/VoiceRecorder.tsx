@@ -7,7 +7,7 @@ import { MicDiagnostics } from './MicDiagnostics';
 import { createCaptureSessionStateMachine } from '@/lib/state-machines/reducers';
 
 interface VoiceRecorderProps {
-  onRecordingComplete: (audioBlob: Blob, duration: number) => void;
+  onRecordingComplete: (audioBlob: Blob, duration: number, transcript: string) => void;
   onCancel?: () => void;
   maxDuration?: number; // in seconds
 }
@@ -21,22 +21,106 @@ export function VoiceRecorder({
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [liveTranscript, setLiveTranscript] = useState('');
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const finalTranscriptRef = useRef('');
   const stateMachineRef = useRef(createCaptureSessionStateMachine('IDLE'));
 
   useEffect(() => {
     return () => {
       // Cleanup on unmount
       stopRecording();
+      stopSpeechRecognition();
     };
   }, []);
+
+  const startSpeechRecognition = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      console.log('Speech recognition not supported');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setIsTranscribing(true);
+    };
+
+    recognition.onresult = (event: any) => {
+      let interimTranscript = '';
+      let finalTranscript = finalTranscriptRef.current;
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript + ' ';
+          finalTranscriptRef.current = finalTranscript;
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+
+      setLiveTranscript(finalTranscript + interimTranscript);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.log('Speech recognition error:', event.error);
+      if (event.error === 'no-speech') {
+        // This is normal, just means silence
+      } else if (event.error === 'aborted') {
+        // User stopped or we stopped it
+      } else {
+        setError(`Speech recognition: ${event.error}`);
+      }
+    };
+
+    recognition.onend = () => {
+      setIsTranscribing(false);
+      // Restart if still recording
+      if (isRecording && recognitionRef.current) {
+        try {
+          recognition.start();
+        } catch (e) {
+          // Already started
+        }
+      }
+    };
+
+    recognitionRef.current = recognition;
+    
+    try {
+      recognition.start();
+    } catch (e) {
+      console.log('Could not start speech recognition:', e);
+    }
+  };
+
+  const stopSpeechRecognition = () => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {
+        // Already stopped
+      }
+      recognitionRef.current = null;
+    }
+  };
 
   const startRecording = async () => {
     try {
       setError(null);
+      setLiveTranscript('');
+      finalTranscriptRef.current = '';
       
       // Check permissions first
       if (navigator.permissions) {
@@ -100,10 +184,16 @@ export function VoiceRecorder({
         // State machine: Complete
         stateMachineRef.current.transition('COMPLETE');
         
+        // Stop speech recognition
+        stopSpeechRecognition();
+        
         // Use the same mime type for blob, or fallback
         const blobType = mimeType || 'audio/mp4';
         const audioBlob = new Blob(audioChunksRef.current, { type: blobType });
-        onRecordingComplete(audioBlob, duration);
+        
+        // Pass the transcript along with the audio
+        const finalText = finalTranscriptRef.current.trim() || liveTranscript.trim();
+        onRecordingComplete(audioBlob, duration, finalText);
         cleanup();
       };
 
@@ -116,6 +206,9 @@ export function VoiceRecorder({
       mediaRecorder.start();
       setIsRecording(true);
       setDuration(0);
+
+      // Start real-time speech recognition
+      startSpeechRecognition();
 
       // Start duration timer
       intervalRef.current = setInterval(() => {
@@ -194,8 +287,21 @@ export function VoiceRecorder({
             <p className="text-sm text-gray-500 mt-2">
               {isRecording ? 'Recording...' : 'Ready to record'}
             </p>
+            {isTranscribing && (
+              <p className="text-xs text-primary-600 mt-1">🎤 Live transcription active</p>
+            )}
           </div>
         </div>
+
+        {/* Live Transcript Preview */}
+        {(isRecording || liveTranscript) && (
+          <div className="bg-gray-50 rounded-xl p-4 text-left max-h-32 overflow-y-auto">
+            <p className="text-xs font-medium text-gray-500 mb-1">Live Transcript:</p>
+            <p className="text-sm text-gray-700">
+              {liveTranscript || <span className="text-gray-400 italic">Speak now...</span>}
+            </p>
+          </div>
+        )}
 
         <div className="flex justify-center space-x-4">
           {!isRecording ? (
@@ -212,7 +318,7 @@ export function VoiceRecorder({
             </Button>
           ) : (
             <Button
-              variant="destructive"
+              variant="danger"
               size="lg"
               onClick={stopRecording}
               className="px-8"
@@ -247,7 +353,6 @@ export function VoiceRecorder({
             stream={stream}
             isRecording={isRecording}
             error={error}
-            onTestMic={handleTestMic}
           />
         </div>
       </div>

@@ -14,7 +14,8 @@ export async function GET(
   try {
     // Check authentication
     const user = await getCurrentUser();
-    if (!user || (user.role !== 'provider' && user.role !== 'admin')) {
+    const allowedRoles = ['provider', 'admin', 'clinician'];
+    if (!user || !allowedRoles.includes(user.role as string)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -86,10 +87,10 @@ export async function GET(
         },
       });
     } else if (format === 'pdf') {
-      // For PDF, we'd need a PDF library - for now return JSON
-      // TODO: Implement PDF generation
+      // PDF export requires additional library (e.g., pdfkit, jsPDF)
+      // Returning 501 Not Implemented is appropriate for future feature
       return NextResponse.json(
-        { error: 'PDF export not yet implemented' },
+        { error: 'PDF export not yet implemented. Please use JSON or CSV format.' },
         { status: 501 }
       );
     } else {

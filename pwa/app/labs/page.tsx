@@ -1,0 +1,92 @@
+'use client';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/lib/store/auth-store';
+import { Header } from '@/components/layout/Header';
+import { BottomNav } from '@/components/layout/BottomNav';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+
+const mockLabs = [
+  { id: '1', name: 'Comprehensive Metabolic Panel', date: '2024-12-20', status: 'completed', hasAbnormal: false },
+  { id: '2', name: 'Hemoglobin A1C', date: '2024-12-20', status: 'completed', hasAbnormal: true },
+  { id: '3', name: 'Lipid Panel', date: '2024-12-15', status: 'completed', hasAbnormal: false },
+  { id: '4', name: 'Thyroid Function Test', date: '2024-12-10', status: 'completed', hasAbnormal: false },
+];
+
+export default function LabsPage() {
+  const router = useRouter();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const [labs, setLabs] = useState(mockLabs);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setTimeout(() => setLoading(false), 500);
+  }, []);
+
+  if (!isAuthenticated) { router.push('/auth/login'); return null; }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
+      <Header />
+      <main className="max-w-4xl mx-auto px-4 py-8">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-navy-600">Lab Results</h1>
+          <p className="text-gray-600">View your laboratory test results</p>
+        </div>
+
+        <Card className="mb-6 bg-primary-50 border-primary-200">
+          <p className="text-sm text-navy-600">
+            💡 <strong>Note:</strong> Lab results are typically available 1-3 days after your test. 
+            For questions about your results, please <a href="/messages/new" className="text-primary-600 hover:underline">message your care team</a>.
+          </p>
+        </Card>
+
+        {loading && (
+          <Card className="text-center py-12">
+            <div className="animate-spin w-8 h-8 border-4 border-primary-300 border-t-transparent rounded-full mx-auto mb-4" />
+            <p className="text-gray-500">Loading lab results...</p>
+          </Card>
+        )}
+
+        {!loading && labs.length > 0 && (
+          <div className="space-y-3">
+            {labs.map((lab) => (
+              <Card key={lab.id} hover className="cursor-pointer" onClick={() => router.push(`/labs/${lab.id}`)}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-navy-600">{lab.name}</h3>
+                      {lab.hasAbnormal && <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full">Review Needed</span>}
+                    </div>
+                    <p className="text-sm text-gray-500">{new Date(lab.date).toLocaleDateString()}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs px-2 py-1 rounded-full ${lab.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                      {lab.status === 'completed' ? '✓ Ready' : 'Pending'}
+                    </span>
+                    <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {!loading && labs.length === 0 && (
+          <Card className="text-center py-12">
+            <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-3xl">🔬</span>
+            </div>
+            <h3 className="text-lg font-semibold text-navy-600 mb-2">No lab results yet</h3>
+            <p className="text-gray-600 mb-6">Your lab results will appear here once available</p>
+            <Button variant="outline" onClick={() => router.push('/messages/new')}>Message Your Care Team</Button>
+          </Card>
+        )}
+      </main>
+      <BottomNav />
+    </div>
+  );
+}

@@ -1,81 +1,54 @@
 'use client';
-
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/lib/store/auth-store';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
-import Link from 'next/link';
 
-export default function LegalSettingsPage() {
+const documents = [
+  { name: 'Terms of Service', updated: 'December 1, 2024', href: '#terms' },
+  { name: 'Privacy Policy', updated: 'December 1, 2024', href: '#privacy' },
+  { name: 'HIPAA Notice of Privacy Practices', updated: 'November 15, 2024', href: '#hipaa' },
+  { name: 'Consent for Telehealth Services', updated: 'October 1, 2024', href: '#telehealth' },
+  { name: 'Patient Rights & Responsibilities', updated: 'October 1, 2024', href: '#rights' },
+];
+
+export default function LegalPage() {
+  const router = useRouter();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  if (!isAuthenticated) { router.push('/auth/login'); return null; }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary-50/30 pb-20 md:pb-8">
-      <Header title="Legal & Privacy" showBack />
-      
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Card variant="elevated" className="p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Legal Documents</h2>
-          
-          <div className="space-y-4">
-            <Link href="/legal/hipaa">
-              <Card hover className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">HIPAA Notice of Privacy Practices</h3>
-                    <p className="text-sm text-gray-500 mt-1">How we protect and use your health information</p>
-                  </div>
-                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </Card>
-            </Link>
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
+      <Header />
+      <main className="max-w-2xl mx-auto px-4 py-8">
+        <h1 className="text-2xl font-bold text-navy-600 mb-1">Terms & Privacy</h1>
+        <p className="text-gray-600 mb-6">Legal documents and policies</p>
 
-            <Link href="/legal/privacy">
-              <Card hover className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Privacy Policy</h3>
-                    <p className="text-sm text-gray-500 mt-1">How we collect, use, and protect your information</p>
-                  </div>
-                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+        <Card className="divide-y divide-gray-100 p-0">
+          {documents.map((doc) => (
+            <a key={doc.name} href={doc.href} className="block p-4 hover:bg-primary-50 transition-colors first:rounded-t-xl last:rounded-b-xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium text-navy-600">{doc.name}</h3>
+                  <p className="text-sm text-gray-500">Last updated: {doc.updated}</p>
                 </div>
-              </Card>
-            </Link>
+                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </div>
+            </a>
+          ))}
+        </Card>
 
-            <Link href="/legal/financial-privacy">
-              <Card hover className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Financial Privacy Policy</h3>
-                    <p className="text-sm text-gray-500 mt-1">How we handle your payment and billing information</p>
-                  </div>
-                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </Card>
-            </Link>
-
-            <Link href="/legal/terms">
-              <Card hover className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Terms of Service</h3>
-                    <p className="text-sm text-gray-500 mt-1">Terms and conditions for using MyHealth Ally</p>
-                  </div>
-                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </Card>
-            </Link>
-          </div>
+        <Card className="mt-6 bg-primary-50 border-primary-200">
+          <p className="text-sm text-navy-600">
+            By using MyHealth Ally, you agree to these terms and acknowledge our privacy practices. 
+            For questions about these policies, please <a href="/settings/contact" className="text-primary-600 hover:underline">contact us</a>.
+          </p>
         </Card>
       </main>
-
       <BottomNav />
     </div>
   );
 }
-

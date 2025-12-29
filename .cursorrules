@@ -1,3 +1,359 @@
+At the start of each development.  You Will
+ENTER CANON COMPLIANCE MODE.
+
+Task: Add canon guardrails exactly as specified:
+- .cursorrules
+- docs/CANON_CODE_GOVERNANCE.md
+- src/domain/enums.ts
+- src/domain/types.ts
+- src/env.ts (zod env validation)
+- .eslintrc.cjs with banned shortcuts
+- scripts/guard-jsx-shaping.mjs
+- package.json scripts: verify pipeline
+- .github/workflows/verify.yml
+
+Hard constraints:
+- No TODOs/stubs.
+- No `as any`, no non-null `!`, no process.env direct usage.
+- Must make `npm run verify` pass.
+
+Deliverables:
+- Full file contents + paths
+- Evidence: paste CI output or `npm run verify` output.
+- If blocked, report BLOCKED with exact failing file/line and proposed fix.
+
+Do not do feature work. Only guardrails + fixes required to pass verify.
+
+1) Cursor enforcement files
+A) .cursorrules (root of repo)
+
+Create a file named .cursorrules with this content:
+
+# Enterprise Canon — Cursor Rules (Hard Enforcement)
+# You are an execution compiler. No narrative. No "later". No TODOs/stubs.
+
+## ABSOLUTE PROHIBITIONS
+- Never use comments as types or constraints.
+- Never introduce string literals where an enum/type exists.
+- Never duplicate enums/types across files. One source only.
+- Never silence TS with: `as any`, `as unknown`, non-null `!`, or unsafe defaults for env vars.
+- Never add TODO/FIXME/STUB/placeholder notes. No "fix later".
+- Never inline data-shaping inside JSX: no .map/.filter/.reduce in return JSX.
+- Never claim verification without tests + build output.
+
+## REQUIRED STRUCTURE
+- All shared enums/types MUST live in:
+  - src/domain/enums.ts
+  - src/domain/types.ts
+- UI imports shared enums/types ONLY from src/domain/* (no redefinition).
+- Env vars validated via src/env.ts (zod). No `process.env.X || ""`.
+
+## STOP CONDITION
+If you cannot comply exactly, output:
+BLOCKED
+Reason:
+Canon rule violated:
+What is missing:
+No further work allowed.
+
+## OUTPUT REQUIREMENTS
+When changing code, always provide:
+- file paths changed
+- exact diffs or full file content
+- commands CI runs (npm run verify)
+
+B) docs/CANON_CODE_GOVERNANCE.md
+
+Create docs/CANON_CODE_GOVERNANCE.md:
+
+# Canon Code Governance (Enterprise)
+
+This repo is governed by strict correctness rules:
+- Single-source enums/types in src/domain/*
+- Strict TS compiler flags
+- No unsafe env defaults
+- No inline JSX data shaping
+- No TODO/FIXME/STUB
+- No `as any` / `as unknown` / non-null assertions `!`
+
+CI runs `npm run verify` and will fail on violations.
+
+2) Repo enforcement code (drop-in)
+A) src/domain/enums.ts
+
+Create (or enforce) src/domain/enums.ts:
+
+// src/domain/enums.ts
+// Single source of truth for ALL enums used across frontend/backend.
+
+export const GradeLevel = [
+  "K1","K2","K3",
+  "G1","G2","G3","G4","G5","G6",
+  "G7","G8","G9","G10","G11","G12",
+] as const;
+export type GradeLevel = typeof GradeLevel[number];
+
+export const Subject = [
+  "Mathematics",
+  "Language Arts",
+  "Science",
+  "Social Studies & Civics",
+  "Creative Arts",
+  "Physical Education & Health",
+  "Digital Literacy & Technology",
+] as const;
+export type Subject = typeof Subject[number];
+
+export const UnitStatus = ["upcoming","in_progress","completed"] as const;
+export type UnitStatus = typeof UnitStatus[number];
+
+export const ActivityType = [
+  "instruction",
+  "guided_practice",
+  "independent_practice",
+  "discussion",
+  "assessment",
+  "lab",
+  "project",
+] as const;
+export type ActivityType = typeof ActivityType[number];
+
+export const TeacherTier = ["0","1","2","3","4"] as const;
+export type TeacherTier = typeof TeacherTier[number];
+
+
+Rule: if any project has different subject naming, do not fork in UI—change here once and propagate.
+
+B) src/domain/types.ts
+
+Create src/domain/types.ts:
+
+// src/domain/types.ts
+import type { ActivityType, UnitStatus, TeacherTier } from "./enums";
+
+export type UUID = string;
+
+export type Course = {
+  id: UUID;
+  grade: string;
+  subject: string;
+  academic_year: string;
+};
+
+export type Semester = {
+  id: UUID;
+  course_id: UUID;
+  label: "Semester 1" | "Semester 2";
+  order: 1 | 2;
+};
+
+export type Unit = {
+  id: UUID;
+  semester_id: UUID;
+  strand_id: UUID | null;
+  title: string;
+  description: string | null;
+  week_start: number | null;
+  week_end: number | null;
+  lesson_count: number;
+  status: UnitStatus;
+};
+
+export type Lesson = {
+  id: UUID;
+  unit_id: UUID;
+  title: string;
+  order: number;
+  objectives: string[];
+};
+
+export type Activity = {
+  id: UUID;
+  lesson_id: UUID;
+  type: ActivityType;
+};
+
+export type ContentBlock = {
+  id: UUID;
+  activity_id: UUID;
+  type: "text" | "image" | "audio" | "video" | "interactive" | "dataset";
+  payload: unknown;
+};
+
+export type TierOverlay = {
+  id: UUID;
+  target_type: "lesson" | "activity" | "content_block";
+  target_id: UUID;
+  tier: TeacherTier;
+  guidance: string;
+};
+
+
+(Keep this minimal; expand per app.)
+
+C) src/env.ts (env validation — no more || "")
+
+Create src/env.ts:
+
+import { z } from "zod";
+
+const EnvSchema = z.object({
+  NODE_ENV: z.enum(["development", "test", "production"]).optional(),
+  // Add per-app required keys here (Stripe/Resend/Supabase/etc.)
+  // Example:
+  // STRIPE_SECRET_KEY: z.string().min(1),
+});
+
+export const env = EnvSchema.parse(process.env);
+
+
+Rule: apps must import env and use env.X. No direct process.env.
+
+3) TypeScript strictness enforcement
+tsconfig.json (or tsconfig.base.json)
+
+Ensure these are set (add if missing):
+
+{
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noFallthroughCasesInSwitch": true
+  }
+}
+
+4) ESLint rules that stop “AI shortcuts”
+A) Install (once per repo)
+
+Add dev deps:
+
+eslint
+
+@typescript-eslint/parser
+
+@typescript-eslint/eslint-plugin
+
+B) .eslintrc.cjs
+
+Create/replace .eslintrc.cjs:
+
+module.exports = {
+  root: true,
+  parser: "@typescript-eslint/parser",
+  plugins: ["@typescript-eslint"],
+  extends: ["next/core-web-vitals", "plugin:@typescript-eslint/recommended"],
+  rules: {
+    // Ban the classic AI escape hatches
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/no-non-null-assertion": "error",
+    "@typescript-eslint/consistent-type-imports": ["error", { prefer: "type-imports" }],
+    "@typescript-eslint/no-unnecessary-type-assertion": "error",
+
+    // Kill TODO/FIXME
+    "no-warning-comments": ["error", { terms: ["todo", "fixme", "hack", "later"], location: "anywhere" }],
+
+    // Ban direct process.env usage (force src/env.ts)
+    "no-restricted-properties": [
+      "error",
+      { object: "process", property: "env", message: "Use src/env.ts (validated env) instead of process.env" }
+    ]
+  },
+};
+
+5) “No data shaping in JSX” guard (pragmatic)
+
+Full AST enforcement is heavy, so we do a strong practical guard:
+
+A) Add scripts/guard-jsx-shaping.mjs
+
+Create scripts/guard-jsx-shaping.mjs:
+
+import fs from "node:fs";
+import path from "node:path";
+
+const ROOT = process.cwd();
+const exts = new Set([".tsx"]);
+const banned = [".map(", ".filter(", ".reduce("];
+
+function walk(dir) {
+  const out = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name.startsWith(".") || entry.name === "node_modules" || entry.name === ".next") continue;
+    const p = path.join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...walk(p));
+    else if (exts.has(path.extname(entry.name))) out.push(p);
+  }
+  return out;
+}
+
+let violations = [];
+for (const file of walk(path.join(ROOT, "src"))) {
+  const text = fs.readFileSync(file, "utf8");
+  // crude but effective: block in JSX return blocks
+  // If you need exceptions, refactor into precomputed variables.
+  if (text.includes("return (")) {
+    for (const b of banned) {
+      if (text.includes("return (") && text.includes(b)) {
+        violations.push(`${file}: contains ${b} inside a component that returns JSX`);
+      }
+    }
+  }
+}
+
+if (violations.length) {
+  console.error("JSX shaping guard failed:\n" + violations.map(v => "- " + v).join("\n"));
+  process.exit(1);
+}
+console.log("JSX shaping guard passed.");
+
+
+This forces Cursor to move map/filter/reduce out of JSX (into variables/services).
+
+6) Package scripts: one command to rule them all
+package.json scripts
+
+Add:
+
+{
+  "scripts": {
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "guard:jsx": "node scripts/guard-jsx-shaping.mjs",
+    "verify": "npm run lint && npm run typecheck && npm run guard:jsx && npm run build"
+  }
+}
+
+
+Your rule: no PR merges unless npm run verify passes.
+
+7) GitHub Actions CI (prevents regressions automatically)
+.github/workflows/verify.yml
+
+Create:
+
+name: verify
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - run: npm ci
+      - run: npm run verify
 # ============================================================================
 # CURSOR RULES - SENIOR TECHNICAL ADVISOR MODE
 # Complete Development Standards for Production Healthcare/Fintech Apps

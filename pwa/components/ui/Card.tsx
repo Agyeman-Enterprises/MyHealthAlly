@@ -1,39 +1,33 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
+'use client';
 
-interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'elevated' | 'outlined' | 'gradient';
-  hover?: boolean;
+interface CardProps {
   children: React.ReactNode;
+  className?: string;
+  variant?: 'default' | 'elevated' | 'gradient' | 'outline';
+  hover?: boolean;
+  onClick?: () => void;
 }
 
-export function Card({
+export function Card({ 
+  children, 
+  className = '', 
   variant = 'default',
-  hover = false,
-  className,
-  children,
-  ...props
+  hover = false, 
+  onClick 
 }: CardProps) {
-  const baseStyles = 'rounded-2xl p-6 transition-all duration-300';
-  
-  const variants = {
-    default: 'bg-white shadow-md border border-gray-100',
+  const variantStyles = {
+    default: 'bg-white shadow-sm border border-gray-100',
     elevated: 'bg-white shadow-xl border border-gray-100',
-    outlined: 'bg-white border-2 border-gray-200',
-    gradient: 'bg-gradient-to-br from-primary-50 to-primary-100 border border-primary-200',
+    gradient: 'bg-gradient-to-br from-primary-50 to-white border border-primary-100',
+    outline: 'bg-white border-2 border-gray-200',
   };
-  
-  const hoverStyles = hover ? 'hover:shadow-xl hover:-translate-y-1 cursor-pointer' : '';
-  
+
   return (
     <div
-      className={cn(
-        baseStyles,
-        variants[variant],
-        hoverStyles,
-        className
-      )}
-      {...props}
+      className={`rounded-2xl p-6 ${variantStyles[variant]} ${
+        hover ? 'hover:shadow-md hover:border-primary-200 transition-all cursor-pointer' : ''
+      } ${className}`}
+      onClick={onClick}
     >
       {children}
     </div>

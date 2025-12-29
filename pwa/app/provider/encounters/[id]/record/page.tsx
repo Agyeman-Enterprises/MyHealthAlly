@@ -77,7 +77,7 @@ export default function RecordPage() {
     });
 
     if (!gating.allowed) {
-      setError(gating.reason);
+      setError(gating.reason || 'Unable to create note');
       return;
     }
 

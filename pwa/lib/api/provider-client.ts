@@ -176,22 +176,37 @@ export class ProviderApiClient {
     );
   }
 
-  private handleError(error: AxiosError): SoloPracticeApiError {
-    if (error.response) {
-      const status = error.response.status;
-      const data = error.response.data as any;
+  private handleError(error: AxiosError | Error | unknown): SoloPracticeApiError {
+    // Handle null/undefined
+    if (!error) {
+      return new SoloPracticeApiError('Unknown error occurred', 0);
+    }
+
+    // Handle AxiosError with response
+    if (error && typeof error === 'object' && 'response' in error && (error as AxiosError).response) {
+      const axiosError = error as AxiosError;
+      const status = axiosError.response?.status || 0;
+      const data = axiosError.response?.data as any;
 
       return new SoloPracticeApiError(
-        data?.message || 'API request failed',
+        data?.message || data?.error || 'API request failed',
         status,
         data?.code
       );
     }
 
-    return new SoloPracticeApiError(
-      error.message || 'Network error',
-      0
-    );
+    // Handle Error with message
+    if (error instanceof Error) {
+      return new SoloPracticeApiError(error.message || 'Network error', 0);
+    }
+
+    // Handle string errors
+    if (typeof error === 'string') {
+      return new SoloPracticeApiError(error, 0);
+    }
+
+    // Fallback
+    return new SoloPracticeApiError('Network error', 0);
   }
 
   // Authentication

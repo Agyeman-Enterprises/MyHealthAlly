@@ -143,3 +143,11 @@ export function getDetectedLanguage(): LanguageCode | null {
   return useLanguageStore.getState().detectedLanguage;
 }
 
+/**
+ * Set detected language from voice/text input
+ * Called after transcription detects the language
+ */
+export function setDetectedLanguage(lang: LanguageCode | null): void {
+  useLanguageStore.getState().setDetectedLanguage(lang);
+}
+

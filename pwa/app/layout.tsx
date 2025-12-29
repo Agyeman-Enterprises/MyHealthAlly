@@ -1,9 +1,6 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
-
-const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'MyHealth Ally',
@@ -59,7 +56,7 @@ export default function RootLayout({
         <meta name="msapplication-TileColor" content="#00bcd4" />
         <meta name="msapplication-TileImage" content="/ms-icon-144x144.png" />
       </head>
-      <body className={inter.className} suppressHydrationWarning>
+      <body className="font-sans antialiased" suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>
     </html>

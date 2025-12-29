@@ -1,210 +1,91 @@
-# MyHealth Ally PWA
+# MHA Complete Fix Package
 
-**Progressive Web App for Patient and Provider Portal**
+## What's Fixed
 
-## 🎯 Overview
+This package fixes ALL the TypeScript build errors by updating:
 
-This PWA provides a web-based interface for:
-- **Patients:** Access messages, vitals, medications, appointments
-- **Providers:** Manage patients, view messages, handle workflows
-- **Integration:** Works seamlessly with native MyHealth Ally app and Solopractice backend
+1. **`lib/store/auth-store.ts`** - Complete auth store with all missing properties:
+   - `role` (patient/provider/admin)
+   - `userId` (computed from user.id)
+   - `patientId` (computed from user.patientId)
+   - `practiceId` (computed from user.practiceId)
+   - `loginProvider()` function
+   - `signInWithSupabase()` function
+   - `accessToken` and `refreshToken`
 
-## 🏗️ Architecture
+2. **`components/ui/Card.tsx`** - Added `variant` prop:
+   - `default` - Standard card
+   - `elevated` - Higher shadow
+   - `gradient` - Lavender gradient background
+   - `outline` - Thicker border
 
-```
-PWA (Next.js)
-├── Patient Portal
-│   ├── Messages
-│   ├── Vitals Tracking
-│   ├── Medications
-│   └── Appointments
-├── Provider Portal (Future)
-│   ├── Dashboard
-│   ├── Message Queue
-│   └── Patient Management
-└── Shared
-    ├── API Client (Solopractice)
-    ├── Authentication
-    └── State Management
-```
+3. **`components/layout/Header.tsx`** - Added props:
+   - `title` - Custom page title
+   - `showBack` - Shows back arrow button
+   - `backHref` - Optional custom back destination
 
-## 🔌 Integration
+4. **`components/ui/Button.tsx`** - Fixed with all variants:
+   - `primary`, `secondary`, `outline`, `ghost`, `danger`
+   - `isLoading` prop support
 
-### Solopractice Backend
-- Uses same API endpoints as native app
-- All CG rules (R1-R12) enforced server-side
-- JWT authentication
-- Same data models and responses
+5. **`app/messages/voice/page.tsx`** - Fixed auth usage:
+   - Changed `authStore.userId` → `storeUser?.id`
+   - Changed `authStore.patientId` → `storeUser?.patientId`
+   - Fixed Header usage to use `showBack` prop
 
-### Native App Compatibility
-- Same authentication flow
-- Same API endpoints
-- Shared data via Solopractice backend
-- Consistent user experience
+## Installation
 
-## 🚀 Getting Started
+Copy files to your pwa folder:
 
-### Prerequisites
-- Node.js 18+
-- npm or yarn
+```powershell
+# From your pwa directory:
 
-### Installation
+# 1. Auth Store
+Copy-Item "mha-complete-fixes\lib\store\auth-store.ts" -Destination "lib\store\" -Force
 
-```bash
-cd pwa
-npm install
-```
+# 2. UI Components  
+Copy-Item "mha-complete-fixes\components\ui\Card.tsx" -Destination "components\ui\" -Force
+Copy-Item "mha-complete-fixes\components\ui\Button.tsx" -Destination "components\ui\" -Force
 
-### Environment Variables
+# 3. Layout Components
+Copy-Item "mha-complete-fixes\components\layout\Header.tsx" -Destination "components\layout\" -Force
 
-Create `.env.local`:
-
-```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:3000
+# 4. Pages
+Copy-Item "mha-complete-fixes\app\messages\voice\page.tsx" -Destination "app\messages\voice\" -Force
 ```
 
-### Development
+## After Installation
 
-```bash
+```powershell
+# Delete build cache and rebuild
+rm .next -Recurse -Force
+npm run build
 npm run dev
 ```
 
-Open [http://localhost:3001](http://localhost:3001)
+## Verification
 
-### Build
+After rebuild, verify:
+- [ ] Build completes without TypeScript errors
+- [ ] Login/logout works
+- [ ] Provider login works
+- [ ] Voice message page loads
+- [ ] Cards show with correct variants
+- [ ] Back buttons work on pages with `showBack`
+- [ ] Colors are LAVENDER (not teal!)
 
-```bash
-npm run build
-npm start
-```
+## Color Reference (Lavender Theme)
 
-## 📱 PWA Features
+| Usage | Hex Code |
+|-------|----------|
+| Primary (buttons) | `#9B8AB8` |
+| Primary hover | `#7E6BA1` |
+| Primary light (bg) | `#F5F3F7` |
+| Primary lightest | `#FAF8FC` |
+| Navy (text) | `#3D4F6F` |
+| Sky (accent) | `#7BA3C4` |
 
-- ✅ Installable (Add to Home Screen)
-- ✅ Offline support (Service Worker)
-- ✅ Responsive design (Mobile + Desktop)
-- ✅ Push notifications (Future)
-- ✅ App-like experience
+## Important: Delete tailwind.config.js!
 
-## 🔐 Authentication
-
-1. Patient receives activation link/token
-2. Enters token in PWA
-3. PWA calls `/api/portal/auth/activate`
-4. Receives JWT tokens
-5. Tokens stored in localStorage (encrypted in production)
-6. All API calls include JWT in Authorization header
-
-## 📋 Features
-
-### Patient Features
-- ✅ View messages
-- ✅ Send messages (with symptom screen for after-hours)
-- ✅ Record vital signs (BP, weight, etc.)
-- ✅ View medications
-- ✅ Request medication refills
-- ✅ View measurement history
-- ✅ Handle deferred/blocked responses
-
-### Provider Features (Future)
-- ⏳ Provider dashboard
-- ⏳ Message queue management
-- ⏳ Patient management
-- ⏳ Workflow handling
-
-## 🎨 Design
-
-- Material Design 3 principles
-- Teal primary color (#00bcd4)
-- Responsive layout
-- Accessible components
-
-## 📦 Tech Stack
-
-- **Framework:** Next.js 14 (App Router)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS
-- **State:** Zustand
-- **Data Fetching:** TanStack Query (React Query)
-- **PWA:** next-pwa
-- **API Client:** Axios
-
-## 🔗 API Integration
-
-All API calls go through `lib/api/solopractice-client.ts`:
-- Authentication
-- Messages
-- Medications
-- Measurements
-- Appointments
-
-Same endpoints as native app:
-- `POST /api/portal/auth/activate`
-- `GET /api/portal/messages/threads`
-- `POST /api/portal/messages/threads/[id]/messages`
-- `POST /api/portal/measurements`
-- `POST /api/portal/meds/refill-requests`
-- etc.
-
-## 🚨 CG Rules Enforcement
-
-All CG rules (R1-R12) are enforced server-side in Solopractice:
-- R1: Practice Hours
-- R2: Emergency Intercept
-- R3: After-Hours Deferral
-- R4: Urgency Classification
-- R5: Hard Escalation
-- R7: Refill Safety Gate
-- R10: Patient Transparency
-- etc.
-
-PWA displays server responses (sent, deferred, blocked) appropriately.
-
-## 📱 PWA Installation
-
-Users can install the PWA:
-1. Visit the site
-2. Browser prompts "Add to Home Screen"
-3. PWA installs like native app
-4. Works offline (cached resources)
-5. App-like experience
-
-## 🔄 Sync with Native App
-
-Both PWA and native app:
-- Use same Solopractice backend
-- Share same data
-- Same authentication
-- Consistent experience
-- Real-time sync via backend
-
-## 📚 Documentation
-
-- **API Integration:** See `lib/api/solopractice-client.ts`
-- **State Management:** See `lib/store/auth-store.ts`
-- **Components:** See `app/` directory
-
-## 🚀 Deployment
-
-### Vercel (Recommended)
-
-```bash
-npm install -g vercel
-vercel
-```
-
-### Other Platforms
-
-Build and deploy the `out` directory (static export) or use Node.js hosting.
-
-## 🔐 Security
-
-- JWT tokens stored securely
-- HTTPS required for PWA
-- Service Worker for offline caching
-- No PHI in client-side code
-- All sensitive operations server-side
-
----
-
-**Status:** Patient portal complete, Provider portal in progress
+Make sure you deleted `tailwind.config.js` (the teal one).
+Only `tailwind.config.ts` (the lavender one) should exist.

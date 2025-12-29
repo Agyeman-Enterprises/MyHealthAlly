@@ -89,7 +89,7 @@ export async function verifyAttestationChain(noteId: string): Promise<{
   invalidIndex: number | null;
   attestations: Array<{ id: string; hash: string; previousHash: string | null }>;
 }> {
-  const { data: attestations, error } = await supabase
+  const { data: rawAttestations, error } = await supabase
     .from('attestations')
     .select('id, signature_hash, previous_attestation_hash')
     .eq('note_id', noteId)
@@ -99,9 +99,15 @@ export async function verifyAttestationChain(noteId: string): Promise<{
     throw new Error(`Failed to fetch attestations: ${error.message}`);
   }
 
+  const attestations = (rawAttestations || []).map((att) => ({
+    id: att.id as string,
+    hash: att.signature_hash as string,
+    previousHash: att.previous_attestation_hash as string | null,
+  }));
+
   // Verify hash chain
-  for (let i = 0; i < attestations.length; i++) {
-    const att = attestations[i];
+  for (let i = 0; i < rawAttestations.length; i++) {
+    const att = rawAttestations[i];
     
     // First attestation should have null previous hash
     if (i === 0 && att.previous_attestation_hash !== null) {
@@ -110,7 +116,7 @@ export async function verifyAttestationChain(noteId: string): Promise<{
 
     // Subsequent attestations should link to previous
     if (i > 0) {
-      const previous = attestations[i - 1];
+      const previous = rawAttestations[i - 1];
       if (att.previous_attestation_hash !== previous.signature_hash) {
         return { valid: false, invalidIndex: i, attestations };
       }

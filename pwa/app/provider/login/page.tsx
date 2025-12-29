@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { providerApiClient } from '@/lib/api/provider-client';
@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 
-export default function ProviderLoginPage() {
+function ProviderLoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, role } = useAuthStore();
@@ -77,9 +77,14 @@ export default function ProviderLoginPage() {
   const handleTestProviderLogin = async () => {
     console.log('Test Provider Login clicked');
     try {
+      const testToken = 'dev-test-provider-access-token';
+      
+      // Set auth cookie for middleware
+      document.cookie = `auth-token=${testToken}; path=/; max-age=86400; SameSite=Lax`;
+      
       // Update auth state
       loginProvider(
-        'dev-test-provider-access-token',
+        testToken,
         'dev-test-provider-refresh-token',
         'dev-test-practice-id',
         'dev-test-provider-user-id',
@@ -100,26 +105,8 @@ export default function ProviderLoginPage() {
       
       console.log('Redirecting to:', redirectTo);
       
-      // Double-check localStorage was saved
-      const stored = localStorage.getItem('auth-storage');
-      console.log('LocalStorage auth-storage:', stored);
-      
-      // Force immediate redirect - don't wait
-      console.log('Executing redirect immediately...');
-      // Use window.location.href with full URL to ensure it works
-      const fullUrl = window.location.origin + redirectTo;
-      console.log('Full redirect URL:', fullUrl);
-      console.log('About to set window.location.href...');
-      
-      // Force redirect - try multiple methods
-      try {
-        window.location.href = fullUrl;
-        console.log('window.location.href set successfully');
-      } catch (e) {
-        console.error('Failed to set window.location.href:', e);
-        // Fallback
-        window.location.replace(fullUrl);
-      }
+      // Force redirect
+      window.location.href = window.location.origin + redirectTo;
     } catch (error) {
       console.error('Test login error:', error);
       setError('Failed to login. Please try again.');
@@ -129,9 +116,14 @@ export default function ProviderLoginPage() {
   const handleTestAdminLogin = async () => {
     console.log('Test Admin Login clicked');
     try {
+      const testToken = 'dev-test-admin-access-token';
+      
+      // Set auth cookie for middleware
+      document.cookie = `auth-token=${testToken}; path=/; max-age=86400; SameSite=Lax`;
+      
       // Update auth state
       loginProvider(
-        'dev-test-admin-access-token',
+        testToken,
         'dev-test-admin-refresh-token',
         'dev-test-practice-id',
         'dev-test-admin-user-id',
@@ -152,26 +144,8 @@ export default function ProviderLoginPage() {
       
       console.log('Redirecting to:', redirectTo);
       
-      // Double-check localStorage was saved
-      const stored = localStorage.getItem('auth-storage');
-      console.log('LocalStorage auth-storage:', stored);
-      
-      // Force immediate redirect - don't wait
-      console.log('Executing redirect immediately...');
-      // Use window.location.href with full URL to ensure it works
-      const fullUrl = window.location.origin + redirectTo;
-      console.log('Full redirect URL:', fullUrl);
-      console.log('About to set window.location.href...');
-      
-      // Force redirect - try multiple methods
-      try {
-        window.location.href = fullUrl;
-        console.log('window.location.href set successfully');
-      } catch (e) {
-        console.error('Failed to set window.location.href:', e);
-        // Fallback
-        window.location.replace(fullUrl);
-      }
+      // Force redirect
+      window.location.href = window.location.origin + redirectTo;
     } catch (error) {
       console.error('Test login error:', error);
       setError('Failed to login. Please try again.');
@@ -294,5 +268,21 @@ export default function ProviderLoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
+    </div>
+  );
+}
+
+export default function ProviderLoginPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <ProviderLoginContent />
+    </Suspense>
   );
 }

@@ -1,183 +1,234 @@
-/**
- * Authentication Store
- * 
- * Manages authentication state using Zustand
- * Now integrates with Supabase Auth
- */
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { apiClient } from '../api/solopractice-client';
-import { signIn, signOut, getCurrentUser, onAuthStateChange } from '../supabase/auth';
-import { FirefoxAuthStorage, restoreSession, rotateRefreshToken, logAuthFailure } from '../auth/firefox-fix';
-import { supabase } from '../supabase/client';
 
-export type UserRole = 'patient' | 'provider' | 'admin';
-
-interface AuthState {
-  isAuthenticated: boolean;
-  accessToken: string | null;
-  refreshToken: string | null;
-  patientId: string | null;
-  practiceId: string | null;
-  userId: string | null;
-  role: UserRole | null;
-  
-  // Actions
-  login: (accessToken: string, refreshToken: string, patientId: string, practiceId: string, role?: UserRole) => void;
-  loginProvider: (accessToken: string, refreshToken: string, practiceId: string, userId: string, role: 'provider' | 'admin') => void;
-  logout: () => void;
-  initialize: () => void;
-  // Supabase Auth methods
-  signInWithSupabase: (email: string, password: string) => Promise<void>;
-  signOutFromSupabase: () => Promise<void>;
-  syncSupabaseAuth: () => Promise<void>;
+/**
+ * User interface - extended for all use cases
+ */
+export interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  dateOfBirth?: string;
+  preferredLanguage?: string;
+  patientId?: string;      // For patient users
+  practiceId?: string;     // For provider users
 }
 
-export const useAuthStore = create<AuthState>()(
+/**
+ * AuthStore interface - supports patient & provider auth
+ */
+export interface AuthStore {
+  // State
+  user: User | null;
+  isAuthenticated: boolean;
+  isInitialized: boolean;
+  role: 'patient' | 'provider' | 'admin' | null;
+  accessToken: string | null;
+  refreshToken: string | null;
+  
+  // Computed helpers (for backward compatibility)
+  userId: string | null;
+  patientId: string | null;
+  practiceId: string | null;
+  
+  // Patient Actions
+  login: (user: User, token?: string) => void;
+  logout: () => void;
+  updateUser: (updates: Partial<User>) => void;
+  initialize: () => void;
+  
+  // Provider Actions
+  loginProvider: (
+    accessToken: string,
+    refreshToken: string,
+    practiceId: string,
+    userId: string,
+    role: 'provider' | 'admin'
+  ) => void;
+  
+  // Supabase Auth
+  signInWithSupabase: (email: string, password: string) => Promise<void>;
+}
+
+const AUTH_TOKEN_KEY = 'auth-token';
+
+/**
+ * Set auth token as a cookie (readable by middleware)
+ */
+function setAuthCookie(token: string): void {
+  if (typeof document !== 'undefined') {
+    document.cookie = `${AUTH_TOKEN_KEY}=${token}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days
+  }
+}
+
+/**
+ * Clear auth token cookie
+ */
+function clearAuthCookie(): void {
+  if (typeof document !== 'undefined') {
+    document.cookie = `${AUTH_TOKEN_KEY}=; path=/; max-age=0`;
+  }
+}
+
+/**
+ * Generate a mock token for development
+ */
+function generateMockToken(userId: string): string {
+  const payload = {
+    sub: userId,
+    iat: Date.now(),
+    exp: Date.now() + (7 * 24 * 60 * 60 * 1000), // 7 days
+  };
+  return btoa(JSON.stringify(payload));
+}
+
+export const useAuthStore = create<AuthStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
+      // Initial state
+      user: null,
       isAuthenticated: false,
+      isInitialized: false,
+      role: null,
       accessToken: null,
       refreshToken: null,
-      patientId: null,
-      practiceId: null,
-      userId: null,
-      role: null,
-
-      login: (accessToken, refreshToken, patientId, practiceId, role = 'patient') => {
-        apiClient.setTokens(accessToken, refreshToken);
-        // Store in Firefox-safe storage
-        FirefoxAuthStorage.setTokens(accessToken, refreshToken);
-        set({
-          isAuthenticated: true,
-          accessToken,
-          refreshToken,
-          patientId,
-          practiceId,
-          role,
-        });
+      
+      // Computed getters (as properties that return current state)
+      get userId() {
+        return get().user?.id || null;
+      },
+      get patientId() {
+        return get().user?.patientId || null;
+      },
+      get practiceId() {
+        return get().user?.practiceId || null;
       },
 
-      loginProvider: (accessToken, refreshToken, practiceId, userId, role) => {
-        apiClient.setTokens(accessToken, refreshToken);
-        set({
-          isAuthenticated: true,
-          accessToken,
-          refreshToken,
-          practiceId,
-          userId,
-          role,
-          patientId: null,
-        });
-      },
-
-      logout: async () => {
-        apiClient.clearTokens();
-        FirefoxAuthStorage.clearTokens();
-        // Also sign out from Supabase if signed in
-        try {
-          await signOut();
-        } catch (e) {
-          // Ignore if not signed in to Supabase
-        }
-        set({
-          isAuthenticated: false,
-          accessToken: null,
-          refreshToken: null,
-          patientId: null,
-          practiceId: null,
-          userId: null,
-          role: null,
-        });
-      },
-
-      initialize: () => {
-        // Only initialize on client side
-        if (typeof window === 'undefined') return;
+      // Patient login
+      login: (user: User, token?: string) => {
+        const authToken = token || generateMockToken(user.id);
+        setAuthCookie(authToken);
         
-        const accessToken = apiClient.getAccessToken();
-        if (accessToken) {
-          set({ isAuthenticated: true, accessToken });
-        }
-
-        // Also check Supabase auth
-        getCurrentUser().then((user) => {
-          if (user) {
-            set({
-              isAuthenticated: true,
-              userId: user.id,
-              role: user.role as UserRole,
-            });
-          }
-        });
-
-        // Listen to auth changes
-        onAuthStateChange((event, session) => {
-          if (event === 'SIGNED_OUT') {
-            set({
-              isAuthenticated: false,
-              accessToken: null,
-              refreshToken: null,
-              userId: null,
-              role: null,
-            });
-          } else if (event === 'SIGNED_IN' && session) {
-            getCurrentUser().then((user) => {
-              if (user) {
-                set({
-                  isAuthenticated: true,
-                  userId: user.id,
-                  role: user.role as UserRole,
-                });
-              }
-            });
-          }
+        set({ 
+          user, 
+          isAuthenticated: true, 
+          isInitialized: true,
+          role: 'patient',
+          accessToken: authToken,
         });
       },
 
-      signInWithSupabase: async (email: string, password: string) => {
-        const result = await signIn(email, password);
-        if (!result.session) throw new Error('Sign in failed');
-
-        const user = await getCurrentUser();
-        if (!user) throw new Error('User record not found');
-
+      // Provider login
+      loginProvider: (
+        accessToken: string,
+        refreshToken: string,
+        practiceId: string,
+        userId: string,
+        role: 'provider' | 'admin'
+      ) => {
+        setAuthCookie(accessToken);
+        
+        const user: User = {
+          id: userId,
+          email: '',
+          firstName: role === 'admin' ? 'Admin' : 'Provider',
+          lastName: 'User',
+          practiceId,
+        };
+        
         set({
+          user,
           isAuthenticated: true,
-          userId: user.id,
-          role: user.role as UserRole,
-          accessToken: result.session.access_token,
-          refreshToken: result.session.refresh_token,
+          isInitialized: true,
+          role,
+          accessToken,
+          refreshToken,
         });
       },
 
-      signOutFromSupabase: async () => {
-        await signOut();
+      // Supabase sign in
+      signInWithSupabase: async (email: string, password: string) => {
+        // Dynamic import to avoid SSR issues
+        const { supabase } = await import('@/lib/supabase/client');
+        
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+        if (!data.user) throw new Error('No user returned');
+
+        const user: User = {
+          id: data.user.id,
+          email: data.user.email || '',
+          firstName: data.user.user_metadata?.first_name || '',
+          lastName: data.user.user_metadata?.last_name || '',
+        };
+
+        setAuthCookie(data.session?.access_token || generateMockToken(user.id));
+
         set({
+          user,
+          isAuthenticated: true,
+          isInitialized: true,
+          role: data.user.user_metadata?.role || 'patient',
+          accessToken: data.session?.access_token || null,
+          refreshToken: data.session?.refresh_token || null,
+        });
+      },
+
+      // Logout
+      logout: () => {
+        clearAuthCookie();
+        
+        // Best effort Supabase signout
+        import('@/lib/supabase/client').then(({ supabase }) => {
+          supabase.auth.signOut().catch(() => {});
+        }).catch(() => {});
+        
+        set({ 
+          user: null, 
           isAuthenticated: false,
+          role: null,
           accessToken: null,
           refreshToken: null,
-          userId: null,
-          role: null,
-          patientId: null,
-          practiceId: null,
+        });
+        
+        // Redirect to login
+        if (typeof window !== 'undefined') {
+          window.location.href = '/auth/login';
+        }
+      },
+
+      // Update user
+      updateUser: (updates: Partial<User>) => {
+        set((state) => {
+          if (!state.user) return state;
+          return { user: { ...state.user, ...updates } };
         });
       },
 
-      syncSupabaseAuth: async () => {
-        const user = await getCurrentUser();
-        if (user) {
-          set({
-            isAuthenticated: true,
-            userId: user.id,
-            role: user.role as UserRole,
-          });
-        }
+      // Initialize from storage
+      initialize: () => {
+        // Zustand persist handles this automatically
+        set({ isInitialized: true });
       },
     }),
     {
-      name: 'auth-storage',
+      name: 'mha-auth-storage',
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+        role: state.role,
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
+      }),
     }
   )
 );
+
+// Type export for external use
+export type { AuthStore as AuthStoreType };

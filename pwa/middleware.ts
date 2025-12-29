@@ -4,76 +4,57 @@ import type { NextRequest } from 'next/server';
 /**
  * Middleware for route protection
  * 
- * This runs on the server before the page loads, providing
- * an additional layer of security beyond client-side checks.
+ * Checks for auth-token cookie to protect routes.
+ * Works with the auth system in lib/auth/auth-utils.ts
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Public routes that don't require authentication
+  // Public routes - no auth required
   const publicRoutes = [
     '/auth/login',
-    '/provider/login',
+    '/auth/forgot-password',
+    '/auth/reset-password',
   ];
 
-  // Check if route is public
+  // Check if this is a public route
   if (publicRoutes.some(route => pathname.startsWith(route))) {
     return NextResponse.next();
   }
 
-  // Provider routes - require provider/admin role
-  if (pathname.startsWith('/provider')) {
-    // Check for auth token in cookies or headers
-    const token = request.cookies.get('auth-token')?.value || 
-                  request.headers.get('authorization')?.replace('Bearer ', '');
-
-    if (!token) {
-      // Redirect to provider login
-      const loginUrl = new URL('/provider/login', request.url);
-      loginUrl.searchParams.set('redirect', pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    // Note: Full role validation happens client-side and server-side
-    // This middleware just checks for token presence
-    // The backend API will validate the token and role
+  // Static assets and API routes - skip auth check
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/images') ||
+    pathname.includes('.')
+  ) {
     return NextResponse.next();
   }
 
-  // Patient routes - require authentication
-  if (pathname.startsWith('/dashboard') || 
-      pathname.startsWith('/messages') || 
-      pathname.startsWith('/vitals') || 
-      pathname.startsWith('/medications')) {
-    
-    const token = request.cookies.get('auth-token')?.value || 
-                  request.headers.get('authorization')?.replace('Bearer ', '');
+  // Check for auth token in cookie
+  const token = request.cookies.get('auth-token')?.value;
 
-    if (!token) {
-      // Redirect to patient login
-      const loginUrl = new URL('/auth/login', request.url);
-      loginUrl.searchParams.set('redirect', pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    return NextResponse.next();
+  if (!token) {
+    // Not authenticated - redirect to login
+    const loginUrl = new URL('/auth/login', request.url);
+    loginUrl.searchParams.set('redirect', pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
-  // Allow all other routes (home page, etc.)
+  // Token exists - allow request
+  // Note: In production, you'd also validate the token here or in API routes
   return NextResponse.next();
 }
 
-// Configure which routes this middleware runs on
 export const config = {
   matcher: [
     /*
-     * Match all request paths except:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public files (public folder)
+     * Match all paths except:
+     * - api routes
+     * - static files
+     * - images
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|images|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 };

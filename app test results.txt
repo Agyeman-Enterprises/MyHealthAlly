@@ -1,0 +1,29 @@
+abnormals not flagging
+able to enter hr 200 which is excessive and bp 190/110
+is data saving anywhere yet?
+again bg 300 and no alerts!
+where do devices put their data
+di not use the mha icon, and haven't reapplied the colors as discussed
+medications page:  no meds listed. pt should be able to enter or take picture of meds and send to solopractice dashboard for MAs to action
+make sure 'view trends' is working.  'ask questions' sends message to MA 
+TSH/T3/T4/; kidney function: GFR/Creat/Na/K/BUN, option to add others depending on disease.
+make sure appointment times match my open hours and since i am in 3 states - Ca/GU/HI, make sure times and dates are correlated from their tz to mine in GU open hours.
+We need a navigation that lets them get from wher they are to other sections
+care plans:  how do they get care  plan and how do they log progress and is message provider hooked up?
+how do streaks work
+verify they can add cards. where does upload put files and how do they get them out.
+validate ALL fields eg zip/state/phone number...if a field exists, once it is coded, it must be autovalidated for contect...THIS IS CANON!!!
+camera didn't work. took picture (yay), but failed to process image
+Unhandled Runtime Error
+Error: Error: Error attempting to read image.
+
+Call Stack
+eval
+node_modules\tesseract.js\src\createWorker.js (217:1)
+worker.onmessage
+node_modules\tesseract.js\src\worker\browser\onMessage.js (5:1)
+once users download the app, there will be a stable of forms they wil get...hipaa privacy notics, financial policy, and other forms required by govt AND our intake form link to do our practice questionnaire which they will then load to us.  this info here will be taken in by solopractice and if they are a new patient, new chart created, if returning patient, they shouldn't have to fill all this..app should recognize them by querying SP db and asking if any data has changed and if they need to update information and give them a way to do that.
+what are the cards messages/medications/tasks for.  they dont seem to do anything, are not clickable???
+why are there 2 buttons...a +request referral and the same button on the card...seems to me there shoud be only 1 and if they do request one, make sure to ask them if they wnat to send another request before going out of that field.  that same 2 button pattern all through app. and no nav except for back arrow.  should be hoem/dashboard/labs/reports/referrals/messages, so they can go wherever they want to go...
+they are on a phne.  can they have an option to call as well, not just send message although let them know that is not the preferred option.  remember disclaimers about our hours.  messages received after hours will be actioned next opening hours, this is NOT for emergencies - go to ED or call 911 for emergencies.  
+use my logo and lavender colors from logo and review banani ui for images.

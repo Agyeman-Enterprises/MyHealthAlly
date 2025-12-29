@@ -45,7 +45,7 @@ describe('Encounter State Machine', () => {
   it('should enforce gating: cannot finalize without signed note', () => {
     const sm = createEncounterStateMachine('NOTE_DRAFT');
     expect(() => sm.transition('FINALIZE')).toThrow(
-      'Cannot finalize: Note must be signed first'
+      'Invalid transition: Cannot FINALIZE from NOTE_DRAFT'
     );
   });
 });
@@ -83,7 +83,7 @@ describe('Capture Session State Machine', () => {
     const sm = createCaptureSessionStateMachine('IDLE');
     sm.transition('INITIALIZE');
     expect(() => sm.transition('START_RECORDING')).toThrow(
-      'Cannot start recording: Stream not active'
+      'Invalid transition: Cannot START_RECORDING from INITIALIZING'
     );
   });
 
@@ -135,7 +135,7 @@ describe('Note State Machine', () => {
   it('should enforce gating: cannot finalize unsigned note', () => {
     const sm = createNoteStateMachine('SUBMITTED');
     expect(() => sm.transition('FINALIZE')).toThrow(
-      'Cannot finalize: Note must be signed first'
+      'Invalid transition: Cannot FINALIZE from SUBMITTED'
     );
   });
 });

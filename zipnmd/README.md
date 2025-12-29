@@ -1,197 +1,210 @@
-# MyHealthAlly - Android Patient Engagement App
+# MyHealth Ally PWA
 
-**Version:** 1.0.0  
-**Build Date:** November 25, 2024  
-**Platform:** Android (Kotlin + Jetpack Compose)
+**Progressive Web App for Patient and Provider Portal**
 
-## 📱 Overview
+## 🎯 Overview
 
-MyHealthAlly is a comprehensive patient engagement platform for Ohimaa Medical. The app enables continuous care through voice messaging, vital tracking, medication management, and secure communication with care teams.
-
-## ✅ Build Status
-
-**READY TO BUILD** - All files are in place and properly configured.
-
-### Completed Features:
-- ✅ Clean architecture (MVVM)
-- ✅ Jetpack Compose UI
-- ✅ Voice recording with AudioRecordingManager
-- ✅ Biometric & PIN authentication
-- ✅ Secure storage (EncryptedSharedPreferences)
-- ✅ Navigation system (24 screens)
-- ✅ Retrofit API integration
-- ✅ Material 3 design system
-- ✅ Teal/White theme matching brand guidelines
-
-### Screen Status:
-1. ✅ Lock Screen (PIN/Biometric)
-2. ✅ Dashboard (Stats, Quick Actions, Tasks)
-3. ✅ Voice Messages List
-4. ✅ Voice Recording Screen
-5. ✅ Message Detail
-6. ✅ Tasks
-7. ✅ Schedule
-8. ✅ Profile
-9. ✅ Settings
-10. ✅ Care Plan
-11-24. ✅ Additional screens (placeholder implementations)
+This PWA provides a web-based interface for:
+- **Patients:** Access messages, vitals, medications, appointments
+- **Providers:** Manage patients, view messages, handle workflows
+- **Integration:** Works seamlessly with native MyHealth Ally app and Solopractice backend
 
 ## 🏗️ Architecture
 
 ```
-app/
-├── data/
-│   ├── api/              # Retrofit API interfaces
-│   ├── models/           # Data models
-│   └── repositories/     # (Ready for Phase 2)
-├── managers/             # Core functionality managers
-│   ├── AudioRecordingManager
-│   ├── BiometricAuthManager
-│   └── PINManager
-├── ui/
-│   ├── theme/           # Brand colors, typography
-│   ├── navigation/      # Navigation graph
-│   ├── screens/         # All app screens
-│   └── components/      # Reusable UI components
-└── MainActivity.kt
+PWA (Next.js)
+├── Patient Portal
+│   ├── Messages
+│   ├── Vitals Tracking
+│   ├── Medications
+│   └── Appointments
+├── Provider Portal (Future)
+│   ├── Dashboard
+│   ├── Message Queue
+│   └── Patient Management
+└── Shared
+    ├── API Client (Solopractice)
+    ├── Authentication
+    └── State Management
 ```
 
-## 🚀 How to Build
+## 🔌 Integration
 
-### Prerequisites:
-- Android Studio Hedgehog (2023.1.1) or later
-- JDK 17
-- Android SDK 34
-- Gradle 8.2+
+### Solopractice Backend
+- Uses same API endpoints as native app
+- All CG rules (R1-R12) enforced server-side
+- JWT authentication
+- Same data models and responses
 
-### Build Steps:
+### Native App Compatibility
+- Same authentication flow
+- Same API endpoints
+- Shared data via Solopractice backend
+- Consistent user experience
 
-1. **Open in Android Studio:**
-   ```bash
-   File > Open > Select MyHealthAlly folder
-   ```
+## 🚀 Getting Started
 
-2. **Sync Gradle:**
-   - Android Studio will auto-sync
-   - Wait for dependencies to download
-   - Should complete with **0 errors**
+### Prerequisites
+- Node.js 18+
+- npm or yarn
 
-3. **Run the App:**
-   - Select device/emulator
-   - Click Run (▶️) or press Shift+F10
-   - App should launch successfully
+### Installation
 
-### Build Variants:
-- **Debug:** `http://10.0.2.2:3000` (local dev)
-- **Release:** `https://api.myhealthally.com/v1` (production)
-
-## 🔧 Configuration
-
-### API Endpoints:
-Currently configured in `build.gradle.kts`:
-```kotlin
-debug: "http://10.0.2.2:3000"
-release: "https://api.myhealthally.com/v1"
+```bash
+cd pwa
+npm install
 ```
 
-### Brand Configuration:
-Located in `ui/theme/BrandConfig.kt`:
-```kotlin
-APP_NAME = "MyHealthAlly"
-TAGLINE = "Your Health Ally"
-PROVIDER_NAME = "Ohimaa Medical"
+### Environment Variables
+
+Create `.env.local`:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3000
 ```
 
-### Colors:
-Primary: `#00A7A0` (Teal)
-Secondary: `#01635F`
-Accent: `#00C8BF`
+### Development
 
-## 📦 Dependencies
-
-### Core:
-- Kotlin 1.9.22
-- Compose BOM 2024.01.00
-- Material 3
-- Navigation Compose 2.7.6
-
-### Networking:
-- Retrofit 2.9.0
-- OkHttp 4.12.0
-- Gson Converter
-
-### Security:
-- EncryptedSharedPreferences 1.1.0-alpha06
-- Biometric 1.1.0
-
-### Audio:
-- MediaRecorder (Android SDK)
-- Media3 ExoPlayer 1.2.1
-
-### Permissions:
-- Accompanist Permissions 0.32.0
-
-## 🎯 Next Steps (Phase 2)
-
-### Backend Integration:
-1. Connect to Supabase backend
-2. Implement real authentication
-3. Add real-time data sync
-4. Enable push notifications
-
-### Features to Add:
-1. Complete medication management
-2. Vital charts and trends
-3. Lab results display
-4. Appointment booking
-5. Chat functionality
-6. Document upload
-
-## 🔐 Security Features
-
-- ✅ PIN lock on app launch
-- ✅ Biometric authentication (fingerprint/face)
-- ✅ Encrypted local storage
-- ✅ Secure token management
-- ✅ HTTPS-only API calls
-
-## 📱 Permissions Required
-
-```xml
-<uses-permission android:name="android.permission.INTERNET" />
-<uses-permission android:name="android.permission.RECORD_AUDIO" />
-<uses-permission android:name="android.permission.USE_BIOMETRIC" />
-<uses-permission android:name="android.permission.VIBRATE" />
-<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+```bash
+npm run dev
 ```
 
-## 🐛 Troubleshooting
+Open [http://localhost:3001](http://localhost:3001)
 
-### Gradle Sync Fails:
-- Clean project: `Build > Clean Project`
-- Invalidate caches: `File > Invalidate Caches > Invalidate and Restart`
+### Build
 
-### Build Errors:
-- Check JDK version: `File > Project Structure > SDK Location`
-- Update Android SDK: `Tools > SDK Manager`
+```bash
+npm run build
+npm start
+```
 
-### App Crashes on Launch:
-- Check permissions in AndroidManifest.xml
-- Verify all resources exist
-- Check Logcat for error messages
+## 📱 PWA Features
 
-## 👥 Team
+- ✅ Installable (Add to Home Screen)
+- ✅ Offline support (Service Worker)
+- ✅ Responsive design (Mobile + Desktop)
+- ✅ Push notifications (Future)
+- ✅ App-like experience
 
-- **CMO/Founder:** Akua (Product Vision)
-- **Developer:** Henry (Xcode/Testing)
-- **AI Assistant:** Claude (Full Android Build)
+## 🔐 Authentication
 
-## 📄 License
+1. Patient receives activation link/token
+2. Enters token in PWA
+3. PWA calls `/api/portal/auth/activate`
+4. Receives JWT tokens
+5. Tokens stored in localStorage (encrypted in production)
+6. All API calls include JWT in Authorization header
 
-Proprietary - Agyeman Enterprises LLC / Ohimaa Medical
+## 📋 Features
+
+### Patient Features
+- ✅ View messages
+- ✅ Send messages (with symptom screen for after-hours)
+- ✅ Record vital signs (BP, weight, etc.)
+- ✅ View medications
+- ✅ Request medication refills
+- ✅ View measurement history
+- ✅ Handle deferred/blocked responses
+
+### Provider Features (Future)
+- ⏳ Provider dashboard
+- ⏳ Message queue management
+- ⏳ Patient management
+- ⏳ Workflow handling
+
+## 🎨 Design
+
+- Material Design 3 principles
+- Teal primary color (#00bcd4)
+- Responsive layout
+- Accessible components
+
+## 📦 Tech Stack
+
+- **Framework:** Next.js 14 (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS
+- **State:** Zustand
+- **Data Fetching:** TanStack Query (React Query)
+- **PWA:** next-pwa
+- **API Client:** Axios
+
+## 🔗 API Integration
+
+All API calls go through `lib/api/solopractice-client.ts`:
+- Authentication
+- Messages
+- Medications
+- Measurements
+- Appointments
+
+Same endpoints as native app:
+- `POST /api/portal/auth/activate`
+- `GET /api/portal/messages/threads`
+- `POST /api/portal/messages/threads/[id]/messages`
+- `POST /api/portal/measurements`
+- `POST /api/portal/meds/refill-requests`
+- etc.
+
+## 🚨 CG Rules Enforcement
+
+All CG rules (R1-R12) are enforced server-side in Solopractice:
+- R1: Practice Hours
+- R2: Emergency Intercept
+- R3: After-Hours Deferral
+- R4: Urgency Classification
+- R5: Hard Escalation
+- R7: Refill Safety Gate
+- R10: Patient Transparency
+- etc.
+
+PWA displays server responses (sent, deferred, blocked) appropriately.
+
+## 📱 PWA Installation
+
+Users can install the PWA:
+1. Visit the site
+2. Browser prompts "Add to Home Screen"
+3. PWA installs like native app
+4. Works offline (cached resources)
+5. App-like experience
+
+## 🔄 Sync with Native App
+
+Both PWA and native app:
+- Use same Solopractice backend
+- Share same data
+- Same authentication
+- Consistent experience
+- Real-time sync via backend
+
+## 📚 Documentation
+
+- **API Integration:** See `lib/api/solopractice-client.ts`
+- **State Management:** See `lib/store/auth-store.ts`
+- **Components:** See `app/` directory
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+
+```bash
+npm install -g vercel
+vercel
+```
+
+### Other Platforms
+
+Build and deploy the `out` directory (static export) or use Node.js hosting.
+
+## 🔐 Security
+
+- JWT tokens stored securely
+- HTTPS required for PWA
+- Service Worker for offline caching
+- No PHI in client-side code
+- All sensitive operations server-side
 
 ---
 
-**Last Updated:** November 25, 2024  
-**Status:** Production-ready for Phase 1 (Mock Data)  
-**Next Milestone:** Backend integration with Supabase
+**Status:** Patient portal complete, Provider portal in progress
