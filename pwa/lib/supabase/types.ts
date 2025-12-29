@@ -294,7 +294,7 @@ export interface Alert {
   status: AlertStatus;
   title: string;
   message: string;
-  trigger_data: Record<string, any> | null;
+  trigger_data: Record<string, unknown> | null;
   assigned_to_user_id: string | null;
   acknowledged_at: string | null;
   resolved_at: string | null;

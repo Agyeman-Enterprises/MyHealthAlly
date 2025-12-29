@@ -1,13 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { supabase } from '@/lib/supabase/client';
+import { env } from '@/lib/env';
 
 // Lazy initialization to avoid build-time errors when env vars are missing
 let stripe: Stripe | null = null;
 
 function getStripe(): Stripe {
   if (!stripe) {
-    const secretKey = process.env.STRIPE_SECRET_KEY;
+    const secretKey = env.STRIPE_SECRET_KEY;
     if (!secretKey) {
       throw new Error('STRIPE_SECRET_KEY environment variable is not set');
     }
@@ -21,7 +23,7 @@ function getStripe(): Stripe {
 export async function POST(request: NextRequest) {
   try {
     // Check if Stripe is configured
-    if (!process.env.STRIPE_SECRET_KEY) {
+    if (!env.STRIPE_SECRET_KEY) {
       return NextResponse.json(
         { error: 'Payment processing not configured' },
         { status: 503 }
@@ -86,10 +88,11 @@ export async function POST(request: NextRequest) {
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Payment intent creation error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create payment intent';
     return NextResponse.json(
-      { error: error.message || 'Failed to create payment intent' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

@@ -1,6 +1,6 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -20,9 +20,32 @@ const apptTypes = [
 
 export default function RequestAppointmentPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const [form, setForm] = useState({ type: '', reason: '', urgency: 'routine', date: '', time: '', telehealth: false });
+  
+  // Get date and time from query params (passed from calendar)
+  const dateFromQuery = searchParams.get('date') || '';
+  const timeFromQuery = searchParams.get('time') || '';
+  
+  const [form, setForm] = useState({ 
+    type: '', 
+    reason: '', 
+    urgency: 'routine', 
+    date: dateFromQuery, 
+    time: timeFromQuery, 
+    telehealth: false 
+  });
   const [submitting, setSubmitting] = useState(false);
+
+  // Update form when query params change (if user navigates with different params)
+  useEffect(() => {
+    if (dateFromQuery) {
+      setForm(prev => ({ ...prev, date: dateFromQuery }));
+    }
+    if (timeFromQuery) {
+      setForm(prev => ({ ...prev, time: timeFromQuery }));
+    }
+  }, [dateFromQuery, timeFromQuery]);
 
   if (!isAuthenticated) { router.push('/auth/login'); return null; }
 

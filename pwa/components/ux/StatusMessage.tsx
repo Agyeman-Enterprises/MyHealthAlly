@@ -1,6 +1,6 @@
 'use client';
 
-import { Clock, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import { Clock, CheckCircle, XCircle } from 'lucide-react';
 
 interface StatusMessageProps {
   status: 'submitted' | 'under_review' | 'review_pending' | 'processing' | 'completed' | 'error';

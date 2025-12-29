@@ -3,7 +3,9 @@
  * Handles audio transcription using OpenAI Whisper API
  */
 
-const OPENAI_API_KEY = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+import { env } from '@/lib/env';
+
+const OPENAI_API_KEY = env.OPENAI_API_KEY;
 const OPENAI_API_URL = 'https://api.openai.com/v1/audio/transcriptions';
 
 export interface TranscriptionResult {
@@ -22,7 +24,8 @@ export interface TranscriptionResult {
  */
 export async function transcribeAudio(
   audioBlob: Blob,
-  detectedLanguage?: string
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _detectedLanguage?: string
 ): Promise<TranscriptionResult> {
   // Try OpenAI Whisper first (if API key available)
   if (OPENAI_API_KEY) {
@@ -77,7 +80,18 @@ async function transcribeWithOpenAI(audioBlob: Blob): Promise<TranscriptionResul
 async function transcribeWithBrowserAPI(audioBlob: Blob): Promise<TranscriptionResult> {
   return new Promise((resolve, reject) => {
     // Check if SpeechRecognition is available
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    interface SpeechRecognitionConstructor {
+      new (): {
+        continuous: boolean;
+        interimResults: boolean;
+        lang: string;
+        start: () => void;
+        stop: () => void;
+        onresult: ((event: { resultIndex: number; results: Array<{ [key: number]: Array<{ transcript: string }>; isFinal: boolean }> }) => void) | null;
+        onerror: ((event: { error: string }) => void) | null;
+      };
+    }
+    const SpeechRecognition = (window as typeof window & { SpeechRecognition?: SpeechRecognitionConstructor; webkitSpeechRecognition?: SpeechRecognitionConstructor }).SpeechRecognition || (window as typeof window & { SpeechRecognition?: SpeechRecognitionConstructor; webkitSpeechRecognition?: SpeechRecognitionConstructor }).webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
       reject(new Error('Speech recognition not supported in this browser. Please use OpenAI API key for transcription.'));
@@ -91,13 +105,13 @@ async function transcribeWithBrowserAPI(audioBlob: Blob): Promise<TranscriptionR
 
     let transcript = '';
 
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: { resultIndex: number; results: Array<{ [key: number]: Array<{ transcript: string }>; isFinal: boolean }> }) => {
       for (let i = event.resultIndex; i < event.results.length; i++) {
         transcript += event.results[i][0].transcript;
       }
     };
 
-    recognition.onerror = (event: any) => {
+    recognition.onerror = (event: { error: string }) => {
       reject(new Error(`Speech recognition error: ${event.error}`));
     };
 

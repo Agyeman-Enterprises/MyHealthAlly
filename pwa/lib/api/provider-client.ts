@@ -5,10 +5,12 @@
  * Used by provider dashboard and practice admin portal.
  */
 
-import axios, { AxiosInstance, AxiosError } from 'axios';
+import axios from 'axios';
+import type { AxiosInstance, AxiosError } from 'axios';
 import { apiClient, SoloPracticeApiError } from './solopractice-client';
+import { env } from '@/lib/env';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL = env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 
 // Provider-specific types
 export interface ProviderMessage {
@@ -18,7 +20,7 @@ export interface ProviderMessage {
   patient_name?: string;
   sender_id: string;
   content: string;
-  attachments?: Record<string, any>;
+  attachments?: Record<string, unknown>;
   status: 'new' | 'in_progress' | 'resolved';
   urgency: 'green' | 'yellow' | 'red';
   read: boolean;
@@ -42,7 +44,7 @@ export interface WorkItem {
   due_at?: string;
   assigned_to?: string;
   assigned_to_name?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface Patient {
@@ -130,7 +132,7 @@ export interface DashboardStats {
 
 export interface ReplyMessageRequest {
   body: string;
-  attachments?: Record<string, any>;
+  attachments?: Record<string, unknown>;
 }
 
 export interface AssignRequest {
@@ -186,7 +188,7 @@ export class ProviderApiClient {
     if (error && typeof error === 'object' && 'response' in error && (error as AxiosError).response) {
       const axiosError = error as AxiosError;
       const status = axiosError.response?.status || 0;
-      const data = axiosError.response?.data as any;
+      const data = axiosError.response?.data as { message?: string; error?: string };
 
       return new SoloPracticeApiError(
         data?.message || data?.error || 'API request failed',
@@ -356,12 +358,12 @@ export class ProviderApiClient {
     return response.data;
   }
 
-  async getPatientVitals(patientId: string): Promise<any[]> {
+  async getPatientVitals(patientId: string): Promise<unknown[]> {
     const response = await this.client.get(`/api/provider/patients/${patientId}/vitals`);
     return response.data;
   }
 
-  async getPatientMedications(patientId: string): Promise<any[]> {
+  async getPatientMedications(patientId: string): Promise<Array<{ id: string; name: string; dosage: string; frequency: string }>> {
     const response = await this.client.get(`/api/provider/patients/${patientId}/medications`);
     return response.data;
   }

@@ -7,6 +7,26 @@ import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 
+const DOSING_FREQUENCIES = [
+  'Once daily',
+  'Twice daily',
+  'Three times daily',
+  'Four times daily',
+  'Every 12 hours',
+  'Every 8 hours',
+  'Every 6 hours',
+  'Every 4 hours',
+  'As needed (PRN)',
+  'At bedtime',
+  'In the morning',
+  'With meals',
+  'Before meals',
+  'After meals',
+  'Weekly',
+  'Bi-weekly',
+  'Monthly',
+];
+
 const mockMeds = [
   { id: '1', name: 'Metformin', dosage: '500mg', frequency: 'Twice daily', refillsLeft: 2, status: 'active', prescriber: 'Dr. Smith' },
   { id: '2', name: 'Lisinopril', dosage: '10mg', frequency: 'Once daily', refillsLeft: 0, status: 'active', prescriber: 'Dr. Smith' },
@@ -55,8 +75,19 @@ export default function MedicationsPage() {
             <div className="space-y-3">
               <input type="text" placeholder="Medication name *" value={newMed.name} onChange={(e) => setNewMed({ ...newMed, name: e.target.value })} className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-400" />
               <div className="grid grid-cols-2 gap-3">
-                <input type="text" placeholder="Dosage (e.g., 500mg)" value={newMed.dosage} onChange={(e) => setNewMed({ ...newMed, dosage: e.target.value })} className="w-full px-4 py-3 border rounded-xl" />
-                <input type="text" placeholder="Frequency" value={newMed.frequency} onChange={(e) => setNewMed({ ...newMed, frequency: e.target.value })} className="w-full px-4 py-3 border rounded-xl" />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Dosage *</label>
+                  <input type="text" placeholder="e.g., 500mg" value={newMed.dosage} onChange={(e) => setNewMed({ ...newMed, dosage: e.target.value })} className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-400" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Frequency *</label>
+                  <select value={newMed.frequency} onChange={(e) => setNewMed({ ...newMed, frequency: e.target.value })} className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-400">
+                    <option value="">Select frequency</option>
+                    {DOSING_FREQUENCIES.map((freq) => (
+                      <option key={freq} value={freq}>{freq}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
               <textarea placeholder="Special instructions" value={newMed.instructions} onChange={(e) => setNewMed({ ...newMed, instructions: e.target.value })} rows={2} className="w-full px-4 py-3 border rounded-xl resize-none" />
               <div className="flex gap-3">

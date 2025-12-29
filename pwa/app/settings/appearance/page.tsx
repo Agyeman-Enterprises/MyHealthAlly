@@ -1,28 +1,67 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { getCurrentUserAndPatient, updateUserSettings } from '@/lib/supabase/queries-settings';
+
+type Theme = 'light' | 'dark' | 'system';
+type TextSize = 'small' | 'medium' | 'large';
 
 export default function AppearancePage() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
-  const [textSize, setTextSize] = useState<'small' | 'medium' | 'large'>('medium');
+  const [theme, setTheme] = useState<Theme>('system');
+  const [textSize, setTextSize] = useState<TextSize>('medium');
   const [highContrast, setHighContrast] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  if (!isAuthenticated) { router.push('/auth/login'); return null; }
+  useEffect(() => {
+    if (!isAuthenticated) { router.push('/auth/login'); return; }
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const { userRecord } = await getCurrentUserAndPatient();
+        setUserId(userRecord.id);
+        const prefs = userRecord.appearance_preferences || {};
+        setTheme(prefs.theme ?? 'system');
+        setTextSize(prefs.textSize ?? 'medium');
+        setHighContrast(prefs.highContrast ?? false);
+        setReduceMotion(prefs.reduceMotion ?? false);
+      } catch (err: any) {
+        console.error('Error loading appearance settings', err);
+        setError(err.message || 'Unable to load appearance settings.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [isAuthenticated, router]);
 
   const handleSave = async () => {
+    if (!userId) return;
     setSaving(true);
-    await new Promise(r => setTimeout(r, 1000));
-    setSaving(false);
-    alert('Appearance settings saved!');
+    setError(null);
+    setSuccess(null);
+    try {
+      const appearancePreferences = { theme, textSize, highContrast, reduceMotion };
+      await updateUserSettings(userId, { appearancePreferences });
+      setSuccess('Appearance settings saved.');
+    } catch (err: any) {
+      console.error('Error saving appearance settings', err);
+      setError(err.message || 'Unable to save appearance settings.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -30,19 +69,22 @@ export default function AppearancePage() {
       <Header />
       <main className="max-w-2xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-navy-600 mb-1">Appearance</h1>
-        <p className="text-gray-600 mb-6">Customize how the app looks</p>
+        <p className="text-gray-600 mb-2">Customize how the app looks</p>
+        {loading && <p className="text-sm text-gray-500 mb-4">Loading preferences…</p>}
+        {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+        {success && <p className="text-sm text-green-600 mb-4">{success}</p>}
 
         <Card className="mb-6">
           <h2 className="font-semibold text-navy-600 mb-4">Theme</h2>
           <div className="grid grid-cols-3 gap-3">
             {[{ v: 'light', l: 'Light', i: '☀️' }, { v: 'dark', l: 'Dark', i: '🌙' }, { v: 'system', l: 'System', i: '💻' }].map((t) => (
-              <button key={t.v} onClick={() => setTheme(t.v as any)} className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${theme === t.v ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-200 hover:border-primary-300'}`}>
+              <button key={t.v} onClick={() => setTheme(t.v as Theme)} className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${theme === t.v ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-200 hover:border-primary-300'}`}>
                 <span className="text-2xl">{t.i}</span>
                 <span className="text-sm font-medium">{t.l}</span>
               </button>
             ))}
           </div>
-          <p className="text-xs text-gray-500 mt-3">Note: Dark mode coming soon! Currently light theme only.</p>
+          <p className="text-xs text-gray-500 mt-3">Dark mode is stored now; apply via theme switcher in layout if enabled.</p>
         </Card>
 
         <Card className="mb-6">
@@ -75,7 +117,7 @@ export default function AppearancePage() {
           </div>
         </Card>
 
-        <Button variant="primary" className="w-full" onClick={handleSave} isLoading={saving}>Save Preferences</Button>
+        <Button variant="primary" className="w-full" onClick={handleSave} isLoading={saving} disabled={loading || saving}>Save Preferences</Button>
       </main>
       <BottomNav />
     </div>

@@ -3,9 +3,11 @@
  * Handles Stripe payment integration with MHA payment indicator
  */
 
-import { loadStripe, Stripe } from '@stripe/stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+import type { Stripe } from '@stripe/stripe-js';
+import { env } from '@/lib/env';
 
-const STRIPE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
+const STRIPE_PUBLISHABLE_KEY = env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
 
 let stripePromise: Promise<Stripe | null>;
 

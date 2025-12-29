@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import type { Stripe } from '@stripe/stripe-js';
 import { getStripe, createPaymentIntent } from '@/lib/stripe/client';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -49,7 +50,9 @@ function PaymentForm() {
         throw new Error('Patient record not found');
       }
 
-      const patientId = (userRecord.patients as any).id;
+      const patientsArray = Array.isArray(userRecord.patients) ? userRecord.patients : [userRecord.patients];
+      const patientId = patientsArray[0]?.id;
+      if (!patientId) throw new Error('Patient ID not found');
 
       // Create payment intent
       const { clientSecret } = await createPaymentIntent({
@@ -62,9 +65,15 @@ function PaymentForm() {
       });
 
       // Confirm payment with Stripe
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) {
+        setError('Card element not found');
+        setLoading(false);
+        return;
+      }
       const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
-          card: elements.getElement(CardElement)!,
+          card: cardElement,
         },
       });
 
@@ -77,8 +86,9 @@ function PaymentForm() {
       if (paymentIntent?.status === 'succeeded') {
         router.push('/payments?payment-success=true');
       }
-    } catch (err: any) {
-      setError(err.message || 'Payment failed');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Payment failed';
+      setError(errorMessage);
       setLoading(false);
     }
   };
@@ -164,7 +174,7 @@ function PaymentForm() {
 export default function MakePaymentPage() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const [stripePromise, setStripePromise] = useState<Promise<any> | null>(null);
+  const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {

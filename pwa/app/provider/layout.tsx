@@ -111,6 +111,16 @@ export default function ProviderLayout({
               Work Items
             </Link>
             <Link
+              href="/provider/alerts"
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                isActive('/provider/alerts')
+                  ? 'border-primary-500 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Alerts
+            </Link>
+            <Link
               href="/provider/patients"
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 isActive('/provider/patients')

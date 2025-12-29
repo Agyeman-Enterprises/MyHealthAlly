@@ -76,7 +76,7 @@ export default function LoginPage() {
       } else {
         throw new Error('Session not created');
       }
-    } catch (err) {
+    } catch {
       setError('Invalid credentials or activation token. Please try again.');
     } finally {
       setIsLoading(false);

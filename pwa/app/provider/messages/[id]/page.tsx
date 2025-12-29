@@ -3,14 +3,15 @@
 import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { providerApiClient, ProviderMessage } from '@/lib/api/provider-client';
+import { providerApiClient } from '@/lib/api/provider-client';
+import type { ProviderMessage } from '@/lib/api/provider-client';
 import { format } from 'date-fns';
 import { DisclaimerBanner } from '@/components/governance/DisclaimerBanner';
 
 export default function ProviderMessageDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const messageId = params.id as string;
+  const messageId = typeof params['id'] === 'string' ? params['id'] : '';
   const queryClient = useQueryClient();
   const [replyText, setReplyText] = useState('');
 

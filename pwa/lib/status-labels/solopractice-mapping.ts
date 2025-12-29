@@ -6,13 +6,9 @@
 
 import {
   ProcessingStatus,
-  ReviewOwnership,
-  ClinicalActionState,
-  MedicationStatus,
-  UrgencyLevel,
   UrgencyFlag,
-  SolopracticeColor,
 } from './types';
+import type { UrgencyLevel, SolopracticeColor } from './types';
 import { calculateSLAColor, SLA_RULES_BY_URGENCY } from './sla-rules';
 
 /**

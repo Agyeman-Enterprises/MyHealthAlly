@@ -52,7 +52,8 @@ export function MicDiagnostics({ stream, isRecording, error, onTestMic }: MicDia
   useEffect(() => {
     if (stream && isRecording) {
       try {
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const audioContext = new AudioContextClass();
         const analyser = audioContext.createAnalyser();
         const source = audioContext.createMediaStreamSource(stream);
 

@@ -1,13 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { supabase } from '@/lib/supabase/client';
+import { env } from '@/lib/env';
 
 // Lazy initialization to avoid build-time errors when env vars are missing
 let stripe: Stripe | null = null;
 
 function getStripe(): Stripe {
   if (!stripe) {
-    const secretKey = process.env.STRIPE_SECRET_KEY;
+    const secretKey = env.STRIPE_SECRET_KEY;
     if (!secretKey) {
       throw new Error('STRIPE_SECRET_KEY environment variable is not set');
     }
@@ -20,14 +22,13 @@ function getStripe(): Stripe {
 
 export async function POST(request: NextRequest) {
   // Check if Stripe is configured
-  if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
+  const webhookSecret = env.STRIPE_WEBHOOK_SECRET;
+  if (!env.STRIPE_SECRET_KEY || !webhookSecret) {
     return NextResponse.json(
       { error: 'Payment webhooks not configured' },
       { status: 503 }
     );
   }
-
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   const body = await request.text();
   const signature = request.headers.get('stripe-signature');
 
@@ -42,10 +43,11 @@ export async function POST(request: NextRequest) {
 
   try {
     event = getStripe().webhooks.constructEvent(body, signature, webhookSecret);
-  } catch (err: any) {
-    console.error('Webhook signature verification failed:', err.message);
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Unknown webhook error';
+    console.error('Webhook signature verification failed:', errorMessage);
     return NextResponse.json(
-      { error: `Webhook Error: ${err.message}` },
+      { error: `Webhook Error: ${errorMessage}` },
       { status: 400 }
     );
   }
@@ -71,9 +73,10 @@ export async function POST(request: NextRequest) {
 
 async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
   try {
-    const patientId = paymentIntent.metadata?.patient_id;
-    const invoiceId = paymentIntent.metadata?.invoice_id;
-    const source = paymentIntent.metadata?.source || 'mha'; // MHA payment indicator
+    const metadata = paymentIntent.metadata || {};
+    const patientId = metadata['patient_id'];
+    const invoiceId = metadata['invoice_id'];
+    const source = metadata['source'] || 'mha'; // MHA payment indicator
 
     if (!patientId) {
       console.error('No patient_id in payment intent metadata');
@@ -117,7 +120,8 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
 
 async function handlePaymentFailure(paymentIntent: Stripe.PaymentIntent) {
   try {
-    const patientId = paymentIntent.metadata?.patient_id;
+    const metadata = paymentIntent.metadata || {};
+    const patientId = metadata['patient_id'];
 
     if (!patientId) return;
 

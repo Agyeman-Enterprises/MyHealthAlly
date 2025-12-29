@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/Button';
 
 export default function RefillPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [pharmacy, setPharmacy] = useState('');
   const [notes, setNotes] = useState('');

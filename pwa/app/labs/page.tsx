@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -17,7 +18,7 @@ const mockLabs = [
 export default function LabsPage() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const [labs, setLabs] = useState(mockLabs);
+  const [labs] = useState(mockLabs);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,7 +39,7 @@ export default function LabsPage() {
         <Card className="mb-6 bg-primary-50 border-primary-200">
           <p className="text-sm text-navy-600">
             💡 <strong>Note:</strong> Lab results are typically available 1-3 days after your test. 
-            For questions about your results, please <a href="/messages/new" className="text-primary-600 hover:underline">message your care team</a>.
+            For questions about your results, please <Link href="/messages/new" className="text-primary-600 hover:underline">message your care team</Link>.
           </p>
         </Card>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { StatusLabelConfig } from '@/lib/status-labels/types';
+import type { StatusLabelConfig } from '@/lib/status-labels/types';
 
 interface StatusBadgeProps {
   config: StatusLabelConfig;

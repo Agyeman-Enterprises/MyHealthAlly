@@ -2,13 +2,36 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { providerApiClient, PracticeSettings, StaffMember } from '@/lib/api/provider-client';
+import { providerApiClient } from '@/lib/api/provider-client';
+import type { PracticeSettings, StaffMember } from '@/lib/api/provider-client';
 import { useAuthStore } from '@/lib/store/auth-store';
 
 export default function ProviderSettingsPage() {
   const { role } = useAuthStore();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'settings' | 'staff' | 'patients'>('settings');
+  const [settingsForm, setSettingsForm] = useState<Partial<PracticeSettings>>({});
+  const [newStaff, setNewStaff] = useState({ name: '', email: '', role: 'staff' });
+
+  const { data: settings, isLoading: settingsLoading } = useQuery<PracticeSettings>({
+    queryKey: ['practice-settings'],
+    queryFn: () => providerApiClient.getPracticeSettings(),
+    enabled: role === 'admin',
+  });
+
+  const { data: staff, isLoading: staffLoading } = useQuery<StaffMember[]>({
+    queryKey: ['staff'],
+    queryFn: () => providerApiClient.getStaff(),
+    enabled: role === 'admin',
+  });
+
+  const updateSettingsMutation = useMutation({
+    mutationFn: (updates: Partial<PracticeSettings>) =>
+      providerApiClient.updatePracticeSettings(updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['practice-settings'] });
+    },
+  });
 
   // Strong security: Enforce admin-only access
   // This is a client-side check - backend must also enforce this
@@ -22,27 +45,6 @@ export default function ProviderSettingsPage() {
       </div>
     );
   }
-
-  const { data: settings, isLoading: settingsLoading } = useQuery<PracticeSettings>({
-    queryKey: ['practice-settings'],
-    queryFn: () => providerApiClient.getPracticeSettings(),
-  });
-
-  const { data: staff, isLoading: staffLoading } = useQuery<StaffMember[]>({
-    queryKey: ['staff'],
-    queryFn: () => providerApiClient.getStaff(),
-  });
-
-  const updateSettingsMutation = useMutation({
-    mutationFn: (updates: Partial<PracticeSettings>) =>
-      providerApiClient.updatePracticeSettings(updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['practice-settings'] });
-    },
-  });
-
-  const [settingsForm, setSettingsForm] = useState<Partial<PracticeSettings>>({});
-  const [newStaff, setNewStaff] = useState({ name: '', email: '', role: 'staff' });
 
   if (settingsLoading || staffLoading) {
     return (

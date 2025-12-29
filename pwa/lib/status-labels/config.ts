@@ -1,4 +1,4 @@
-import {
+import type {
   ProcessingStatus,
   ReviewOwnership,
   ClinicalActionState,
@@ -341,12 +341,20 @@ export function getStatusLabelConfig(
   clinical: StatusLabelConfig;
   medication?: StatusLabelConfig;
 } {
-  return {
+  const result: {
+    processing: StatusLabelConfig;
+    ownership: StatusLabelConfig;
+    clinical: StatusLabelConfig;
+    medication?: StatusLabelConfig;
+  } = {
     processing: PROCESSING_STATUS_CONFIG[processingStatus],
     ownership: REVIEW_OWNERSHIP_CONFIG[reviewOwnership],
     clinical: CLINICAL_ACTION_STATE_CONFIG[clinicalActionState],
-    medication: medicationStatus ? MEDICATION_STATUS_CONFIG[medicationStatus] : undefined,
   };
+  if (medicationStatus) {
+    result.medication = MEDICATION_STATUS_CONFIG[medicationStatus];
+  }
+  return result;
 }
 
 /**

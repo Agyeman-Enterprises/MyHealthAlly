@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTasks, updateTask } from '@/lib/supabase/queries';
 import { format } from 'date-fns';
-import Link from 'next/link';
 import { DisclaimerBanner } from '@/components/governance/DisclaimerBanner';
+import type { TaskStatus } from '@/lib/supabase/types';
 
 export default function ProviderWorkItemsPage() {
   const queryClient = useQueryClient();
@@ -17,18 +17,25 @@ export default function ProviderWorkItemsPage() {
 
   const { data: tasks, isLoading } = useQuery({
     queryKey: ['provider-work-items', filters],
-    queryFn: () => getTasks({
-      status: filters.status !== 'all' ? filters.status : undefined,
-      priority: filters.priority !== 'all' ? filters.priority : undefined,
-      category: filters.category !== 'all' ? filters.category : undefined,
-      limit: 100,
-    }),
+    queryFn: () => {
+      const queryParams: { status?: string; priority?: string; category?: string; limit: number } = { limit: 100 };
+      if (filters.status !== 'all') {
+        queryParams.status = filters.status;
+      }
+      if (filters.priority !== 'all') {
+        queryParams.priority = filters.priority;
+      }
+      if (filters.category !== 'all') {
+        queryParams.category = filters.category;
+      }
+      return getTasks(queryParams);
+    },
     refetchInterval: 30000,
   });
 
   const updateStatusMutation = useMutation({
     mutationFn: ({ taskId, status }: { taskId: string; status: string }) =>
-      updateTask(taskId, { status: status as any }),
+      updateTask(taskId, { status: status as TaskStatus }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['provider-work-items'] });
     },
@@ -49,20 +56,6 @@ export default function ProviderWorkItemsPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'new':
-        return 'bg-blue-100 text-blue-800';
-      case 'in_progress':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   const getCategoryIcon = (category: string) => {
     switch (category) {

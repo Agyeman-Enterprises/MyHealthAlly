@@ -4,7 +4,7 @@
  */
 
 import { supabase } from './client';
-import type { User, UserRole } from './types';
+import type { UserRole } from './types';
 
 export interface AuthUser {
   id: string;
@@ -89,7 +89,7 @@ export async function getSession() {
 /**
  * Listen to auth state changes
  */
-export function onAuthStateChange(callback: (event: string, session: any) => void) {
+export function onAuthStateChange(callback: (event: string, session: { access_token?: string; refresh_token?: string; user?: { id: string; email?: string } } | null) => void) {
   return supabase.auth.onAuthStateChange(callback);
 }
 

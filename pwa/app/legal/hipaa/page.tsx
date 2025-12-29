@@ -33,7 +33,7 @@ export default function HIPAAPage() {
                 <li>Correct your health and claims records</li>
                 <li>Request confidential communication</li>
                 <li>Ask us to limit the information we share</li>
-                <li>Get a list of those with whom we've shared your information</li>
+                <li>Get a list of those with whom we&apos;ve shared your information</li>
                 <li>Get a copy of this privacy notice</li>
                 <li>Choose someone to act for you</li>
                 <li>File a complaint if you feel your rights are violated</li>
@@ -49,11 +49,11 @@ export default function HIPAAPage() {
                 <li><strong>Treat you:</strong> We can use your health information and share it with other professionals who are treating you.</li>
                 <li><strong>Run our organization:</strong> We can use and share your health information to run our practice, improve your care, and contact you when necessary.</li>
                 <li><strong>Bill for your services:</strong> We can use and share your health information to bill and get payment from health plans or other entities.</li>
-                <li><strong>Help with public health and safety issues:</strong> We can share health information about you for certain situations such as preventing disease, helping with product recalls, reporting adverse reactions to medications, and preventing or reducing a serious threat to anyone's health or safety.</li>
-                <li><strong>Comply with the law:</strong> We will share information about you if state or federal laws require it, including with the Department of Health and Human Services if it wants to see that we're complying with federal privacy law.</li>
+                <li><strong>Help with public health and safety issues:</strong> We can share health information about you for certain situations such as preventing disease, helping with product recalls, reporting adverse reactions to medications, and preventing or reducing a serious threat to anyone&apos;s health or safety.</li>
+                <li><strong>Comply with the law:</strong> We will share information about you if state or federal laws require it, including with the Department of Health and Human Services if it wants to see that we&apos;re complying with federal privacy law.</li>
                 <li><strong>Respond to organ and tissue donation requests:</strong> We can share health information about you with organ procurement organizations.</li>
                 <li><strong>Work with a medical examiner or funeral director:</strong> We can share health information with a coroner, medical examiner, or funeral director when an individual dies.</li>
-                <li><strong>Address workers' compensation, law enforcement, and other government requests:</strong> We can use or share health information about you for workers' compensation claims, for law enforcement purposes or with a law enforcement official, with health oversight agencies for activities authorized by law, and for special government functions such as military, national security, and presidential protective services.</li>
+                <li><strong>Address workers&apos; compensation, law enforcement, and other government requests:</strong> We can use or share health information about you for workers&apos; compensation claims, for law enforcement purposes or with a law enforcement official, with health oversight agencies for activities authorized by law, and for special government functions such as military, national security, and presidential protective services.</li>
                 <li><strong>Respond to lawsuits and legal actions:</strong> We can share health information about you in response to a court or administrative order, or in response to a subpoena.</li>
               </ul>
             </section>

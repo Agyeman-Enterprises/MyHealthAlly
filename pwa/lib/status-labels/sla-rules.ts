@@ -12,7 +12,8 @@
  * - Practice manager or MD needs to be made aware
  */
 
-import { ProcessingStatus, UrgencyLevel, UrgencyFlag, SolopracticeColor } from './types';
+import { ProcessingStatus, UrgencyLevel, UrgencyFlag } from './types';
+import type { SolopracticeColor } from './types';
 
 /**
  * SLA Time Rules by Urgency Level
@@ -81,7 +82,8 @@ export function calculateSLAColor(
 ): SolopracticeColor {
   const rules = SLA_RULES_BY_URGENCY[urgencyLevel];
   const now = new Date();
-  const elapsedSinceSubmission = now.getTime() - submittedAt.getTime();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _elapsedSinceSubmission = now.getTime() - submittedAt.getTime();
   const elapsedSinceUpdate = now.getTime() - lastUpdatedAt.getTime();
 
   // If already in a terminal state, return GREEN

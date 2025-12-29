@@ -15,7 +15,7 @@ import Link from 'next/link';
 export default function InvoiceDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const invoiceId = params.id as string;
+  const invoiceId = typeof params['id'] === 'string' ? params['id'] : '';
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   useEffect(() => {
@@ -38,7 +38,9 @@ export default function InvoiceDetailPage() {
 
       if (!userRecord || !userRecord.patients) return null;
 
-      const patientId = (userRecord.patients as any).id;
+      const patientsArray = Array.isArray(userRecord.patients) ? userRecord.patients : [userRecord.patients];
+      const patientId = patientsArray[0]?.id;
+      if (!patientId) return null;
 
       const { data, error } = await supabase
         .from('patient_billing')

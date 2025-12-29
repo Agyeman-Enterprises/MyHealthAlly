@@ -18,7 +18,7 @@ export function EmergencyDisclaimer({
   if (variant === 'compact') {
     return (
       <div className={`text-xs text-gray-500 ${className}`}>
-        <span className="font-medium">Not for emergencies.</span> If you're experiencing a medical emergency, call 911.
+        <span className="font-medium">Not for emergencies.</span> If you&apos;re experiencing a medical emergency, call 911.
       </div>
     );
   }
@@ -72,7 +72,7 @@ export function EmergencyDisclaimer({
             <span className="font-semibold">Office Hours:</span> Messages are typically responded to within 24-48 hours during business hours.
           </p>
           <p className="text-sm text-amber-700 mt-1">
-            <span className="font-semibold">⚠️ Not for emergencies.</span> If you're experiencing a medical emergency, 
+            <span className="font-semibold">⚠️ Not for emergencies.</span> If you&apos;re experiencing a medical emergency, 
             go to your nearest emergency room or call 911.
           </p>
         </div>
@@ -127,7 +127,7 @@ interface MessageConfirmationProps {
   onEmergency: () => void;
 }
 
-export function MessageConfirmation({ isOpen, onConfirm, onCancel, onEmergency }: MessageConfirmationProps) {
+export function MessageConfirmation({ isOpen, onConfirm, onCancel }: MessageConfirmationProps) {
   if (!isOpen) return null;
 
   return (

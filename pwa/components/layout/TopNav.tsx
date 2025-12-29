@@ -3,7 +3,44 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import Image from 'next/image';
+
+// Logo component with fallback
+function TopNavLogoImage() {
+  const [logoError, setLogoError] = useState(false);
+  const [usePng, setUsePng] = useState(false);
+
+  if (logoError && !usePng) {
+    // Try PNG fallback
+    return (
+      <img
+        src="/images/mha_logo_512.png"
+        alt="MyHealth Ally"
+        className="w-8 h-8 rounded-lg object-cover"
+        onError={() => setUsePng(true)}
+      />
+    );
+  }
+
+  if (usePng) {
+    // Final fallback to gradient icon
+    return (
+      <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
+        <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+        </svg>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src="/images/MHA_logo.jpg"
+      alt="MyHealth Ally"
+      className="w-8 h-8 rounded-lg object-cover"
+      onError={() => setLogoError(true)}
+    />
+  );
+}
 
 interface NavItem {
   label: string;
@@ -144,10 +181,11 @@ function getBreadcrumbs(pathname: string): { label: string; href?: string }[] {
     const label = labelMap[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);
     
     if (segment !== 'dashboard') { // Don't duplicate Home
-      breadcrumbs.push({
-        label,
-        href: isLast ? undefined : path,
-      });
+      const breadcrumb: { label: string; href?: string } = { label };
+      if (!isLast) {
+        breadcrumb.href = path;
+      }
+      breadcrumbs.push(breadcrumb);
     }
   });
 
@@ -171,11 +209,7 @@ export function TopNav({ showBreadcrumbs = true }: TopNavProps) {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/dashboard" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-              </div>
+              <TopNavLogoImage />
               <span className="text-xl font-bold text-navy-900">MyHealth Ally</span>
             </Link>
 

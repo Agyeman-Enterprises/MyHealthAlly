@@ -36,7 +36,7 @@ export interface AuditLogEntry {
   action_type: ActionType;
   resource_type: ResourceType;
   resource_id?: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   patient_id?: string;
 }
 
@@ -47,7 +47,7 @@ export interface PatientInteractionLog {
   copy_shown: string;
   action_taken: string;
   reason?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -112,7 +112,7 @@ export async function logMessageSent(
   messageId: string,
   threadId: string,
   patientId: string,
-  details?: Record<string, any>
+  details?: Record<string, unknown>
 ): Promise<void> {
   await logAuditEvent({
     action_type: 'message_sent',
@@ -164,7 +164,7 @@ export async function logMessageDeferred(
 export async function logEmergencyRedirect(
   patientId: string,
   reason: string,
-  symptoms?: Record<string, any>
+  symptoms?: Record<string, unknown>
 ): Promise<void> {
   await logAuditEvent({
     action_type: 'emergency_redirect_shown',
@@ -214,7 +214,7 @@ export async function logDisclaimerAcknowledged(
 export async function logWarningIgnored(
   patientId: string,
   warningType: string,
-  details?: Record<string, any>
+  details?: Record<string, unknown>
 ): Promise<void> {
   await logAuditEvent({
     action_type: 'warning_ignored',

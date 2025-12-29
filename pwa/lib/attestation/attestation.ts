@@ -44,7 +44,7 @@ export async function createAttestation(
   const previousHash = previousAttestation?.signature_hash || null;
 
   // Create hash
-  const { hash, canonical } = await createAttestationHash(
+  const { hash } = await createAttestationHash(
     request.noteId,
     request.clinicianId,
     request.attestationText,
@@ -108,6 +108,9 @@ export async function verifyAttestationChain(noteId: string): Promise<{
   // Verify hash chain
   for (let i = 0; i < rawAttestations.length; i++) {
     const att = rawAttestations[i];
+    if (!att) {
+      return { valid: false, invalidIndex: i, attestations };
+    }
     
     // First attestation should have null previous hash
     if (i === 0 && att.previous_attestation_hash !== null) {
@@ -117,6 +120,9 @@ export async function verifyAttestationChain(noteId: string): Promise<{
     // Subsequent attestations should link to previous
     if (i > 0) {
       const previous = rawAttestations[i - 1];
+      if (!previous) {
+        return { valid: false, invalidIndex: i, attestations };
+      }
       if (att.previous_attestation_hash !== previous.signature_hash) {
         return { valid: false, invalidIndex: i, attestations };
       }

@@ -3,10 +3,11 @@
   "short_name": "MHA",
   "description": "Patient engagement platform for continuous care",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#00bcd4",
-  "orientation": "portrait-primary",
+  "theme_color": "#9B8AB8",
+  "orientation": "any",
   "icons": [
     {
       "src": "/icon-192x192.png",

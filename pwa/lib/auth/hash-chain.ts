@@ -6,13 +6,13 @@
 /**
  * Create canonical JSON (stable key ordering)
  */
-export function createCanonicalJSON(obj: Record<string, any>): string {
+export function createCanonicalJSON(obj: Record<string, unknown>): string {
   // Sort keys recursively
   const sorted = sortKeys(obj);
   return JSON.stringify(sorted, null, 0);
 }
 
-function sortKeys(obj: any): any {
+function sortKeys(obj: unknown): unknown {
   if (obj === null || typeof obj !== 'object') {
     return obj;
   }
@@ -21,11 +21,12 @@ function sortKeys(obj: any): any {
     return obj.map(sortKeys);
   }
 
-  const sorted: Record<string, any> = {};
+  const sorted: Record<string, unknown> = {};
   const keys = Object.keys(obj).sort();
+  const objRecord = obj as Record<string, unknown>;
   
   for (const key of keys) {
-    sorted[key] = sortKeys(obj[key]);
+    sorted[key] = sortKeys(objRecord[key]);
   }
 
   return sorted;
@@ -34,7 +35,7 @@ function sortKeys(obj: any): any {
 /**
  * Calculate SHA-256 hash of canonical JSON
  */
-export async function calculateHash(data: Record<string, any>): Promise<string> {
+export async function calculateHash(data: Record<string, unknown>): Promise<string> {
   const canonical = createCanonicalJSON(data);
   const encoder = new TextEncoder();
   const dataBuffer = encoder.encode(canonical);
@@ -53,7 +54,7 @@ export async function createHashChainedEvent(
   eventType: string,
   entityType: string,
   entityId: string | null,
-  eventData: Record<string, any>,
+  eventData: Record<string, unknown>,
   previousHash: string | null
 ): Promise<{ hash: string; canonical: string }> {
   const canonicalData = {
@@ -78,7 +79,7 @@ export async function createAttestationHash(
   noteId: string,
   clinicianId: string,
   attestationText: string,
-  signatureData: Record<string, any>,
+  signatureData: Record<string, unknown>,
   previousHash: string | null
 ): Promise<{ hash: string; canonical: string }> {
   const canonicalData = {
@@ -100,10 +101,13 @@ export async function createAttestationHash(
  * Verify hash chain integrity
  */
 export async function verifyHashChain(
-  events: Array<{ hash: string; previous_hash: string | null; data: Record<string, any> }>
+  events: Array<{ hash: string; previous_hash: string | null; data: Record<string, unknown> }>
 ): Promise<{ valid: boolean; invalidIndex: number | null }> {
   for (let i = 0; i < events.length; i++) {
     const event = events[i];
+    if (!event) {
+      return { valid: false, invalidIndex: i };
+    }
     
     // Verify current event hash
     const calculatedHash = await calculateHash(event.data);
@@ -114,6 +118,9 @@ export async function verifyHashChain(
     // Verify previous hash link (except first event)
     if (i > 0) {
       const previousEvent = events[i - 1];
+      if (!previousEvent) {
+        return { valid: false, invalidIndex: i };
+      }
       if (event.previous_hash !== previousEvent.hash) {
         return { valid: false, invalidIndex: i };
       }

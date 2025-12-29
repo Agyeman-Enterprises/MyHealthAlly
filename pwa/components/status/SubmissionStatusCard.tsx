@@ -1,6 +1,6 @@
 'use client';
 
-import { SubmissionStatus } from '@/lib/status-labels/types';
+import type { SubmissionStatus } from '@/lib/status-labels/types';
 import { getStatusLabelConfig } from '@/lib/status-labels/config';
 import { getSolopracticeColor, getSolopracticeColorClass } from '@/lib/status-labels/solopractice-mapping';
 import { getSLAStatusMessage, getTimeUntilNextSLAThreshold, requiresEscalation, getCountdownTimer } from '@/lib/status-labels/sla-rules';
@@ -8,8 +8,9 @@ import { StatusLabel } from './StatusLabel';
 import { Card } from '@/components/ui/Card';
 import { useEffect, useState } from 'react';
 
-// Helper function to format time remaining
-function formatTimeRemaining(ms: number): string {
+// Helper function to format time remaining (unused but kept for potential future use)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _formatTimeRemaining(ms: number): string {
   const hours = Math.floor(ms / (60 * 60 * 1000));
   const minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
   if (hours > 0) {
@@ -68,10 +69,6 @@ export function SubmissionStatusCard({
     }
   }, [status.urgencyLevel, status.submittedAt, status.lastUpdatedAt, configs.processing.isTerminal]);
 
-  const isUrgent = status.isUrgent || status.urgencyFlag !== 'none';
-  const hasEscalationFlag = status.requiresEscalation || 
-    status.urgencyFlag === 'escalation_recommended' || 
-    status.urgencyFlag === 'emergency_redirect_sent';
 
   return (
     <Card variant="elevated" className={`${className} border-l-4 ${colorClass.split(' ')[0]}`}>

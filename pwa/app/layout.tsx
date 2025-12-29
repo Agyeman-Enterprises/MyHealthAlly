@@ -18,7 +18,8 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: '#00bcd4',
+  themeColor: '#9B8AB8',
+  viewportFit: 'cover', // Support for notched devices (iPhone X+, iPad Pro)
 };
 
 export default function RootLayout({
@@ -53,8 +54,14 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         
         {/* Microsoft Tiles */}
-        <meta name="msapplication-TileColor" content="#00bcd4" />
+        <meta name="msapplication-TileColor" content="#9B8AB8" />
         <meta name="msapplication-TileImage" content="/ms-icon-144x144.png" />
+        
+        {/* PWA Meta Tags */}
+        <meta name="application-name" content="MyHealth Ally" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
         <Providers>{children}</Providers>

@@ -3,7 +3,7 @@
  * Explicit transition logic with guards
  */
 
-import {
+import type {
   EncounterState,
   EncounterEvent,
   EncounterStateMachine,
@@ -67,7 +67,7 @@ export function createEncounterStateMachine(
       return validEvents.includes(event);
     },
 
-    transition(event: EncounterEvent, context?: Record<string, any>): EncounterState {
+    transition(event: EncounterEvent, context?: Record<string, unknown>): EncounterState {
       if (!this.canTransition(event)) {
         throw new Error(
           `Invalid transition: Cannot ${event} from ${state}. Valid transitions: ${ENCOUNTER_TRANSITIONS[state].join(', ')}`
@@ -75,12 +75,12 @@ export function createEncounterStateMachine(
       }
 
       // Guard: Cannot start recording without stream
-      if (event === 'START_RECORDING' && !context?.streamActive) {
+      if (event === 'START_RECORDING' && !context?.['streamActive']) {
         throw new Error('Cannot start recording: Audio stream not active');
       }
 
       // Guard: Cannot create note without audio
-      if (event === 'CREATE_NOTE' && !context?.hasAudio) {
+      if (event === 'CREATE_NOTE' && !context?.['hasAudio']) {
         throw new Error('Cannot create note: No audio recorded');
       }
 
@@ -154,7 +154,7 @@ export function createCaptureSessionStateMachine(
       return validEvents.includes(event);
     },
 
-    transition(event: CaptureSessionEvent, context?: Record<string, any>): CaptureSessionState {
+    transition(event: CaptureSessionEvent, context?: Record<string, unknown>): CaptureSessionState {
       if (!this.canTransition(event)) {
         throw new Error(
           `Invalid transition: Cannot ${event} from ${state}. Valid transitions: ${CAPTURE_TRANSITIONS[state].join(', ')}`
@@ -175,10 +175,10 @@ export function createCaptureSessionStateMachine(
       } else if (event === 'STOP' || event === 'ABORT') {
         diagnostics.recordingActive = false;
       } else if (event === 'FAIL') {
-        diagnostics.error = context?.error || 'Unknown error';
+        diagnostics.error = context?.['error'] || 'Unknown error';
         diagnostics.lastError = {
-          code: context?.code || 'UNKNOWN',
-          message: context?.message || diagnostics.error,
+          code: context?.['code'] || 'UNKNOWN',
+          message: context?.['message'] || diagnostics.error,
           timestamp: new Date().toISOString(),
         };
         diagnostics.streamActive = false;
@@ -186,8 +186,9 @@ export function createCaptureSessionStateMachine(
       }
 
       // Update audio level if provided
-      if (context?.audioLevel !== undefined) {
-        diagnostics.audioLevel = context.audioLevel;
+      const audioLevel = context?.['audioLevel'];
+      if (audioLevel !== undefined) {
+        diagnostics.audioLevel = audioLevel;
       }
 
       state = CAPTURE_STATE_MAP[event];
@@ -242,7 +243,7 @@ export function createNoteStateMachine(initialState: NoteState = 'DRAFT'): NoteS
       return validEvents.includes(event);
     },
 
-    transition(event: NoteEvent, context?: Record<string, any>): NoteState {
+    transition(event: NoteEvent, context?: Record<string, unknown>): NoteState {
       if (!this.canTransition(event)) {
         throw new Error(
           `Invalid transition: Cannot ${event} from ${state}. Valid transitions: ${NOTE_TRANSITIONS[state].join(', ')}`
@@ -250,7 +251,7 @@ export function createNoteStateMachine(initialState: NoteState = 'DRAFT'): NoteS
       }
 
       // Guard: Cannot sign without attestation
-      if (event === 'SIGN' && !context?.attestation) {
+      if (event === 'SIGN' && !context?.['attestation']) {
         throw new Error('Cannot sign note: Attestation required');
       }
 
@@ -318,7 +319,8 @@ export function createExportJobStateMachine(
       return validEvents.includes(event);
     },
 
-    transition(event: ExportJobEvent, context?: Record<string, any>): ExportJobState {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    transition(event: ExportJobEvent, _context?: Record<string, unknown>): ExportJobState {
       if (!this.canTransition(event)) {
         throw new Error(
           `Invalid transition: Cannot ${event} from ${state}. Valid transitions: ${EXPORT_TRANSITIONS[state].join(', ')}`

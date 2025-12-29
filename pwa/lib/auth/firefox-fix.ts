@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '@/lib/supabase/client';
+import { env } from '@/lib/env';
 
 // ============================================
 // COOKIE/TOKEN STRATEGY
@@ -36,7 +37,8 @@ export class FirefoxAuthStorage {
     } catch (error) {
       console.error('Failed to store tokens:', error);
       // Last resort: in-memory (will be lost on refresh)
-      (window as any).__mha_tokens = { accessToken, refreshToken };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as Record<string, unknown>).__mha_tokens = { accessToken, refreshToken };
     }
   }
 
@@ -61,7 +63,8 @@ export class FirefoxAuthStorage {
       }
       
       // Try in-memory fallback
-      const inMemory = (window as any).__mha_tokens;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const inMemory = (window as Record<string, { accessToken: string; refreshToken: string }>).__mha_tokens;
       if (inMemory) {
         return { accessToken: inMemory.accessToken, refreshToken: inMemory.refreshToken };
       }
@@ -78,7 +81,8 @@ export class FirefoxAuthStorage {
       localStorage.removeItem(this.REFRESH_KEY);
       sessionStorage.removeItem(this.TOKEN_KEY);
       sessionStorage.removeItem(this.REFRESH_KEY);
-      delete (window as any).__mha_tokens;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (window as Record<string, unknown>).__mha_tokens;
     } catch (error) {
       console.error('Failed to clear tokens:', error);
     }
@@ -232,12 +236,12 @@ export interface AuthFailureEvent {
 
 export function logAuthFailure(event: AuthFailureEvent): void {
   // Log to console in dev
-  if (process.env.NODE_ENV === 'development') {
+  if (env.NODE_ENV === 'development') {
     console.error('Auth Failure:', event);
   }
 
   // In production, send to telemetry endpoint
-  if (process.env.NODE_ENV === 'production') {
+  if (env.NODE_ENV === 'production') {
     fetch('/api/telemetry/auth-failure', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

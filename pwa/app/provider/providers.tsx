@@ -1,6 +1,7 @@
 'use client';
 
-import { ReactNode, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useAuthStore } from '@/lib/store/auth-store';
 
 export function Providers({ children }: { children: ReactNode }) {

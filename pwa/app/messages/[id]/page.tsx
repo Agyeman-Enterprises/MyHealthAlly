@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -15,7 +15,6 @@ const mockThread = [
 
 export default function MessageDetailPage() {
   const router = useRouter();
-  const params = useParams();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);

@@ -17,7 +17,7 @@ const mockDocs = [
 export default function DocumentsPage() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const [docs, setDocs] = useState(mockDocs);
+  const [docs] = useState(mockDocs);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { setTimeout(() => setLoading(false), 500); }, []);

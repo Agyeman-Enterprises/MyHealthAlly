@@ -5,9 +5,11 @@
  * All CG rules (R1-R12) enforced server-side.
  */
 
-import axios, { AxiosInstance, AxiosError } from 'axios';
+import axios from 'axios';
+import type { AxiosInstance, AxiosError } from 'axios';
+import { env } from '@/lib/env';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL = env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 
 export interface ActivateAccountRequest {
   token: string;
@@ -35,7 +37,7 @@ export interface SymptomScreenResult {
 export interface SendMessageRequest {
   body: string;
   symptom_screen?: SymptomScreenResult;
-  attachments?: Record<string, any>;
+  attachments?: Record<string, unknown>;
   detected_language?: string; // Language detected from voice/text (e.g., 'ko', 'es', 'ch')
   preferred_language?: string; // Patient's preferred language for responses
 }
@@ -45,7 +47,7 @@ export interface MessageResponse {
   thread_id: string;
   sender_id: string;
   content: string;
-  attachments?: Record<string, any>;
+  attachments?: Record<string, unknown>;
   status: 'sent' | 'after_hours_deferred' | 'blocked';
   read: boolean;
   read_at?: string;
@@ -67,16 +69,16 @@ export interface MessageThread {
 
 export interface RecordMeasurementRequest {
   type: string;
-  value: Record<string, any>;
+  value: Record<string, unknown>;
   source?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface MeasurementResponse {
   id: string;
   patient_id: string;
   type: string;
-  value: Record<string, any>;
+  value: Record<string, unknown>;
   timestamp: string;
   source: string;
   urgency?: 'green' | 'yellow' | 'red';
@@ -135,8 +137,13 @@ export class SoloPracticeApiClient {
     // Request interceptor - add auth token
     this.client.interceptors.request.use(
       (config) => {
-        if (this.accessToken) {
-          config.headers.Authorization = `Bearer ${this.accessToken}`;
+        // Get token from instance, localStorage, or auth store
+        let token = this.accessToken;
+        if (!token && typeof window !== 'undefined') {
+          token = localStorage.getItem('access_token');
+        }
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
       },
@@ -155,7 +162,7 @@ export class SoloPracticeApiClient {
               error.config.headers.Authorization = `Bearer ${this.accessToken}`;
               return this.client.request(error.config);
             }
-          } catch (refreshError) {
+          } catch {
             // Refresh failed, clear tokens
             this.clearTokens();
             throw new SoloPracticeApiError('Unauthorized', 401);
@@ -219,7 +226,7 @@ export class SoloPracticeApiClient {
     if (error && typeof error === 'object' && 'response' in error && (error as AxiosError).response) {
       const axiosError = error as AxiosError;
       const status = axiosError.response?.status || 0;
-      const data = axiosError.response?.data as any;
+      const data = axiosError.response?.data as { message?: string; error?: string };
 
       if (status === 403) {
         return new SoloPracticeApiError(

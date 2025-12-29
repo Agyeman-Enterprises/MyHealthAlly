@@ -647,22 +647,6 @@ function VitalSuccess({ message, onDismiss }: { message: string; onDismiss: () =
   );
 }
 
-function PeakFlowZone({ value, personalBest }: { value: number; personalBest?: number }) {
-  if (!personalBest) return null;
-  
-  const percent = (value / personalBest) * 100;
-  const zone = percent < 50 ? 'RED' : percent < 80 ? 'YELLOW' : 'GREEN';
-  const bgColor = zone === 'RED' ? 'bg-red-100' : zone === 'YELLOW' ? 'bg-amber-100' : 'bg-green-100';
-  const textColor = zone === 'RED' ? 'text-red-800' : zone === 'YELLOW' ? 'text-amber-800' : 'text-green-800';
-  
-  return (
-    <div className={`${bgColor} rounded-lg p-3 text-center`}>
-      <p className={`font-bold ${textColor}`}>{zone} ZONE</p>
-      <p className={`text-sm ${textColor} opacity-90`}>{percent.toFixed(0)}% of personal best</p>
-    </div>
-  );
-}
-
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -782,10 +766,10 @@ export default function VitalsPage() {
         id: savedVital.id,
         type: selectedType,
         value: numValue,
-        value2: numValue2,
+        ...(numValue2 !== undefined && { value2: numValue2 }),
         unit: config.unit,
         timestamp: new Date(savedVital.measured_at),
-        notes: notes || undefined,
+        ...(notes && { notes }),
       };
 
       // Add to recent readings

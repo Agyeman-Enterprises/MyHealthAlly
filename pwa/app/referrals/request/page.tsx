@@ -50,11 +50,14 @@ export default function RequestReferralPage() {
         .eq('supabase_auth_id', user.id)
         .single();
 
-      if (!userRecord || !userRecord.patients) {
+      if (!userRecord || !userRecord.patients || !Array.isArray(userRecord.patients) || userRecord.patients.length === 0) {
         throw new Error('Patient record not found');
       }
 
-      const patientId = (userRecord.patients as any).id;
+      const patientId = userRecord.patients[0]?.id;
+      if (!patientId) {
+        throw new Error('Patient ID not found');
+      }
 
       const { data: referral, error } = await supabase
         .from('referral_requests')
@@ -145,7 +148,7 @@ export default function RequestReferralPage() {
                       name="urgency"
                       value={level}
                       checked={formData.urgency === level}
-                      onChange={(e) => setFormData({ ...formData, urgency: e.target.value as any })}
+                      onChange={(e) => setFormData({ ...formData, urgency: e.target.value as 'routine' | 'soon' | 'urgent' })}
                       className="w-4 h-4 text-primary-600"
                     />
                     <span className="text-gray-700 capitalize">{level}</span>

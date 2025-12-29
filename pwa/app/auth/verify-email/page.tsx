@@ -49,7 +49,7 @@ function VerifyEmailContent() {
 
       if (error) throw error;
       setResent(true);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Resend error:', err);
     } finally {
       setResending(false);
@@ -69,7 +69,7 @@ function VerifyEmailContent() {
           <h1 className="text-3xl font-bold text-gray-900 mb-4">Check Your Email</h1>
           
           <p className="text-gray-600 mb-6">
-            We've sent a verification link to{' '}
+            We&apos;ve sent a verification link to{' '}
             <span className="font-semibold text-gray-900">{email}</span>
           </p>
 

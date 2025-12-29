@@ -6,11 +6,11 @@ import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 
 const documents = [
-  { name: 'Terms of Service', updated: 'December 1, 2024', href: '#terms' },
-  { name: 'Privacy Policy', updated: 'December 1, 2024', href: '#privacy' },
-  { name: 'HIPAA Notice of Privacy Practices', updated: 'November 15, 2024', href: '#hipaa' },
-  { name: 'Consent for Telehealth Services', updated: 'October 1, 2024', href: '#telehealth' },
-  { name: 'Patient Rights & Responsibilities', updated: 'October 1, 2024', href: '#rights' },
+  { name: 'Terms of Service', updated: 'December 1, 2024', href: '/legal/terms' },
+  { name: 'Privacy Policy', updated: 'December 1, 2024', href: '/legal/privacy' },
+  { name: 'HIPAA Notice of Privacy Practices', updated: 'November 15, 2024', href: '/legal/hipaa' },
+  { name: 'Financial Privacy Policy', updated: 'December 1, 2024', href: '/legal/financial-privacy' },
+  { name: 'Consent Forms', updated: 'December 1, 2024', href: '/legal/consent', highlight: true },
 ];
 
 export default function LegalPage() {
@@ -27,7 +27,13 @@ export default function LegalPage() {
 
         <Card className="divide-y divide-gray-100 p-0">
           {documents.map((doc) => (
-            <a key={doc.name} href={doc.href} className="block p-4 hover:bg-primary-50 transition-colors first:rounded-t-xl last:rounded-b-xl">
+            <a 
+              key={doc.name} 
+              href={doc.href} 
+              className={`block p-4 hover:bg-primary-50 transition-colors first:rounded-t-xl last:rounded-b-xl ${
+                (doc as any).highlight ? 'bg-primary-50 border-l-4 border-primary-500' : ''
+              }`}
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-medium text-navy-600">{doc.name}</h3>

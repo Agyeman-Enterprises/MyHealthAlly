@@ -1,33 +1,48 @@
 'use client';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 
-const categories = [
-  { id: 'diabetes', name: 'Diabetes Management', icon: '🩸', count: 8 },
-  { id: 'nutrition', name: 'Nutrition & Diet', icon: '🥗', count: 12 },
-  { id: 'exercise', name: 'Exercise & Fitness', icon: '🏃', count: 6 },
-  { id: 'heart', name: 'Heart Health', icon: '❤️', count: 5 },
-  { id: 'stress', name: 'Stress Management', icon: '🧘', count: 4 },
-  { id: 'sleep', name: 'Sleep Health', icon: '😴', count: 3 },
+type Resource = {
+  id: string;
+  title: string;
+  category: string;
+  type: 'article' | 'pdf';
+  duration: string;
+  href: string;
+  icon: string;
+};
+
+const resources: Resource[] = [
+  { id: 'asthma-guide', title: 'Asthma Self-Management Guide', category: 'Respiratory', type: 'pdf', duration: '12 pages', href: '/resources/asthma-self-management-guide.md', icon: '🌬️' },
+  { id: 'asthma-action', title: 'Asthma Action Plan', category: 'Respiratory', type: 'pdf', duration: '10 pages', href: '/resources/asthma-action-plan-guide.md', icon: '📝' },
+  { id: 'copd-management', title: 'COPD Management Guide', category: 'Respiratory', type: 'pdf', duration: '14 pages', href: '/resources/copd-management-guide.md', icon: '💨' },
+  { id: 'newborn-warning', title: 'Newborn Warning Signs', category: 'Pediatrics', type: 'pdf', duration: '8 pages', href: '/resources/newborn-warning-signs-guide.md', icon: '👶' },
 ];
 
-const featuredResources = [
-  { id: '1', title: 'Understanding Your A1C Results', category: 'Diabetes', type: 'article', duration: '5 min read', image: '📊' },
-  { id: '2', title: 'Healthy Eating on a Budget', category: 'Nutrition', type: 'video', duration: '12 min', image: '🎬' },
-  { id: '3', title: 'Managing Blood Sugar with Exercise', category: 'Exercise', type: 'article', duration: '8 min read', image: '📝' },
-  { id: '4', title: 'Pacific Island Heart-Healthy Recipes', category: 'Nutrition', type: 'pdf', duration: '15 pages', image: '📄' },
+const categories = [
+  { id: 'Respiratory', name: 'Respiratory Health', icon: '🌬️' },
+  { id: 'Pediatrics', name: 'Pediatric Care', icon: '👶' },
 ];
 
 export default function EducationPage() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   if (!isAuthenticated) { router.push('/auth/login'); return null; }
+
+  const filtered = useMemo(() => {
+    return resources.filter((r) => {
+      const matchesSearch = r.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = !activeCategory || r.category === activeCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [searchQuery, activeCategory]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
@@ -38,7 +53,6 @@ export default function EducationPage() {
           <p className="text-gray-600">Learn about managing your health</p>
         </div>
 
-        {/* Search */}
         <div className="mb-6">
           <input
             type="text"
@@ -49,28 +63,32 @@ export default function EducationPage() {
           />
         </div>
 
-        {/* Categories */}
         <Card className="mb-6">
           <h2 className="font-semibold text-navy-600 mb-4">Browse by Topic</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {categories.map((cat) => (
-              <button key={cat.id} onClick={() => alert(`Browse ${cat.name}`)} className="p-4 border rounded-xl hover:border-primary-400 hover:bg-primary-50 transition-all text-center">
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(activeCategory === cat.id ? null : cat.id)}
+                className={`p-4 border rounded-xl hover:border-primary-400 hover:bg-primary-50 transition-all text-center ${activeCategory === cat.id ? 'border-primary-400 bg-primary-50' : ''}`}
+              >
                 <span className="text-2xl block mb-1">{cat.icon}</span>
                 <span className="text-sm font-medium text-navy-600">{cat.name}</span>
-                <span className="text-xs text-gray-500 block">{cat.count} resources</span>
+                <span className="text-xs text-gray-500 block">
+                  {resources.filter((r) => r.category === cat.id).length} resources
+                </span>
               </button>
             ))}
           </div>
         </Card>
 
-        {/* Featured Resources */}
-        <h2 className="font-semibold text-navy-600 mb-4">Recommended for You</h2>
+        <h2 className="font-semibold text-navy-600 mb-4">Resources</h2>
         <div className="space-y-3">
-          {featuredResources.map((resource) => (
-            <Card key={resource.id} hover className="cursor-pointer" onClick={() => alert(`Open: ${resource.title}`)}>
+          {filtered.map((resource) => (
+            <Card key={resource.id} hover className="cursor-pointer" onClick={() => router.push(resource.href)}>
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 bg-primary-100 rounded-xl flex items-center justify-center text-2xl">
-                  {resource.image}
+                  {resource.icon}
                 </div>
                 <div className="flex-1">
                   <h3 className="font-medium text-navy-600">{resource.title}</h3>
@@ -82,11 +100,12 @@ export default function EducationPage() {
               </div>
             </Card>
           ))}
+          {filtered.length === 0 && <p className="text-sm text-gray-500">No resources match your filters.</p>}
         </div>
 
         <Card className="mt-6 bg-primary-50 border-primary-200">
           <h3 className="font-semibold text-navy-600 mb-2">📚 Personalized Learning</h3>
-          <p className="text-sm text-gray-600">These resources are recommended based on your care plan and health conditions. Ask your care team for additional recommendations.</p>
+          <p className="text-sm text-gray-600">These resources link directly to the available guides. Ask your care team for additional recommendations.</p>
         </Card>
       </main>
       <BottomNav />

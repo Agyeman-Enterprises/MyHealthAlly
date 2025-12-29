@@ -3,7 +3,8 @@
  * GET /api/patient/export
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/client';
 import { getCurrentUser } from '@/lib/supabase/auth';
 
@@ -90,10 +91,11 @@ export async function GET(request: NextRequest) {
         { status: 501 }
       );
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Export error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to export data';
     return NextResponse.json(
-      { error: 'Failed to export data' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

@@ -14,7 +14,7 @@ import { DisclaimerBanner } from '@/components/governance/DisclaimerBanner';
 export default function ProviderPatientDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const patientId = params.id as string;
+  const patientId = typeof params['id'] === 'string' ? params['id'] : '';
 
   const { data: patient, isLoading } = useQuery({
     queryKey: ['provider-patient', patientId],
@@ -148,7 +148,7 @@ export default function ProviderPatientDetailPage() {
         <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Vital Signs</h3>
         {vitals && vitals.length > 0 ? (
           <div className="space-y-3">
-            {vitals.slice(0, 5).map((vital: any) => (
+            {vitals.slice(0, 5).map((vital: { id: string; type: string; value: number; timestamp: string }) => (
               <div key={vital.id} className="border-b border-gray-200 pb-3 last:border-0 last:pb-0">
                 <div className="flex justify-between items-center">
                   <div>
@@ -180,7 +180,7 @@ export default function ProviderPatientDetailPage() {
         <h3 className="text-lg font-medium text-gray-900 mb-4">Medications</h3>
         {medications && medications.length > 0 ? (
           <ul className="space-y-3">
-            {medications.map((med: any) => (
+            {medications.map((med: { id: string; name: string; dosage: string; dosage_unit: string; frequency: string; is_active: boolean }) => (
               <li key={med.id} className="border-b border-gray-200 pb-3 last:border-0 last:pb-0">
                 <p className="text-sm font-medium text-gray-900">{med.name}</p>
                 <p className="text-xs text-gray-500">{med.dosage} {med.dosage_unit} - {med.frequency}</p>
@@ -200,7 +200,7 @@ export default function ProviderPatientDetailPage() {
         <h3 className="text-lg font-medium text-gray-900 mb-4">Lab Orders</h3>
         {labOrders && labOrders.length > 0 ? (
           <ul className="space-y-3">
-            {labOrders.map((lab: any) => (
+            {labOrders.map((lab: { id: string; status: string; ordered_at: string; lab_tests?: Array<{ test_name?: string }> }) => (
               <li key={lab.id} className="border-b border-gray-200 pb-3 last:border-0 last:pb-0">
                 <p className="text-sm font-medium text-gray-900">
                   {lab.lab_tests?.[0]?.test_name || 'Lab Order'}
@@ -221,7 +221,7 @@ export default function ProviderPatientDetailPage() {
         <h3 className="text-lg font-medium text-gray-900 mb-4">Care Plans</h3>
         {carePlans && carePlans.length > 0 ? (
           <ul className="space-y-3">
-            {carePlans.map((plan: any) => (
+            {carePlans.map((plan: { id: string; title: string; status: string; created_at: string }) => (
               <li key={plan.id} className="border-b border-gray-200 pb-3 last:border-0 last:pb-0">
                 <p className="text-sm font-medium text-gray-900">{plan.title}</p>
                 <p className="text-xs text-gray-500">Status: {plan.status}</p>

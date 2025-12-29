@@ -36,7 +36,9 @@ export default function PaymentsPage() {
 
       if (!userRecord || !userRecord.patients) return [];
 
-      const patientId = (userRecord.patients as any).id;
+      const patientsArray = Array.isArray(userRecord.patients) ? userRecord.patients : [userRecord.patients];
+      const patientId = patientsArray[0]?.id;
+      if (!patientId) return [];
 
       const { data, error } = await supabase
         .from('patient_payments')
@@ -54,7 +56,12 @@ export default function PaymentsPage() {
     return null;
   }
 
-  const totalPaid = payments?.reduce((sum: number, p: any) => {
+  interface Payment {
+    id: string;
+    status: string;
+    amount: number;
+  }
+  const totalPaid = payments?.reduce((sum: number, p: Payment) => {
     return sum + (p.status === 'completed' ? p.amount : 0);
   }, 0) || 0;
 
@@ -85,7 +92,7 @@ export default function PaymentsPage() {
           </div>
         ) : payments && payments.length > 0 ? (
           <div className="space-y-4">
-            {payments.map((payment: any) => (
+            {payments.map((payment: Payment) => (
               <Card key={payment.id} hover className="p-6">
                 <div className="flex justify-between items-start">
                   <div>

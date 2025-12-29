@@ -2,12 +2,47 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/auth-store';
 import { signUp } from '@/lib/supabase/auth';
 import Link from 'next/link';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+
+// Logo component with fallback
+function SignupLogo() {
+  const [logoError, setLogoError] = useState(false);
+  const [usePng, setUsePng] = useState(false);
+
+  if (logoError && !usePng) {
+    return (
+      <img
+        src="/images/mha_logo_512.png"
+        alt="MyHealth Ally"
+        className="w-20 h-20 rounded-3xl mx-auto mb-4 shadow-lg object-cover"
+        onError={() => setUsePng(true)}
+      />
+    );
+  }
+
+  if (usePng) {
+    return (
+      <div className="w-20 h-20 bg-gradient-primary rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+        <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src="/images/MHA_logo.jpg"
+      alt="MyHealth Ally"
+      className="w-20 h-20 rounded-3xl mx-auto mb-4 shadow-lg object-cover"
+      onError={() => setLogoError(true)}
+    />
+  );
+}
 
 export default function SignupPage() {
   const router = useRouter();
@@ -97,9 +132,10 @@ export default function SignupPage() {
 
       // Redirect to email verification page
       router.push('/auth/verify-email?email=' + encodeURIComponent(formData.email));
-    } catch (err: any) {
+    } catch (err) {
       console.error('Signup error:', err);
-      setError(err.message || 'Failed to create account. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create account. Please try again.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -110,11 +146,7 @@ export default function SignupPage() {
       <div className="max-w-md w-full animate-fade-in">
         {/* Logo & Header */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-gradient-primary rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-          </div>
+          <SignupLogo />
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent mb-2">
             Create Account
           </h1>

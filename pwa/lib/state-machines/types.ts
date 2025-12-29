@@ -38,7 +38,7 @@ export type EncounterEvent =
 export interface EncounterStateMachine {
   state: EncounterState;
   canTransition(event: EncounterEvent): boolean;
-  transition(event: EncounterEvent, context?: Record<string, any>): EncounterState;
+  transition(event: EncounterEvent, context?: Record<string, unknown>): EncounterState;
   getValidTransitions(): EncounterEvent[];
 }
 
@@ -73,7 +73,7 @@ export type CaptureSessionEvent =
 export interface CaptureSessionStateMachine {
   state: CaptureSessionState;
   canTransition(event: CaptureSessionEvent): boolean;
-  transition(event: CaptureSessionEvent, context?: Record<string, any>): CaptureSessionState;
+  transition(event: CaptureSessionEvent, context?: Record<string, unknown>): CaptureSessionState;
   getValidTransitions(): CaptureSessionEvent[];
   getDiagnostics(): CaptureSessionDiagnostics;
 }
@@ -119,7 +119,7 @@ export type NoteEvent =
 export interface NoteStateMachine {
   state: NoteState;
   canTransition(event: NoteEvent): boolean;
-  transition(event: NoteEvent, context?: Record<string, any>): NoteState;
+  transition(event: NoteEvent, context?: Record<string, unknown>): NoteState;
   getValidTransitions(): NoteEvent[];
   requiresAttestation(): boolean;
   isImmutable(): boolean;
@@ -150,7 +150,7 @@ export type ExportJobEvent =
 export interface ExportJobStateMachine {
   state: ExportJobState;
   canTransition(event: ExportJobEvent): boolean;
-  transition(event: ExportJobEvent, context?: Record<string, any>): ExportJobState;
+  transition(event: ExportJobEvent, context?: Record<string, unknown>): ExportJobState;
   getValidTransitions(): ExportJobEvent[];
   canRetry(): boolean;
   getRetryCount(): number;

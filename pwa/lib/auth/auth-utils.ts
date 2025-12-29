@@ -39,7 +39,7 @@ export function getAuthToken(): string | null {
   const cookies = document.cookie.split(';');
   for (const cookie of cookies) {
     const [name, value] = cookie.trim().split('=');
-    if (name === AUTH_TOKEN_KEY) {
+    if (name === AUTH_TOKEN_KEY && value) {
       return value;
     }
   }

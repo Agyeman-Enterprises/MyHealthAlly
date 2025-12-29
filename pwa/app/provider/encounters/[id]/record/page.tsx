@@ -10,9 +10,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { createEncounterStateMachine } from '@/lib/state-machines/reducers';
 import { createCaptureSessionStateMachine } from '@/lib/state-machines/reducers';
-import { canCreateNote, canSignNote, canFinalizeEncounter } from '@/lib/notes/note-gating';
+import { canCreateNote } from '@/lib/notes/note-gating';
 import { VoiceRecorder } from '@/components/voice/VoiceRecorder';
-import { MicDiagnostics } from '@/components/voice/MicDiagnostics';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { DisclaimerBanner } from '@/components/governance/DisclaimerBanner';
@@ -20,14 +19,14 @@ import { supabase } from '@/lib/supabase/client';
 
 export default function RecordPage() {
   const params = useParams();
-  const encounterId = params.id as string;
+  const encounterId = typeof params['id'] === 'string' ? params['id'] : '';
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   
   const [encounterState, setEncounterState] = useState(createEncounterStateMachine('IN_PROGRESS'));
-  const [captureState, setCaptureState] = useState(createCaptureSessionStateMachine('IDLE'));
+  const [captureState] = useState(createCaptureSessionStateMachine('IDLE'));
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [] = useState<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Load encounter
@@ -54,7 +53,7 @@ export default function RecordPage() {
     loadEncounter();
   }, [isAuthenticated, encounterId]);
 
-  const handleRecordingComplete = (blob: Blob, duration: number) => {
+  const handleRecordingComplete = (blob: Blob) => {
     setAudioBlob(blob);
     
     // State machine: Stop recording → Transcribing
@@ -62,8 +61,9 @@ export default function RecordPage() {
       encounterState.transition('STOP_RECORDING', { streamActive: true });
       encounterState.transition('TRANSCRIBE_COMPLETE', { hasAudio: true });
       setEncounterState(encounterState);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to stop recording';
+      setError(errorMessage);
     }
   };
 
@@ -85,8 +85,9 @@ export default function RecordPage() {
       encounterState.transition('CREATE_NOTE', { hasAudio: true });
       setEncounterState(encounterState);
       router.push(`/provider/encounters/${encounterId}/note`);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to stop recording';
+      setError(errorMessage);
     }
   };
 

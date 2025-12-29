@@ -52,9 +52,10 @@ function ProviderLoginContent() {
         await signInWithSupabase(email, password);
         router.push(redirectTo);
         return;
-      } catch (supabaseError: any) {
+      } catch (supabaseError) {
         // If Supabase fails, try SoloPractice API (for backward compatibility)
-        console.log('Supabase auth failed, trying SoloPractice API...', supabaseError);
+        const errorMessage = supabaseError instanceof Error ? supabaseError.message : 'Unknown error';
+        console.log('Supabase auth failed, trying SoloPractice API...', errorMessage);
       }
 
       // Fallback to SoloPractice API
@@ -67,8 +68,9 @@ function ProviderLoginContent() {
         response.role
       );
       router.push(redirectTo);
-    } catch (err: any) {
-      setError(err.message || 'Login failed');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Login failed';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

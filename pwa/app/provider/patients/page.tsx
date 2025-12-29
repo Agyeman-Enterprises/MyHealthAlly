@@ -11,10 +11,13 @@ export default function ProviderPatientsPage() {
 
   const { data: patients, isLoading } = useQuery({
     queryKey: ['provider-patients', search],
-    queryFn: () => getPatients({
-      search: search || undefined,
-      limit: 100,
-    }),
+    queryFn: () => {
+      const queryParams: { search?: string; limit: number } = { limit: 100 };
+      if (search) {
+        queryParams.search = search;
+      }
+      return getPatients(queryParams);
+    },
   });
 
   if (isLoading) {

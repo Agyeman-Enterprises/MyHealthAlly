@@ -14,17 +14,19 @@ const quickActions = [
   { name: 'Appointments', description: 'Schedule & view', href: '/appointments', icon: '📅', color: 'from-amber-400 to-amber-500' },
   { name: 'Lab Results', description: 'View test results', href: '/labs', icon: '🔬', color: 'from-green-400 to-green-500' },
   { name: 'Care Plan', description: 'Goals & activities', href: '/care-plan', icon: '📋', color: 'from-purple-400 to-purple-500' },
+  { name: 'Symptom Check', description: 'AI-assisted symptom intake', href: '/symptom-check', icon: '🩺', color: 'from-emerald-400 to-emerald-600' },
   { name: 'Documents', description: 'Upload & view', href: '/documents', icon: '📄', color: 'from-blue-400 to-blue-500' },
   { name: 'Referrals', description: 'Request specialist', href: '/referrals', icon: '🏥', color: 'from-red-400 to-red-500' },
   { name: 'Billing', description: 'Invoices & payments', href: '/billing', icon: '💳', color: 'from-emerald-400 to-emerald-500' },
   { name: 'Intake Forms', description: 'Complete paperwork', href: '/intake', icon: '📝', color: 'from-orange-400 to-orange-500' },
   { name: 'Education', description: 'Health resources', href: '/education', icon: '📚', color: 'from-indigo-400 to-indigo-500' },
+  { name: 'Pricing', description: 'Membership pricing & terms', href: '/pricing', icon: '💲', color: 'from-amber-400 to-amber-600' },
   { name: 'Settings', description: 'Preferences', href: '/settings', icon: '⚙️', color: 'from-gray-400 to-gray-500' },
 ];
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
 
   if (!isAuthenticated) {
     router.push('/auth/login');

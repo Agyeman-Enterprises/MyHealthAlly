@@ -36,7 +36,9 @@ export default function InvoicesPage() {
 
       if (!userRecord || !userRecord.patients) return [];
 
-      const patientId = (userRecord.patients as any).id;
+      const patientsArray = Array.isArray(userRecord.patients) ? userRecord.patients : [userRecord.patients];
+      const patientId = patientsArray[0]?.id;
+      if (!patientId) return [];
 
       const { data, error } = await supabase
         .from('patient_billing')
@@ -54,7 +56,13 @@ export default function InvoicesPage() {
     return null;
   }
 
-  const totalDue = invoices?.reduce((sum: number, inv: any) => {
+  interface Invoice {
+    id: string;
+    status: string;
+    total_amount: number;
+  }
+
+  const totalDue = invoices?.reduce((sum: number, inv: Invoice) => {
     return sum + (inv.status === 'pending' || inv.status === 'overdue' ? inv.total_amount : 0);
   }, 0) || 0;
 
@@ -79,7 +87,7 @@ export default function InvoicesPage() {
           </div>
         ) : invoices && invoices.length > 0 ? (
           <div className="space-y-4">
-            {invoices.map((invoice: any) => (
+            {invoices.map((invoice: Invoice) => (
               <Card key={invoice.id} hover className="p-6">
                 <div className="flex justify-between items-start">
                   <div>
@@ -129,7 +137,7 @@ export default function InvoicesPage() {
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No invoices</h3>
-            <p className="text-gray-500">You don't have any invoices yet</p>
+            <p className="text-gray-500">You don&apos;t have any invoices yet</p>
           </Card>
         )}
       </main>

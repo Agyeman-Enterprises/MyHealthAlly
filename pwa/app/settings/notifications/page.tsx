@@ -1,27 +1,87 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { getCurrentUserAndPatient, updatePatientProfile, updateUserSettings } from '@/lib/supabase/queries-settings';
+
+type SettingsState = {
+  pushEnabled: boolean;
+  smsEnabled: boolean;
+  emailEnabled: boolean;
+  messages: boolean;
+  appointments: boolean;
+  labResults: boolean;
+  medications: boolean;
+  billing: boolean;
+  appointmentReminders: boolean;
+  medicationReminders: boolean;
+};
+
+const defaultState: SettingsState = {
+  pushEnabled: true,
+  smsEnabled: false,
+  emailEnabled: true,
+  messages: true,
+  appointments: true,
+  labResults: true,
+  medications: true,
+  billing: false,
+  appointmentReminders: true,
+  medicationReminders: true,
+};
 
 export default function NotificationsPage() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const [settings, setSettings] = useState({
-    pushEnabled: true,
-    emailEnabled: true,
-    messages: true,
-    appointments: true,
-    labResults: true,
-    medications: true,
-    billing: false,
-  });
+  const [settings, setSettings] = useState<SettingsState>(defaultState);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [patientId, setPatientId] = useState<string | null>(null);
 
-  if (!isAuthenticated) { router.push('/auth/login'); return null; }
+  useEffect(() => {
+    if (!isAuthenticated) { router.push('/auth/login'); return; }
+
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const { userRecord, patientId: pid } = await getCurrentUserAndPatient();
+        setUserId(userRecord.id);
+        setPatientId(pid || null);
+
+        const notif = userRecord.notification_settings || {};
+        const channels = notif.channels || notif; // backward compatibility with flat shape
+        const categories = notif.categories || notif;
+
+        setSettings({
+          pushEnabled: channels.push ?? true,
+          smsEnabled: channels.sms ?? false,
+          emailEnabled: channels.email ?? true,
+          messages: categories.messages ?? true,
+          appointments: categories.appointments ?? true,
+          labResults: categories.labResults ?? true,
+          medications: categories.medications ?? true,
+          billing: categories.billing ?? false,
+          appointmentReminders: userRecord.patients?.appointment_reminders ?? true,
+          medicationReminders: userRecord.patients?.medication_reminders ?? true,
+        });
+      } catch (err: any) {
+        console.error('Error loading notification settings', err);
+        setError(err.message || 'Unable to load notification settings.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [isAuthenticated, router]);
 
   const Toggle = ({ enabled, onChange }: { enabled: boolean; onChange: () => void }) => (
     <button onClick={onChange} className={`w-12 h-6 rounded-full transition-colors relative ${enabled ? 'bg-primary-500' : 'bg-gray-300'}`}>
@@ -30,10 +90,42 @@ export default function NotificationsPage() {
   );
 
   const handleSave = async () => {
+    if (!userId) return;
     setSaving(true);
-    await new Promise(r => setTimeout(r, 1000));
-    setSaving(false);
-    alert('Notification settings saved!');
+    setError(null);
+    setSuccess(null);
+    try {
+      const notificationSettings = {
+        channels: {
+          push: settings.pushEnabled,
+          sms: settings.smsEnabled,
+          email: settings.emailEnabled,
+        },
+        categories: {
+          messages: settings.messages,
+          appointments: settings.appointments,
+          labResults: settings.labResults,
+          medications: settings.medications,
+          billing: settings.billing,
+        },
+      };
+
+      await updateUserSettings(userId, { notificationSettings });
+
+      if (patientId) {
+        await updatePatientProfile(patientId, {
+          appointment_reminders: settings.appointmentReminders,
+          medication_reminders: settings.medicationReminders,
+        });
+      }
+
+      setSuccess('Notification settings saved.');
+    } catch (err: any) {
+      console.error('Error saving notification settings', err);
+      setError(err.message || 'Unable to save notification settings.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -41,7 +133,10 @@ export default function NotificationsPage() {
       <Header />
       <main className="max-w-2xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-navy-600 mb-1">Notifications</h1>
-        <p className="text-gray-600 mb-6">Manage how you receive updates</p>
+        <p className="text-gray-600 mb-2">Manage how you receive updates</p>
+        {loading && <p className="text-sm text-gray-500 mb-4">Loading preferences…</p>}
+        {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+        {success && <p className="text-sm text-green-600 mb-4">{success}</p>}
 
         <Card className="mb-6">
           <h2 className="font-semibold text-navy-600 mb-4">Notification Channels</h2>
@@ -49,6 +144,10 @@ export default function NotificationsPage() {
             <div className="flex items-center justify-between">
               <div><h3 className="font-medium text-navy-600">Push Notifications</h3><p className="text-sm text-gray-500">Receive alerts on your device</p></div>
               <Toggle enabled={settings.pushEnabled} onChange={() => setSettings(s => ({ ...s, pushEnabled: !s.pushEnabled }))} />
+            </div>
+            <div className="flex items-center justify-between">
+              <div><h3 className="font-medium text-navy-600">SMS Notifications</h3><p className="text-sm text-gray-500">Get text alerts to your phone</p></div>
+              <Toggle enabled={settings.smsEnabled} onChange={() => setSettings(s => ({ ...s, smsEnabled: !s.smsEnabled }))} />
             </div>
             <div className="flex items-center justify-between">
               <div><h3 className="font-medium text-navy-600">Email Notifications</h3><p className="text-sm text-gray-500">Receive updates via email</p></div>
@@ -75,7 +174,21 @@ export default function NotificationsPage() {
           </div>
         </Card>
 
-        <Button variant="primary" className="w-full" onClick={handleSave} isLoading={saving}>Save Settings</Button>
+        <Card className="mb-6">
+          <h2 className="font-semibold text-navy-600 mb-4">Reminders</h2>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div><h3 className="font-medium text-navy-600">Appointment reminders</h3><p className="text-sm text-gray-500">Receive reminders before visits</p></div>
+              <Toggle enabled={settings.appointmentReminders} onChange={() => setSettings(s => ({ ...s, appointmentReminders: !s.appointmentReminders }))} />
+            </div>
+            <div className="flex items-center justify-between">
+              <div><h3 className="font-medium text-navy-600">Medication reminders</h3><p className="text-sm text-gray-500">Stay on schedule with meds</p></div>
+              <Toggle enabled={settings.medicationReminders} onChange={() => setSettings(s => ({ ...s, medicationReminders: !s.medicationReminders }))} />
+            </div>
+          </div>
+        </Card>
+
+        <Button variant="primary" className="w-full" onClick={handleSave} isLoading={saving} disabled={loading || saving}>Save Settings</Button>
       </main>
       <BottomNav />
     </div>

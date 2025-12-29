@@ -26,6 +26,44 @@ const moreNavItems = [
 
 const allNavItems = [...mainNavItems, ...moreNavItems];
 
+// Logo component with fallback
+function LogoImage() {
+  const [logoError, setLogoError] = useState(false);
+  const [usePng, setUsePng] = useState(false);
+
+  if (logoError && !usePng) {
+    // Try PNG fallback
+    return (
+      <img
+        src="/images/mha_logo_512.png"
+        alt="MyHealth Ally"
+        className="w-10 h-10 rounded-xl object-cover shadow-sm"
+        onError={() => setUsePng(true)}
+      />
+    );
+  }
+
+  if (usePng) {
+    // Final fallback to gradient icon
+    return (
+      <div className="w-10 h-10 bg-gradient-to-br from-primary-400 to-primary-600 rounded-xl flex items-center justify-center shadow-sm">
+        <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+        </svg>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src="/images/MHA_logo.jpg"
+      alt="MyHealth Ally"
+      className="w-10 h-10 rounded-xl object-cover shadow-sm"
+      onError={() => setLogoError(true)}
+    />
+  );
+}
+
 const labelMap: Record<string, string> = {
   'dashboard': 'Home',
   'messages': 'Messages',
@@ -73,7 +111,11 @@ function getBreadcrumbs(pathname: string): { label: string; href?: string }[] {
     const isLast = index === segments.length - 1;
     const label = labelMap[segment] || segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ');
     
-    breadcrumbs.push({ label, href: isLast ? undefined : path });
+    const breadcrumb: { label: string; href?: string } = { label };
+    if (!isLast) {
+      breadcrumb.href = path;
+    }
+    breadcrumbs.push(breadcrumb);
   });
 
   return breadcrumbs;
@@ -113,7 +155,10 @@ export function Header({ title, showBack, backHref }: HeaderProps = {}) {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+      <header 
+        className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Back button + Logo/Title */}
@@ -134,11 +179,7 @@ export function Header({ title, showBack, backHref }: HeaderProps = {}) {
                 <h1 className="text-xl font-bold text-navy-600">{title}</h1>
               ) : (
                 <Link href="/dashboard" className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-gradient-to-br from-primary-400 to-primary-600 rounded-xl flex items-center justify-center shadow-sm">
-                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                  </div>
+                  <LogoImage />
                   <span className="text-xl font-bold text-navy-600">MyHealth Ally</span>
                 </Link>
               )}

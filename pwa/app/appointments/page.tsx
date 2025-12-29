@@ -15,7 +15,7 @@ const mockAppts = [
 export default function AppointmentsPage() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const [appts, setAppts] = useState(mockAppts);
+  const [appts] = useState(mockAppts);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { setTimeout(() => setLoading(false), 500); }, []);

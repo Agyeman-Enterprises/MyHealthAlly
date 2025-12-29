@@ -27,7 +27,17 @@ export function VoiceRecorder({
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const recognitionRef = useRef<any>(null);
+  interface SpeechRecognition extends EventTarget {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    start: () => void;
+    stop: () => void;
+    onstart: (() => void) | null;
+    onresult: ((event: { resultIndex: number; results: Array<{ [key: number]: Array<{ transcript: string }>; isFinal: boolean }> }) => void) | null;
+    onerror: ((event: { error: string }) => void) | null;
+  }
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const finalTranscriptRef = useRef('');
   const stateMachineRef = useRef(createCaptureSessionStateMachine('IDLE'));
 
@@ -37,10 +47,14 @@ export function VoiceRecorder({
       stopRecording();
       stopSpeechRecognition();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startSpeechRecognition = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    interface SpeechRecognitionConstructor {
+      new (): SpeechRecognition;
+    }
+    const SpeechRecognition = (window as typeof window & { SpeechRecognition?: SpeechRecognitionConstructor; webkitSpeechRecognition?: SpeechRecognitionConstructor }).SpeechRecognition || (window as typeof window & { SpeechRecognition?: SpeechRecognitionConstructor; webkitSpeechRecognition?: SpeechRecognitionConstructor }).webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
       console.log('Speech recognition not supported');
@@ -56,7 +70,7 @@ export function VoiceRecorder({
       setIsTranscribing(true);
     };
 
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: { resultIndex: number; results: Array<{ [key: number]: Array<{ transcript: string }>; isFinal: boolean }> }) => {
       let interimTranscript = '';
       let finalTranscript = finalTranscriptRef.current;
 
@@ -73,7 +87,7 @@ export function VoiceRecorder({
       setLiveTranscript(finalTranscript + interimTranscript);
     };
 
-    recognition.onerror = (event: any) => {
+    recognition.onerror = (event: { error: string }) => {
       console.log('Speech recognition error:', event.error);
       if (event.error === 'no-speech') {
         // This is normal, just means silence
@@ -90,7 +104,7 @@ export function VoiceRecorder({
       if (isRecording && recognitionRef.current) {
         try {
           recognition.start();
-        } catch (e) {
+        } catch {
           // Already started
         }
       }
@@ -109,7 +123,7 @@ export function VoiceRecorder({
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
-      } catch (e) {
+      } catch {
         // Already stopped
       }
       recognitionRef.current = null;
@@ -220,9 +234,9 @@ export function VoiceRecorder({
           return prev + 1;
         });
       }, 1000);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error starting recording:', err);
-      setError(err.message || 'Failed to start recording. Please check microphone permissions.');
+      setError(err instanceof Error ? err.message : 'Failed to start recording. Please check microphone permissions.');
     }
   };
 

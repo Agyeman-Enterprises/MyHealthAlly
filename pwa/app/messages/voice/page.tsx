@@ -15,7 +15,6 @@ import { DisclaimerBanner } from '@/components/governance/DisclaimerBanner';
 export default function VoiceMessagePage() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [transcript, setTranscript] = useState<string>('');
@@ -60,7 +59,9 @@ export default function VoiceMessagePage() {
             .single();
           
           if (altUser?.patients) {
-            const patientId = (altUser.patients as any).id;
+            const patientsArray = Array.isArray(altUser.patients) ? altUser.patients : [altUser.patients];
+            const patientId = patientsArray[0]?.id;
+            if (!patientId) throw new Error('Patient ID not found');
             return await createVoiceMessage(altUser.id, patientId, audioBlob, transcript);
           }
         }
@@ -71,7 +72,9 @@ export default function VoiceMessagePage() {
         throw new Error('Patient record not found. Please complete your intake form.');
       }
 
-      const patientId = (userRecord.patients as any).id;
+      const patientsArray = Array.isArray(userRecord.patients) ? userRecord.patients : [userRecord.patients];
+      const patientId = patientsArray[0]?.id;
+      if (!patientId) throw new Error('Patient ID not found');
       return await createVoiceMessage(userRecord.id, patientId, audioBlob, transcript);
     },
     onSuccess: (data) => {
@@ -112,7 +115,7 @@ export default function VoiceMessagePage() {
           .getPublicUrl(fileName);
         voiceUrl = urlData.publicUrl;
       }
-    } catch (e) {
+    } catch {
       console.log('Audio upload skipped (storage not configured)');
     }
 

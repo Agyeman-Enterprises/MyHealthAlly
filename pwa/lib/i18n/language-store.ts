@@ -28,7 +28,8 @@ const DEFAULT_LANGUAGE = 'en';
 
 export const useLanguageStore = create<LanguageState>()(
   persist(
-    (set, get) => ({
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    (set, _get) => ({
       preferredLanguage: DEFAULT_LANGUAGE,
       uiLanguage: DEFAULT_LANGUAGE,
       detectedLanguage: null,
@@ -55,8 +56,8 @@ export const useLanguageStore = create<LanguageState>()(
                 .eq('id', userRecord.id);
 
               // Update patient's communication language if patient record exists
-              if (userRecord.patients) {
-                const patientId = (userRecord.patients as any).id;
+              if (userRecord.patients && Array.isArray(userRecord.patients) && userRecord.patients.length > 0) {
+                const patientId = userRecord.patients[0]?.id;
                 await supabase
                   .from('patients')
                   .update({ 
@@ -108,7 +109,8 @@ export const useLanguageStore = create<LanguageState>()(
         }
       },
 
-      detectLanguageFromText: async (text: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      detectLanguageFromText: async (_text: string) => {
         // Simple language detection (can be enhanced with API)
         // For now, return null - SoloPractice will detect server-side
         // This is a placeholder for future client-side detection

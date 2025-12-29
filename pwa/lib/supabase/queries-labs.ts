@@ -30,7 +30,7 @@ export async function getPatientLabOrders(patientId: string, options?: { limit?:
 
   if (error) throw error;
   return data as (LabOrder & {
-    lab_tests: any[];
+    lab_tests: Array<{ id: string; name: string; result?: string; status?: string }>;
     clinicians: { first_name: string; last_name: string } | null;
   })[];
 }

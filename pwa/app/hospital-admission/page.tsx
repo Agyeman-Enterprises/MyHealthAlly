@@ -42,7 +42,11 @@ export default function HospitalAdmissionPage() {
         throw new Error('Patient record not found');
       }
 
-      const patientId = (userRecord.patients as any).id;
+      const patientsArray = Array.isArray(userRecord.patients) ? userRecord.patients : [userRecord.patients];
+      const patientId = patientsArray[0]?.id;
+      if (!patientId) {
+        throw new Error('Patient ID not found');
+      }
 
       // Get primary clinician to notify
       const { data: patient } = await supabase
@@ -166,7 +170,7 @@ export default function HospitalAdmissionPage() {
               </label>
               <select
                 value={formData.admissionType}
-                onChange={(e) => setFormData({ ...formData, admissionType: e.target.value as any })}
+                onChange={(e) => setFormData({ ...formData, admissionType: e.target.value as 'emergency' | 'planned' | 'observation' })}
                 className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 outline-none"
               >
                 <option value="emergency">Emergency</option>

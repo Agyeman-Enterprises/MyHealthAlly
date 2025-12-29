@@ -24,6 +24,8 @@ export interface AuthStore {
   user: User | null;
   isAuthenticated: boolean;
   isInitialized: boolean;
+  mfaRequired: boolean;
+  mfaEmail: string | null;
   role: 'patient' | 'provider' | 'admin' | null;
   accessToken: string | null;
   refreshToken: string | null;
@@ -38,6 +40,8 @@ export interface AuthStore {
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
   initialize: () => void;
+  completeMfa: (session: any, user: User) => void;
+  requestMfaCode: (email: string) => Promise<void>;
   
   // Provider Actions
   loginProvider: (
@@ -91,6 +95,8 @@ export const useAuthStore = create<AuthStore>()(
       user: null,
       isAuthenticated: false,
       isInitialized: false,
+      mfaRequired: false,
+      mfaEmail: null,
       role: null,
       accessToken: null,
       refreshToken: null,
@@ -115,6 +121,8 @@ export const useAuthStore = create<AuthStore>()(
           user, 
           isAuthenticated: true, 
           isInitialized: true,
+          mfaRequired: false,
+          mfaEmail: null,
           role: 'patient',
           accessToken: authToken,
         });
@@ -161,12 +169,64 @@ export const useAuthStore = create<AuthStore>()(
         if (error) throw error;
         if (!data.user) throw new Error('No user returned');
 
+        // Load patient ID from users table
+        let patientId: string | undefined;
+        let twoFactorEnabled = false;
+        try {
+          const { data: userRecord, error: userError } = await supabase
+            .from('users')
+            .select('id, patients(id), two_factor_enabled')
+            .eq('supabase_auth_id', data.user.id)
+            .single();
+          
+          if (userError) {
+            console.error('Error loading user record during sign in:', userError);
+            // Don't fail login if user record query fails - might be a new user
+          } else if (userRecord?.patients) {
+            const patientsArray = Array.isArray(userRecord.patients) ? userRecord.patients : [userRecord.patients];
+            patientId = patientsArray[0]?.id;
+            twoFactorEnabled = userRecord.two_factor_enabled || false;
+            
+            if (patientId) {
+              console.log('✅ Patient ID loaded during login:', patientId);
+            } else {
+              console.warn('⚠️ User record found but no patient record linked. User may need to complete intake.');
+            }
+          } else {
+            console.warn('⚠️ No patient record found during login. User may need to complete intake.');
+          }
+        } catch (err) {
+          console.error('Error loading patient ID during sign in:', err);
+          // Don't fail login - patient ID can be loaded later
+        }
+
         const user: User = {
           id: data.user.id,
           email: data.user.email || '',
           firstName: data.user.user_metadata?.first_name || '',
           lastName: data.user.user_metadata?.last_name || '',
+          patientId,
         };
+
+        // If 2FA is enabled, sign out the password session and trigger OTP flow
+        if (twoFactorEnabled) {
+          await supabase.auth.signOut();
+          await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
+          set({
+            user: null,
+            isAuthenticated: false,
+            isInitialized: true,
+            mfaRequired: true,
+            mfaEmail: email,
+            role: null,
+            accessToken: null,
+            refreshToken: null,
+          });
+          if (typeof window !== 'undefined') {
+            window.location.href = `/auth/mfa?email=${encodeURIComponent(email)}`;
+          }
+          return;
+        }
 
         setAuthCookie(data.session?.access_token || generateMockToken(user.id));
 
@@ -174,6 +234,8 @@ export const useAuthStore = create<AuthStore>()(
           user,
           isAuthenticated: true,
           isInitialized: true,
+          mfaRequired: false,
+          mfaEmail: null,
           role: data.user.user_metadata?.role || 'patient',
           accessToken: data.session?.access_token || null,
           refreshToken: data.session?.refresh_token || null,
@@ -192,6 +254,8 @@ export const useAuthStore = create<AuthStore>()(
         set({ 
           user: null, 
           isAuthenticated: false,
+          mfaRequired: false,
+          mfaEmail: null,
           role: null,
           accessToken: null,
           refreshToken: null,
@@ -209,6 +273,25 @@ export const useAuthStore = create<AuthStore>()(
           if (!state.user) return state;
           return { user: { ...state.user, ...updates } };
         });
+      },
+
+      completeMfa: (session: any, user: User) => {
+        setAuthCookie(session?.access_token || generateMockToken(user.id));
+        set({
+          user,
+          isAuthenticated: true,
+          isInitialized: true,
+          mfaRequired: false,
+          mfaEmail: null,
+          role: user.role || 'patient',
+          accessToken: session?.access_token || null,
+          refreshToken: session?.refresh_token || null,
+        });
+      },
+
+      requestMfaCode: async (email: string) => {
+        const { supabase } = await import('@/lib/supabase/client');
+        await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
       },
 
       // Initialize from storage

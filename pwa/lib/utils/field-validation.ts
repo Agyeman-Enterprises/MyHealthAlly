@@ -35,7 +35,7 @@ export function validatePhone(value: string): ValidationResult {
     };
   }
 
-  // Format as (XXX) XXX-XXXX
+  // Format as (###) ###-####
   const formatted = `(${normalized.slice(0, 3)}) ${normalized.slice(3, 6)}-${normalized.slice(6)}`;
 
   return { isValid: true, formatted };
@@ -125,7 +125,7 @@ export function validateState(value: string): ValidationResult {
 
   // Check if it's a full state name
   const abbrev = Object.entries(US_STATES).find(
-    ([_, name]) => name.toUpperCase() === input
+    ([, name]) => name.toUpperCase() === input
   )?.[0];
 
   if (abbrev) {
@@ -196,11 +196,10 @@ export function validateSSN(value: string): ValidationResult {
     };
   }
 
-  // Format as XXX-XX-XXXX (masked for display: ***-**-XXXX)
+  // Format as ###-##-#### (masked for display: ***-**-####)
   const formatted = `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
-  const masked = `***-**-${digits.slice(5)}`;
 
-  return { isValid: true, formatted, };
+  return { isValid: true, formatted };
 }
 
 /**

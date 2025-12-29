@@ -3,7 +3,8 @@
  * DELETE /api/patient/data
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/client';
 import { getCurrentUser } from '@/lib/supabase/auth';
 
@@ -76,10 +77,11 @@ export async function DELETE(request: NextRequest) {
       message: 'Data deleted successfully',
       deleted_at: new Date().toISOString(),
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Delete error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to delete data';
     return NextResponse.json(
-      { error: 'Failed to delete data' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

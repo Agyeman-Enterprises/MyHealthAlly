@@ -8,7 +8,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "type-check": "tsc --noEmit",
+    "guard:jsx": "node scripts/guard-jsx-shaping.mjs",
+    "verify": "npm run lint && npm run typecheck && npm run guard:jsx && npm run build",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -46,6 +49,8 @@
     "@types/node": "^20.10.6",
     "@types/react": "^18.2.46",
     "@types/react-dom": "^18.2.18",
+    "@typescript-eslint/eslint-plugin": "^8.50.1",
+    "@typescript-eslint/parser": "^8.50.1",
     "autoprefixer": "^10.4.16",
     "dotenv": "^17.2.3",
     "eslint": "^8.56.0",
@@ -56,6 +61,7 @@
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
     "ts-jest": "^29.4.6",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "zod": "^4.2.1"
   }
 }

@@ -1,14 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getMessageThreads, updateMessageStatus } from '@/lib/supabase/queries';
+import { useQuery } from '@tanstack/react-query';
+import { getMessageThreads } from '@/lib/supabase/queries';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { DisclaimerBanner } from '@/components/governance/DisclaimerBanner';
 
 export default function ProviderMessagesPage() {
-  const queryClient = useQueryClient();
   const [filters, setFilters] = useState({
     status: 'all' as string,
     priority: 'all' as string,
@@ -16,20 +15,17 @@ export default function ProviderMessagesPage() {
 
   const { data: threads, isLoading } = useQuery({
     queryKey: ['provider-messages', filters],
-    queryFn: () => getMessageThreads({
-      status: filters.status !== 'all' ? filters.status : undefined,
-      priority: filters.priority !== 'all' ? filters.priority : undefined,
-      limit: 100,
-    }),
-    refetchInterval: 30000,
-  });
-
-  const updateStatusMutation = useMutation({
-    mutationFn: ({ messageId, status }: { messageId: string; status: string }) =>
-      updateMessageStatus(messageId, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['provider-messages'] });
+    queryFn: () => {
+      const queryParams: { status?: string; priority?: string; limit: number } = { limit: 100 };
+      if (filters.status !== 'all') {
+        queryParams.status = filters.status;
+      }
+      if (filters.priority !== 'all') {
+        queryParams.priority = filters.priority;
+      }
+      return getMessageThreads(queryParams);
     },
+    refetchInterval: 30000,
   });
 
   const getPriorityColor = (priority: string) => {

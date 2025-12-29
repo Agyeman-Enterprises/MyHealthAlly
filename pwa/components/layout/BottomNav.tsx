@@ -65,7 +65,10 @@ export function BottomNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden z-30">
+    <nav 
+      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden z-30"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+    >
       <div className="flex justify-around items-center h-16 px-2">
         {navItems.map((item) => (
           <Link

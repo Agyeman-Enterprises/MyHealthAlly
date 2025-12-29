@@ -4,7 +4,7 @@
  */
 
 import { supabase } from './client';
-import type { Database, Patient, Message, MessageThread, Task, Alert, Vital } from './types';
+import type { Patient, Message, MessageThread, Task, Alert, Vital } from './types';
 
 // ============================================
 // PATIENTS
@@ -50,7 +50,7 @@ export async function getPatient(patientId: string) {
   if (error) throw error;
   return data as Patient & {
     users: { email: string; phone: string | null };
-    clinicians: any;
+    clinicians: Array<{ id: string; first_name: string; last_name: string }> | null;
   };
 }
 
@@ -253,7 +253,7 @@ export async function getAlerts(options?: {
 // DASHBOARD STATS
 // ============================================
 
-export async function getDashboardStats(clinicianId?: string) {
+export async function getDashboardStats() {
   // Get message counts with last_message_at and patient_id for SLA calculations
   const { data: messages, error: messagesError } = await supabase
     .from('message_threads')
