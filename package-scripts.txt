@@ -1,0 +1,5 @@
+ADD / MERGE THESE INTO package.json SCRIPTS:
+
+"lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+"lint:verify": "eslint . --ext .js,.jsx,.ts,.tsx --max-warnings 0 -c .eslintrc.verify.cjs",
+"verify": "npm run lint:verify"
