@@ -19,6 +19,7 @@ import type {
   AlertStatus,
   EncounterType,
   EncounterStatus,
+  EncounterState,
 } from './enums';
 
 export type UUID = string;

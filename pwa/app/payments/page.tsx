@@ -60,6 +60,10 @@ export default function PaymentsPage() {
     id: string;
     status: string;
     amount: number;
+    currency?: string | null;
+    paid_at?: string | null;
+    metadata?: { description?: string } | null;
+    source?: string | null;
   }
   const totalPaid = payments?.reduce((sum: number, p: Payment) => {
     return sum + (p.status === 'completed' ? p.amount : 0);

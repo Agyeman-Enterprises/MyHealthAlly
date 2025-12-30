@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { supabase } from '@/lib/supabase/client';
@@ -8,6 +8,7 @@ import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { SignaturePad } from '@/components/signature/SignaturePad';
+import Image from 'next/image';
 
 type ConsentType = 'hipaa' | 'telehealth' | 'financial' | 'treatment';
 
@@ -105,7 +106,7 @@ export default function ConsentPage() {
   const [signedConsents, setSignedConsents] = useState<Set<ConsentType>>(new Set());
 
   // Helper function to get patient ID
-  const getPatientId = async (): Promise<string | null> => {
+  const getPatientId = useCallback(async (): Promise<string | null> => {
     let currentPatientId = patientId;
     
     if (!currentPatientId) {
@@ -143,7 +144,7 @@ export default function ConsentPage() {
     }
     
     return currentPatientId || null;
-  };
+  }, [patientId]);
 
   // Load existing consents
   useEffect(() => {
@@ -168,7 +169,8 @@ export default function ConsentPage() {
         }
         
         if (data) {
-          setSignedConsents(new Set(data.map((c: any) => c.consent_type as ConsentType)));
+          type ConsentRow = { consent_type: ConsentType };
+          setSignedConsents(new Set(data.map((c: ConsentRow) => c.consent_type)));
         }
       } catch (err) {
         console.error('Error loading consents:', err);
@@ -178,7 +180,7 @@ export default function ConsentPage() {
     if (isAuthenticated) {
       loadConsents();
     }
-  }, [isAuthenticated, patientId]);
+  }, [isAuthenticated, getPatientId]);
 
   if (!isAuthenticated) { router.push('/auth/login'); return null; }
 
@@ -220,7 +222,7 @@ export default function ConsentPage() {
       const signatureBlob = await (await fetch(signatureDataUrl)).blob();
       const fileName = `consent-${selectedConsent}-${currentPatientId}-${Date.now()}.png`;
       
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('consent-signatures')
         .upload(fileName, signatureBlob, {
           contentType: 'image/png',
@@ -288,12 +290,14 @@ export default function ConsentPage() {
           .eq('is_active', true);
         
         if (data) {
-          setSignedConsents(new Set(data.map((c: any) => c.consent_type as ConsentType)));
+          type ConsentRow = { consent_type: ConsentType };
+          setSignedConsents(new Set(data.map((c: ConsentRow) => c.consent_type)));
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error signing consent:', err);
-      setError(err.message || 'Failed to save signature. Please try again.');
+      const message = err instanceof Error ? err.message : 'Failed to save signature. Please try again.';
+      setError(message);
     } finally {
       setSigning(false);
     }
@@ -413,9 +417,11 @@ export default function ConsentPage() {
                   <div>
                     <h3 className="text-lg font-semibold text-navy-600 mb-2">Signature Preview</h3>
                     <div className="border-2 border-gray-300 rounded-lg p-4 bg-white">
-                      <img
+                      <Image
                         src={signatureDataUrl}
                         alt="Your signature"
+                        width={400}
+                        height={200}
                         className="max-w-full h-auto"
                       />
                     </div>

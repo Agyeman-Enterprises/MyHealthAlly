@@ -37,9 +37,10 @@ export default function AppearancePage() {
         setTextSize(prefs.textSize ?? 'medium');
         setHighContrast(prefs.highContrast ?? false);
         setReduceMotion(prefs.reduceMotion ?? false);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error loading appearance settings', err);
-        setError(err.message || 'Unable to load appearance settings.');
+        const message = err instanceof Error ? err.message : 'Unable to load appearance settings.';
+        setError(message);
       } finally {
         setLoading(false);
       }
@@ -56,9 +57,10 @@ export default function AppearancePage() {
       const appearancePreferences = { theme, textSize, highContrast, reduceMotion };
       await updateUserSettings(userId, { appearancePreferences });
       setSuccess('Appearance settings saved.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving appearance settings', err);
-      setError(err.message || 'Unable to save appearance settings.');
+      const message = err instanceof Error ? err.message : 'Unable to save appearance settings.';
+      setError(message);
     } finally {
       setSaving(false);
     }

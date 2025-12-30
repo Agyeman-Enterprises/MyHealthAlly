@@ -8,7 +8,8 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { supabase } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store/auth-store';
-import { createSymptomCheckWithTask, TriageLevel } from '@/lib/supabase/queries-symptom-check';
+import { createSymptomCheckWithTask } from '@/lib/supabase/queries-symptom-check';
+import type { TriageLevel } from '@/lib/supabase/queries-symptom-check';
 
 type Step = 'disclaimer' | 'chief' | 'redflags' | 'intake' | 'review' | 'sent';
 
@@ -145,7 +146,11 @@ export default function SymptomCheckPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [patientId, setPatientId] = useState<string | null>(null);
 
-  if (!isAuthenticated) { router.push('/auth/login'); return null; }
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/auth/login');
+    }
+  }, [isAuthenticated, router]);
 
   const questions = useMemo(() => buildQuestions(category), [category]);
 
@@ -212,9 +217,10 @@ export default function SymptomCheckPage() {
       });
       setSuccess('Sent to your care team. A clinician will review.');
       setStep('sent');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || 'Unable to send.');
+      const message = err instanceof Error ? err.message : 'Unable to send.';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -238,7 +244,7 @@ export default function SymptomCheckPage() {
     setPatientId(pid || null);
   };
 
-  useEffect(() => { loadPatientId(); }, []);
+  useEffect(() => { void loadPatientId(); }, []);
 
   const disclaimerBlock = (
     <Card className="mb-4">

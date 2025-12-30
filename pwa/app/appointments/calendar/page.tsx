@@ -36,16 +36,9 @@ export default function CalendarPage() {
     // Calculate the actual date - handle month boundaries correctly
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
-    const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
-    const firstDayOfWeek = firstDayOfMonth.getDay();
-    
-    // Calculate which month the selected day belongs to
     let targetMonth = currentMonth;
     let targetYear = currentYear;
-    
-    // If the day is in the first week and the first day of month is later in the week,
-    // the early days shown are from previous month (we don't show those as clickable)
-    // If the day is > 15 and we're showing days 1-7, it's next month
+
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     if (selectedDate > daysInMonth) {
       // This is next month

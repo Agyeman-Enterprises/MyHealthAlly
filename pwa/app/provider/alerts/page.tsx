@@ -52,7 +52,7 @@ export default function ProviderAlertsPage() {
   });
 
   const resolveAlertMutation = useMutation({
-    mutationFn: async ({ alertId, notes }: { alertId: string; notes?: string }) => {
+    mutationFn: async ({ alertId }: { alertId: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -169,7 +169,14 @@ export default function ProviderAlertsPage() {
                   ? `${alert.patients.first_name} ${alert.patients.last_name}`
                   : `Patient ${alert.patient_id.slice(0, 8)}`;
 
-                const triggerData = alert.trigger_data as any;
+                type TriggerData = {
+                  vital_type?: string;
+                  value?: string | number | null;
+                  value2?: string | number | null;
+                  recommendation?: string;
+                  notes?: string | null;
+                };
+                const triggerData = (alert.trigger_data || {}) as TriggerData;
                 const isAcknowledged = alert.acknowledged_at !== null;
                 const isResolved = alert.status === 'resolved';
 

@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Header } from '@/components/layout/Header';
@@ -23,26 +23,42 @@ type Goal = {
   target: string;
 };
 
+type CarePlanItem = {
+  id: string;
+  title: string;
+  description?: string | null;
+  frequency?: string | null;
+};
+
+type CarePlanSection = {
+  type: string;
+  care_plan_items?: CarePlanItem[];
+};
+
+type CarePlan = {
+  title?: string | null;
+  description?: string | null;
+  review_date?: string | null;
+  care_plan_sections?: CarePlanSection[];
+} | null;
+
 export default function CarePlanPage() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [patientId, setPatientId] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('overview');
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [carePlan, setCarePlan] = useState<any | null>(null);
+  const [carePlan, setCarePlan] = useState<CarePlan>(null);
   const [progressMap, setProgressMap] = useState<Record<string, string>>({}); // itemId -> progressId for today
-
-  if (!isAuthenticated) { router.push('/auth/login'); return null; }
 
   const setTransientSuccess = (msg: string | null) => {
     setSuccess(msg);
     if (msg) setTimeout(() => setSuccess(null), 2500);
   };
 
-  const loadPatientId = async () => {
+  const loadPatientId = useCallback(async () => {
     const store = useAuthStore.getState();
     let pid = store.patientId || store.user?.patientId;
     if (!pid) {
@@ -59,9 +75,9 @@ export default function CarePlanPage() {
     }
     if (pid && store.updateUser) store.updateUser({ patientId: pid });
     return pid || null;
-  };
+  }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -85,24 +101,31 @@ export default function CarePlanPage() {
         .lte('completed_at', `${today}T23:59:59`);
       if (progErr) throw progErr;
       const map: Record<string, string> = {};
-      (progress || []).forEach((p: any) => { map[p.item_id] = p.id; });
+      (progress || []).forEach((p: { id: string; item_id: string }) => { map[p.item_id] = p.id; });
       setProgressMap(map);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error loading care plan', err);
-      setError(err.message || 'Unable to load care plan.');
+      const message = err instanceof Error ? err.message : 'Unable to load care plan.';
+      setError(message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [loadPatientId]);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/auth/login');
+      return;
+    }
+    void loadData();
+  }, [isAuthenticated, loadData, router]);
 
   const goals: Goal[] = useMemo(() => {
     if (!carePlan?.care_plan_sections) return [];
     return carePlan.care_plan_sections
-      .filter((s: any) => s.type === 'goals')
-      .flatMap((s: any) => s.care_plan_items || [])
-      .map((item: any) => ({
+      .filter((s) => s.type === 'goals')
+      .flatMap((s) => s.care_plan_items || [])
+      .map((item) => ({
         id: item.id,
         name: item.title,
         target: item.description || '',
@@ -112,9 +135,9 @@ export default function CarePlanPage() {
   const activities: Activity[] = useMemo(() => {
     if (!carePlan?.care_plan_sections) return [];
     return carePlan.care_plan_sections
-      .filter((s: any) => s.type === 'tasks' || s.type === 'activities')
-      .flatMap((s: any) => s.care_plan_items || [])
-      .map((item: any) => ({
+      .filter((s) => s.type === 'tasks' || s.type === 'activities')
+      .flatMap((s) => s.care_plan_items || [])
+      .map((item) => ({
         id: item.id,
         name: item.title,
         frequency: item.frequency || 'As directed',
@@ -126,15 +149,15 @@ export default function CarePlanPage() {
 
   const toggleActivity = async (itemId: string) => {
     if (!patientId) return;
-    setSaving(true);
     setError(null);
     try {
       const existing = progressMap[itemId];
       if (existing) {
         const { error: delErr } = await supabase.from('care_plan_progress').delete().eq('id', existing);
         if (delErr) throw delErr;
-        const { [itemId]: _, ...rest } = progressMap;
-        setProgressMap(rest);
+        const updatedMap = { ...progressMap };
+        delete updatedMap[itemId];
+        setProgressMap(updatedMap);
         setTransientSuccess('Marked incomplete.');
       } else {
         const { data, error: insErr } = await supabase
@@ -146,11 +169,10 @@ export default function CarePlanPage() {
         setProgressMap({ ...progressMap, [itemId]: data.id });
         setTransientSuccess('Marked complete.');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error updating activity', err);
-      setError(err.message || 'Unable to update activity.');
-    } finally {
-      setSaving(false);
+      const message = err instanceof Error ? err.message : 'Unable to update activity.';
+      setError(message);
     }
   };
 

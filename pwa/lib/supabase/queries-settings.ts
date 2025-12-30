@@ -1,8 +1,26 @@
 import { supabase } from './client';
 
 export interface UserSettingsPayload {
-  notificationSettings?: any;
-  appearancePreferences?: any;
+  notificationSettings?: {
+    channels: {
+      push?: boolean;
+      sms?: boolean;
+      email?: boolean;
+    };
+    categories: {
+      messages?: boolean;
+      appointments?: boolean;
+      labResults?: boolean;
+      medications?: boolean;
+      billing?: boolean;
+    };
+  };
+  appearancePreferences?: {
+    theme?: 'light' | 'dark' | 'system';
+    textSize?: 'small' | 'medium' | 'large';
+    highContrast?: boolean;
+    reduceMotion?: boolean;
+  };
   preferredLanguage?: string;
   communicationLanguage?: string;
   twoFactorEnabled?: boolean;
@@ -16,8 +34,20 @@ export interface PatientProfilePayload {
   first_name?: string;
   last_name?: string;
   date_of_birth?: string | null;
-  address?: any;
-  emergency_contact?: any;
+  address?: {
+    street1: string;
+    street2?: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
+  emergency_contact?: {
+    name: string;
+    relationship: string;
+    phone: string;
+    email?: string;
+  };
   appointment_reminders?: boolean;
   medication_reminders?: boolean;
 }
@@ -34,9 +64,13 @@ export async function getCurrentUserAndPatient() {
 
   if (userError || !userRecord) throw userError || new Error('User record not found');
 
-  const patientId = Array.isArray(userRecord.patients)
-    ? userRecord.patients[0]?.id
-    : userRecord.patients?.id;
+  const patientRecord = Array.isArray(userRecord.patients)
+    ? userRecord.patients[0]
+    : userRecord.patients;
+  const patientId =
+    patientRecord && typeof patientRecord === 'object' && 'id' in patientRecord
+      ? (patientRecord as { id?: string }).id ?? null
+      : null;
 
   return { authUser: authData.user, userRecord, patientId };
 }

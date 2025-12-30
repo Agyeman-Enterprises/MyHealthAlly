@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { Session } from '@supabase/supabase-js';
 
 /**
  * User interface - extended for all use cases
@@ -9,11 +10,12 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  phone?: string;
-  dateOfBirth?: string;
-  preferredLanguage?: string;
-  patientId?: string;      // For patient users
-  practiceId?: string;     // For provider users
+  role?: 'patient' | 'provider' | 'admin' | null;
+  phone?: string | null;
+  dateOfBirth?: string | null;
+  preferredLanguage?: string | null;
+  patientId?: string | null;      // For patient users
+  practiceId?: string | null;     // For provider users
 }
 
 /**
@@ -40,7 +42,7 @@ export interface AuthStore {
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
   initialize: () => void;
-  completeMfa: (session: any, user: User) => void;
+  completeMfa: (session: Session, user: User) => void;
   requestMfaCode: (email: string) => Promise<void>;
   
   // Provider Actions
@@ -197,15 +199,15 @@ export const useAuthStore = create<AuthStore>()(
           }
         } catch (err) {
           console.error('Error loading patient ID during sign in:', err);
-          // Don't fail login - patient ID can be loaded later
         }
 
+        const meta = (data.user.user_metadata || {}) as Record<string, unknown>;
         const user: User = {
           id: data.user.id,
           email: data.user.email || '',
-          firstName: data.user.user_metadata?.first_name || '',
-          lastName: data.user.user_metadata?.last_name || '',
-          patientId,
+          firstName: typeof meta['first_name'] === 'string' ? (meta['first_name'] as string) : '',
+          lastName: typeof meta['last_name'] === 'string' ? (meta['last_name'] as string) : '',
+          patientId: patientId ?? null,
         };
 
         // If 2FA is enabled, sign out the password session and trigger OTP flow
@@ -230,13 +232,17 @@ export const useAuthStore = create<AuthStore>()(
 
         setAuthCookie(data.session?.access_token || generateMockToken(user.id));
 
+        const metaRole = typeof meta['role'] === 'string' ? (meta['role'] as string) : undefined;
+        const resolvedRole: 'patient' | 'provider' | 'admin' | null =
+          metaRole === 'provider' || metaRole === 'admin' ? metaRole : 'patient';
+
         set({
           user,
           isAuthenticated: true,
           isInitialized: true,
           mfaRequired: false,
           mfaEmail: null,
-          role: data.user.user_metadata?.role || 'patient',
+          role: resolvedRole,
           accessToken: data.session?.access_token || null,
           refreshToken: data.session?.refresh_token || null,
         });
@@ -275,7 +281,7 @@ export const useAuthStore = create<AuthStore>()(
         });
       },
 
-      completeMfa: (session: any, user: User) => {
+      completeMfa: (session: Session, user: User) => {
         setAuthCookie(session?.access_token || generateMockToken(user.id));
         set({
           user,

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 
 // Logo component with fallback
 function TopNavLogoImage() {
@@ -12,9 +13,11 @@ function TopNavLogoImage() {
   if (logoError && !usePng) {
     // Try PNG fallback
     return (
-      <img
+      <Image
         src="/images/mha_logo_512.png"
         alt="MyHealth Ally"
+        width={32}
+        height={32}
         className="w-8 h-8 rounded-lg object-cover"
         onError={() => setUsePng(true)}
       />
@@ -33,9 +36,11 @@ function TopNavLogoImage() {
   }
 
   return (
-    <img
+    <Image
       src="/images/MHA_logo.jpg"
       alt="MyHealth Ally"
+      width={32}
+      height={32}
       className="w-8 h-8 rounded-lg object-cover"
       onError={() => setLogoError(true)}
     />

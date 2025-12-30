@@ -39,9 +39,10 @@ export default function LanguagePage() {
         const { userRecord } = await getCurrentUserAndPatient();
         setUserId(userRecord.id);
         setSelected(userRecord.preferred_language || 'en');
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error loading language', err);
-        setError(err.message || 'Unable to load language preference.');
+        const message = err instanceof Error ? err.message : 'Unable to load language preference.';
+        setError(message);
       } finally {
         setLoading(false);
       }
@@ -57,9 +58,10 @@ export default function LanguagePage() {
     try {
       await updateUserSettings(userId, { preferredLanguage: selected, communicationLanguage: selected });
       setSuccess('Language preference saved.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving language', err);
-      setError(err.message || 'Unable to save language preference.');
+      const message = err instanceof Error ? err.message : 'Unable to save language preference.';
+      setError(message);
     } finally {
       setSaving(false);
     }

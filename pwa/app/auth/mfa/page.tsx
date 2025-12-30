@@ -7,6 +7,8 @@ import { supabase } from '@/lib/supabase/client';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Header } from '@/components/layout/Header';
+import { BottomNav } from '@/components/layout/BottomNav';
+import type { User } from '@/lib/store/auth-store';
 
 export default function MfaPage() {
   const searchParams = useSearchParams();
@@ -42,7 +44,10 @@ export default function MfaPage() {
 
       // Load patient id and metadata
       let patientId: string | undefined;
-      let role: 'patient' | 'provider' | 'admin' | null = data.user.user_metadata?.role || 'patient';
+      const meta = (data.user.user_metadata || {}) as Record<string, unknown>;
+      const roleValue = typeof meta['role'] === 'string' ? (meta['role'] as string) : 'patient';
+      const role: 'patient' | 'provider' | 'admin' | null =
+        roleValue === 'provider' || roleValue === 'admin' ? (roleValue as 'provider' | 'admin') : 'patient';
       try {
         const { data: userRecord } = await supabase
           .from('users')
@@ -53,24 +58,25 @@ export default function MfaPage() {
           const arr = Array.isArray(userRecord.patients) ? userRecord.patients : [userRecord.patients];
           patientId = arr[0]?.id;
         }
-      } catch (e) {
+      } catch {
         // best effort
       }
 
-      const user = {
+      const user: User = {
         id: data.user.id,
         email: data.user.email || '',
-        firstName: data.user.user_metadata?.first_name || '',
-        lastName: data.user.user_metadata?.last_name || '',
-        patientId,
+        firstName: typeof meta['first_name'] === 'string' ? (meta['first_name'] as string) : '',
+        lastName: typeof meta['last_name'] === 'string' ? (meta['last_name'] as string) : '',
+        patientId: patientId ?? null,
         role,
-      } as any;
+      };
 
       completeMfa(data.session, user);
       setSuccess('Verified');
       router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'Verification failed.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Verification failed.';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -84,8 +90,9 @@ export default function MfaPage() {
     try {
       await requestMfaCode(email);
       setSuccess('Code sent.');
-    } catch (err: any) {
-      setError(err.message || 'Unable to send code.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unable to send code.';
+      setError(message);
     } finally {
       setResending(false);
     }

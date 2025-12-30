@@ -148,24 +148,36 @@ export default function ProviderPatientDetailPage() {
         <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Vital Signs</h3>
         {vitals && vitals.length > 0 ? (
           <div className="space-y-3">
-            {vitals.slice(0, 5).map((vital: { id: string; type: string; value: number; timestamp: string }) => (
+            {vitals.slice(0, 5).map((vital) => (
               <div key={vital.id} className="border-b border-gray-200 pb-3 last:border-0 last:pb-0">
                 <div className="flex justify-between items-center">
                   <div>
                     <p className="text-sm font-medium text-gray-900">{vital.type}</p>
                     <p className="text-xs text-gray-500">
-                      {format(new Date(vital.timestamp), 'PPpp')}
+                      {format(
+                        new Date(
+                          (vital as { timestamp?: string; measured_at?: string; created_at?: string }).timestamp ||
+                          (vital as { timestamp?: string; measured_at?: string; created_at?: string }).measured_at ||
+                          (vital as { timestamp?: string; measured_at?: string; created_at?: string }).created_at ||
+                          ''
+                        ),
+                        'PPpp'
+                      )}
                     </p>
                   </div>
-                  {vital.urgency && (
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      vital.urgency === 'red' ? 'bg-red-100 text-red-800' :
-                      vital.urgency === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-green-100 text-green-800'
-                    }`}>
-                      {vital.urgency.toUpperCase()}
-                    </span>
-                  )}
+                  {(() => {
+                    const urgency = (vital as { urgency?: string }).urgency;
+                    if (!urgency) return null;
+                    return (
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        urgency === 'red' ? 'bg-red-100 text-red-800' :
+                        urgency === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-green-100 text-green-800'
+                      }`}>
+                        {urgency.toUpperCase()}
+                      </span>
+                    );
+                  })()}
                 </div>
               </div>
             ))}
@@ -180,15 +192,27 @@ export default function ProviderPatientDetailPage() {
         <h3 className="text-lg font-medium text-gray-900 mb-4">Medications</h3>
         {medications && medications.length > 0 ? (
           <ul className="space-y-3">
-            {medications.map((med: { id: string; name: string; dosage: string; dosage_unit: string; frequency: string; is_active: boolean }) => (
-              <li key={med.id} className="border-b border-gray-200 pb-3 last:border-0 last:pb-0">
-                <p className="text-sm font-medium text-gray-900">{med.name}</p>
-                <p className="text-xs text-gray-500">{med.dosage} {med.dosage_unit} - {med.frequency}</p>
-                {!med.is_active && (
-                  <p className="text-xs text-red-500">Discontinued</p>
-                )}
-              </li>
-            ))}
+            {medications.map((med) => {
+              const medInfo = med as {
+                id: string;
+                name?: string | null;
+                dosage?: string | number | null;
+                dosage_unit?: string | null;
+                frequency?: string | null;
+                is_active?: boolean | null;
+              };
+              return (
+                <li key={medInfo.id} className="border-b border-gray-200 pb-3 last:border-0 last:pb-0">
+                  <p className="text-sm font-medium text-gray-900">{medInfo.name || 'Medication'}</p>
+                  <p className="text-xs text-gray-500">
+                    {medInfo.dosage ?? '—'} {medInfo.dosage_unit ?? ''} - {medInfo.frequency ?? 'unspecified'}
+                  </p>
+                  {medInfo.is_active === false && (
+                    <p className="text-xs text-red-500">Discontinued</p>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <p className="text-sm text-gray-500">No medications</p>
@@ -200,16 +224,26 @@ export default function ProviderPatientDetailPage() {
         <h3 className="text-lg font-medium text-gray-900 mb-4">Lab Orders</h3>
         {labOrders && labOrders.length > 0 ? (
           <ul className="space-y-3">
-            {labOrders.map((lab: { id: string; status: string; ordered_at: string; lab_tests?: Array<{ test_name?: string }> }) => (
-              <li key={lab.id} className="border-b border-gray-200 pb-3 last:border-0 last:pb-0">
-                <p className="text-sm font-medium text-gray-900">
-                  {lab.lab_tests?.[0]?.test_name || 'Lab Order'}
-                </p>
-                <p className="text-xs text-gray-500">
-                  Status: {lab.status} | Ordered: {format(new Date(lab.ordered_at), 'MMM d, yyyy')}
-                </p>
-              </li>
-            ))}
+            {labOrders.map((lab) => {
+              const labInfo = lab as {
+                id: string;
+                status?: string | null;
+                ordered_at?: string | null;
+                lab_tests?: Array<{ id?: string; name?: string; test_name?: string; result?: string; status?: string | null }>;
+              };
+              const firstTest = labInfo.lab_tests?.[0];
+              const label = firstTest?.name || firstTest?.test_name || 'Lab Order';
+              return (
+                <li key={labInfo.id} className="border-b border-gray-200 pb-3 last:border-0 last:pb-0">
+                  <p className="text-sm font-medium text-gray-900">
+                    {label}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Status: {labInfo.status || 'pending'} | Ordered: {labInfo.ordered_at ? format(new Date(labInfo.ordered_at), 'MMM d, yyyy') : 'N/A'}
+                  </p>
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <p className="text-sm text-gray-500">No lab orders</p>

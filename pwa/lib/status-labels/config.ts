@@ -1,11 +1,11 @@
-import type {
+import {
   ProcessingStatus,
   ReviewOwnership,
   ClinicalActionState,
   MedicationStatus,
   UrgencyFlag,
-  StatusLabelConfig,
 } from './types';
+import type { StatusLabelConfig } from './types';
 
 /**
  * Status Label Configuration

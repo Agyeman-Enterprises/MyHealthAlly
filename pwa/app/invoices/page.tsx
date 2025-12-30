@@ -58,8 +58,11 @@ export default function InvoicesPage() {
 
   interface Invoice {
     id: string;
+  invoice_number?: string | null;
     status: string;
     total_amount: number;
+  created_at: string;
+  description?: string | null;
   }
 
   const totalDue = invoices?.reduce((sum: number, inv: Invoice) => {

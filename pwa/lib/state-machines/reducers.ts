@@ -175,10 +175,13 @@ export function createCaptureSessionStateMachine(
       } else if (event === 'STOP' || event === 'ABORT') {
         diagnostics.recordingActive = false;
       } else if (event === 'FAIL') {
-        diagnostics.error = context?.['error'] || 'Unknown error';
+        const contextError = context?.['error'];
+        const contextCode = context?.['code'];
+        const contextMessage = context?.['message'];
+        diagnostics.error = typeof contextError === 'string' ? contextError : 'Unknown error';
         diagnostics.lastError = {
-          code: context?.['code'] || 'UNKNOWN',
-          message: context?.['message'] || diagnostics.error,
+          code: typeof contextCode === 'string' ? contextCode : 'UNKNOWN',
+          message: typeof contextMessage === 'string' ? contextMessage : diagnostics.error,
           timestamp: new Date().toISOString(),
         };
         diagnostics.streamActive = false;
@@ -187,7 +190,7 @@ export function createCaptureSessionStateMachine(
 
       // Update audio level if provided
       const audioLevel = context?.['audioLevel'];
-      if (audioLevel !== undefined) {
+      if (typeof audioLevel === 'number') {
         diagnostics.audioLevel = audioLevel;
       }
 

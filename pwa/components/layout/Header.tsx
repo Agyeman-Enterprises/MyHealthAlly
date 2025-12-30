@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
+import Image from 'next/image';
 
 const mainNavItems = [
   { label: 'Home', href: '/dashboard' },
@@ -34,9 +35,11 @@ function LogoImage() {
   if (logoError && !usePng) {
     // Try PNG fallback
     return (
-      <img
+      <Image
         src="/images/mha_logo_512.png"
         alt="MyHealth Ally"
+        width={40}
+        height={40}
         className="w-10 h-10 rounded-xl object-cover shadow-sm"
         onError={() => setUsePng(true)}
       />
@@ -55,9 +58,11 @@ function LogoImage() {
   }
 
   return (
-    <img
+    <Image
       src="/images/MHA_logo.jpg"
       alt="MyHealth Ally"
+      width={40}
+      height={40}
       className="w-10 h-10 rounded-xl object-cover shadow-sm"
       onError={() => setLogoError(true)}
     />

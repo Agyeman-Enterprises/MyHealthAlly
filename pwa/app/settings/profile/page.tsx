@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -19,8 +18,7 @@ type FormState = {
 const emptyForm: FormState = { firstName: '', lastName: '', email: '', phone: '', dateOfBirth: '' };
 
 export default function ProfilePage() {
-  const router = useRouter();
-  const { isAuthenticated, updateUser } = useAuthStore();
+  const { updateUser } = useAuthStore();
   const [form, setForm] = useState<FormState>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -28,8 +26,6 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [patientId, setPatientId] = useState<string | null>(null);
-
-  if (!isAuthenticated) { router.push('/auth/login'); return null; }
 
   useEffect(() => {
     const load = async () => {
@@ -39,16 +35,20 @@ export default function ProfilePage() {
         const { userRecord, patientId: pid } = await getCurrentUserAndPatient();
         setUserId(userRecord.id);
         setPatientId(pid || null);
+        const patientProfile = Array.isArray(userRecord.patients)
+          ? userRecord.patients[0]
+          : userRecord.patients || null;
         setForm({
-          firstName: userRecord.patients?.first_name || '',
-          lastName: userRecord.patients?.last_name || '',
+          firstName: patientProfile?.first_name || '',
+          lastName: patientProfile?.last_name || '',
           email: userRecord.email || '',
           phone: userRecord.phone || '',
-          dateOfBirth: userRecord.patients?.date_of_birth || '',
+          dateOfBirth: patientProfile?.date_of_birth || '',
         });
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error loading profile', err);
-        setError(err.message || 'Unable to load profile.');
+        const message = err instanceof Error ? err.message : 'Unable to load profile.';
+        setError(message);
       } finally {
         setLoading(false);
       }
@@ -73,9 +73,10 @@ export default function ProfilePage() {
       }
       updateUser({ firstName: form.firstName, lastName: form.lastName, email: form.email, phone: form.phone, dateOfBirth: form.dateOfBirth });
       setSuccess('Profile updated.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving profile', err);
-      setError(err.message || 'Unable to save profile.');
+      const message = err instanceof Error ? err.message : 'Unable to save profile.';
+      setError(message);
     } finally {
       setSaving(false);
     }

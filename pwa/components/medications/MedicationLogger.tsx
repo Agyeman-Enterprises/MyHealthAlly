@@ -97,15 +97,15 @@ export function MedicationLogger({ medications, onMedicationsChange }: Medicatio
       }
       
       setShowCamera(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Camera error:', error);
       let errorMessage = 'Camera access denied or not available.';
       
-      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+      if (error instanceof Error && (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError')) {
         errorMessage = 'Camera permission denied. Please allow camera access in browser settings.';
-      } else if (error.name === 'NotFoundError') {
+      } else if (error instanceof Error && error.name === 'NotFoundError') {
         errorMessage = 'No camera found. Please use text or voice input instead.';
-      } else if (error.name === 'NotReadableError') {
+      } else if (error instanceof Error && error.name === 'NotReadableError') {
         errorMessage = 'Camera is already in use by another application.';
       }
       
@@ -185,7 +185,7 @@ export function MedicationLogger({ medications, onMedicationsChange }: Medicatio
       // Reset form
       resetForm();
       setInputMode('text');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error processing voice:', error);
       alert('Error processing voice recording. Please try again or use text input.');
     } finally {
@@ -206,8 +206,8 @@ export function MedicationLogger({ medications, onMedicationsChange }: Medicatio
     // Extract dosage (look for numbers followed by mg, ml, etc.)
     const dosageMatch = text.match(/(\d+(?:\.\d+)?)\s*(mg|ml|mcg|g|units?|tablets?|capsules?|pills?)/i);
     if (dosageMatch) {
-      parsed.dosage = dosageMatch[1];
-      parsed.dosageUnit = dosageMatch[2].toLowerCase();
+      parsed.dosage = dosageMatch[1] ?? '';
+      parsed.dosageUnit = dosageMatch[2]?.toLowerCase() ?? '';
     }
     
     // Extract frequency (BID, TID, QD, once daily, twice daily, etc.)
@@ -321,7 +321,7 @@ export function MedicationLogger({ medications, onMedicationsChange }: Medicatio
         <Card className="p-4 bg-primary-50 border-primary-200">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-sm text-navy-600 font-medium">
-              Speak your medication details (e.g., "Lisinopril 10 milligrams once daily")
+              Speak your medication details (e.g., &quot;Lisinopril 10 milligrams once daily&quot;)
             </p>
             <button
               onClick={() => {

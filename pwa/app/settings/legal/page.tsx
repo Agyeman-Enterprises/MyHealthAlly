@@ -31,7 +31,7 @@ export default function LegalPage() {
               key={doc.name} 
               href={doc.href} 
               className={`block p-4 hover:bg-primary-50 transition-colors first:rounded-t-xl last:rounded-b-xl ${
-                (doc as any).highlight ? 'bg-primary-50 border-l-4 border-primary-500' : ''
+                doc.highlight ? 'bg-primary-50 border-l-4 border-primary-500' : ''
               }`}
             >
               <div className="flex items-center justify-between">

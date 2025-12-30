@@ -59,6 +59,9 @@ export default function NotificationsPage() {
         const notif = userRecord.notification_settings || {};
         const channels = notif.channels || notif; // backward compatibility with flat shape
         const categories = notif.categories || notif;
+        const patientProfile = Array.isArray(userRecord.patients)
+          ? userRecord.patients[0]
+          : userRecord.patients || null;
 
         setSettings({
           pushEnabled: channels.push ?? true,
@@ -69,12 +72,13 @@ export default function NotificationsPage() {
           labResults: categories.labResults ?? true,
           medications: categories.medications ?? true,
           billing: categories.billing ?? false,
-          appointmentReminders: userRecord.patients?.appointment_reminders ?? true,
-          medicationReminders: userRecord.patients?.medication_reminders ?? true,
+          appointmentReminders: patientProfile?.appointment_reminders ?? true,
+          medicationReminders: patientProfile?.medication_reminders ?? true,
         });
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error loading notification settings', err);
-        setError(err.message || 'Unable to load notification settings.');
+        const message = err instanceof Error ? err.message : 'Unable to load notification settings.';
+        setError(message);
       } finally {
         setLoading(false);
       }
@@ -120,9 +124,10 @@ export default function NotificationsPage() {
       }
 
       setSuccess('Notification settings saved.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving notification settings', err);
-      setError(err.message || 'Unable to save notification settings.');
+      const message = err instanceof Error ? err.message : 'Unable to save notification settings.';
+      setError(message);
     } finally {
       setSaving(false);
     }

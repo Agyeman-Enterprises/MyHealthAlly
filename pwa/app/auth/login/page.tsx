@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabase/client';
 
 export default function LoginPage() {
@@ -110,9 +111,11 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           {!logoError ? (
-            <img
+            <Image
               src="/images/MHA_logo.jpg"
               alt="MyHealth Ally"
+              width={80}
+              height={80}
               className="w-20 h-20 rounded-2xl mx-auto mb-4 shadow-lg object-cover"
               onError={() => setLogoError(true)}
             />

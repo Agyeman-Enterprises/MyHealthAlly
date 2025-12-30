@@ -188,12 +188,12 @@ export class ProviderApiClient {
     if (error && typeof error === 'object' && 'response' in error && (error as AxiosError).response) {
       const axiosError = error as AxiosError;
       const status = axiosError.response?.status || 0;
-      const data = axiosError.response?.data as { message?: string; error?: string };
+      const data = axiosError.response?.data as { message?: string; error?: string; code?: string | number };
 
       return new SoloPracticeApiError(
         data?.message || data?.error || 'API request failed',
         status,
-        data?.code
+        data?.code !== undefined && data?.code !== null ? String(data.code) : undefined
       );
     }
 

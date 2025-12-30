@@ -145,11 +145,22 @@ export default function VitalsPage() {
         return;
       }
       
-      const readings: VitalReading[] = (data || []).map((v: any) => ({
+      type VitalRow = {
+        id: string;
+        type: string;
+        value: number | null;
+        value_secondary: number | null;
+        unit: string | null;
+        measured_at: string;
+        is_abnormal: boolean | null;
+        abnormal_reason: string | null;
+      };
+
+      const readings: VitalReading[] = (data || []).map((v: VitalRow) => ({
         id: v.id,
         type: v.type.replace(/_/g, ' '),
-        value: v.value,
-        value2: v.value_secondary,
+        value: v.value !== null && v.value !== undefined ? String(v.value) : '',
+        value2: v.value_secondary !== null && v.value_secondary !== undefined ? String(v.value_secondary) : '',
         unit: v.unit || '',
         date: v.measured_at,
         status: v.is_abnormal ? (v.abnormal_reason?.includes('critical') || v.abnormal_reason?.includes('emergency') ? 'critical' : 'warning') : 'normal',
@@ -158,13 +169,6 @@ export default function VitalsPage() {
       setRecentReadings(readings);
     } catch (error) {
       console.error('Failed to load readings:', error);
-    }
-  };
-
-  const loadRecentReadings = async () => {
-    const currentPatientId = patientId || useAuthStore.getState().patientId || useAuthStore.getState().user?.patientId;
-    if (currentPatientId) {
-      await loadRecentReadingsWithId(currentPatientId);
     }
   };
 
@@ -258,7 +262,7 @@ export default function VitalsPage() {
         result = validateBloodGlucose(numValue, false, patientContext);
         break;
       case 'blood-pressure':
-        result = validateBloodPressure(numValue, numValue2!, patientContext);
+        result = validateBloodPressure(numValue, numValue2 ?? 0, patientContext);
         break;
       case 'heart-rate':
         result = validateHeartRate(numValue, patientContext);
@@ -304,7 +308,7 @@ export default function VitalsPage() {
       if (!currentPatientId) {
         // Try to get from auth store
         const authStore = useAuthStore.getState();
-        currentPatientId = authStore.patientId || authStore.user?.patientId;
+        currentPatientId = authStore.patientId ?? authStore.user?.patientId ?? null;
         
         // If still not found, try to get from Supabase user
         if (!currentPatientId) {
@@ -332,7 +336,7 @@ export default function VitalsPage() {
                 }
               }
             }
-          } catch (err: any) {
+          } catch (err: unknown) {
             console.error('Error loading patient ID:', err);
             throw new Error('Unable to find your patient record. Please complete your intake form first or contact support.');
           }
@@ -357,7 +361,7 @@ export default function VitalsPage() {
         'weight': 'weight',
       };
 
-      const { data: savedVital, error: saveError } = await supabase
+      const { error: saveError } = await supabase
         .from('vitals')
         .insert({
           patient_id: currentPatientId,
@@ -402,7 +406,7 @@ export default function VitalsPage() {
         };
         
         if (numValue2 !== undefined) {
-          measurementValue.value2 = numValue2;
+          measurementValue['value2'] = numValue2;
         }
 
         const metadata: Record<string, unknown> = {
@@ -414,8 +418,9 @@ export default function VitalsPage() {
 
         // Send to SoloPractice - this will create alerts in SoloPractice provider panel
         // SoloPractice will enforce R4 (urgency classification) and R5 (hard escalation)
+        const formType = showForm ?? '';
         const spResponse = await apiClient.recordMeasurement({
-          type: vitalTypeMap[showForm || ''] || showForm,
+          type: vitalTypeMap[formType] || formType,
           value: measurementValue,
           source: 'manual',
           metadata: metadata,
@@ -434,10 +439,16 @@ export default function VitalsPage() {
             console.log('🚨 CRITICAL: SoloPractice escalated this measurement - alert created in SoloPractice provider panel');
           }
         }
-      } catch (spError: any) {
+      } catch (spError: unknown) {
         // CRITICAL: If SoloPractice API fails, we still need to create alert locally
         console.error('⚠️ CRITICAL: Failed to send measurement to SoloPractice:', spError);
-        console.error('Error details:', spError?.response?.data || spError?.message);
+        const spErrorDetails =
+          spError instanceof Error
+            ? spError.message
+            : (spError as { response?: { data?: unknown }; message?: string })?.response?.data ||
+              (spError as { message?: string })?.message ||
+              'Unknown error';
+        console.error('Error details:', spErrorDetails);
         // Fall through to create local alert as backup
         // In production, this should trigger immediate admin notification
       }
@@ -480,7 +491,7 @@ export default function VitalsPage() {
           }
 
           console.log('Alert created successfully:', alertData.id);
-        } catch (alertError: any) {
+        } catch (alertError: unknown) {
           // This is CRITICAL - if we can't create alerts, we can't promise notification
           console.error('CRITICAL ALERT CREATION FAILURE:', alertError);
           // Don't fail the vital save, but log this as a critical issue
@@ -503,9 +514,14 @@ export default function VitalsPage() {
         // Validation result already shown in UI via setValidationResult
         // No need for alert
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to save vital:', error);
-      const errorMessage = error?.message || error?.error?.message || 'Unknown error';
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : (error as { message?: string; error?: { message?: string } })?.message ||
+              (error as { message?: string; error?: { message?: string } })?.error?.message ||
+              'Unknown error';
       
       // Show error inline instead of alert
       setError(`Failed to save vital: ${errorMessage}. Please check that you are logged in and try again.`);

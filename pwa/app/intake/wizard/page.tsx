@@ -160,7 +160,7 @@ export default function IntakeWizardPage() {
             insuranceGroupNumber: patient.insurance_group_number || '',
             chronicConditions: patient.chronic_conditions || [],
             allergies: patient.allergies || [],
-            medications: (existingMedications || []).map((m: any) => ({
+            medications: (existingMedications || []).map((m) => ({
               id: m.id,
               name: m.name,
               dosage: m.dosage,
@@ -217,7 +217,7 @@ export default function IntakeWizardPage() {
             }
           }
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error loading patient ID:', err);
         throw err; // Re-throw to be handled by caller
       }
@@ -229,7 +229,7 @@ export default function IntakeWizardPage() {
 
     const dataToSave = { ...formData, ...partialData };
     
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       first_name: dataToSave.firstName,
       last_name: dataToSave.lastName,
       preferred_name: dataToSave.preferredName || null,
@@ -274,11 +274,12 @@ export default function IntakeWizardPage() {
         .eq('patient_id', currentPatientId)
         .eq('is_active', true);
 
-      const existingIds = new Set((existingMeds || []).map((m: any) => m.id));
+      type MedicationIdRow = { id: string };
+      const existingIds = new Set((existingMeds || []).map((m: MedicationIdRow) => m.id));
 
       // Upsert medications
       for (const med of dataToSave.medications) {
-        const medicationData: any = {
+        const medicationData: Record<string, unknown> = {
           patient_id: currentPatientId,
           name: med.name,
           dosage: med.dosage || '',
@@ -308,14 +309,14 @@ export default function IntakeWizardPage() {
       }
 
       // Mark medications not in the list as inactive
-      const currentMedIds = new Set(dataToSave.medications.filter(m => m.id).map(m => m.id!));
-      const toDeactivate = (existingMeds || []).filter((m: any) => !currentMedIds.has(m.id));
+      const currentMedIds = new Set((dataToSave.medications.map((m) => m.id).filter(Boolean) as string[]));
+      const toDeactivate = (existingMeds || []).filter((m: MedicationIdRow) => !currentMedIds.has(m.id));
       
       if (toDeactivate.length > 0) {
         await supabase
           .from('medications')
           .update({ is_active: false })
-          .in('id', toDeactivate.map((m: any) => m.id));
+          .in('id', toDeactivate.map((m: MedicationIdRow) => m.id));
       }
     }
   };
@@ -352,10 +353,14 @@ export default function IntakeWizardPage() {
       
       // Move to next step
       if (currentStepIndex < steps.length - 1) {
-        setCurrentStep(steps[currentStepIndex + 1]);
+          const nextStep = steps[currentStepIndex + 1];
+          if (nextStep) {
+            setCurrentStep(nextStep);
+          }
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to save progress');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to save progress';
+      setError(message);
     } finally {
       setSaving(false);
     }
@@ -363,7 +368,10 @@ export default function IntakeWizardPage() {
 
   const handleBack = () => {
     if (currentStepIndex > 0) {
-      setCurrentStep(steps[currentStepIndex - 1]);
+      const prevStep = steps[currentStepIndex - 1];
+      if (prevStep) {
+        setCurrentStep(prevStep);
+      }
     }
   };
 
@@ -425,9 +433,10 @@ export default function IntakeWizardPage() {
       // Show success message inline instead of alert
       setError(null);
       router.push('/intake');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error submitting intake:', err);
-      setError(err.message || 'Failed to submit intake forms. Please try again.');
+      const message = err instanceof Error ? err.message : 'Failed to submit intake forms. Please try again.';
+      setError(message);
     } finally {
       setSaving(false);
     }
@@ -642,8 +651,11 @@ export default function IntakeWizardPage() {
                       value={allergy.allergen}
                       onChange={(e) => {
                         const newAllergies = [...formData.allergies];
-                        newAllergies[index].allergen = e.target.value;
-                        setFormData({ ...formData, allergies: newAllergies });
+                        const targetAllergy = newAllergies[index];
+                        if (targetAllergy) {
+                          targetAllergy.allergen = e.target.value;
+                          setFormData({ ...formData, allergies: newAllergies });
+                        }
                       }}
                     />
                     <Input
@@ -651,8 +663,11 @@ export default function IntakeWizardPage() {
                       value={allergy.reaction}
                       onChange={(e) => {
                         const newAllergies = [...formData.allergies];
-                        newAllergies[index].reaction = e.target.value;
-                        setFormData({ ...formData, allergies: newAllergies });
+                        const targetAllergy = newAllergies[index];
+                        if (targetAllergy) {
+                          targetAllergy.reaction = e.target.value;
+                          setFormData({ ...formData, allergies: newAllergies });
+                        }
                       }}
                     />
                     <div>
@@ -661,8 +676,11 @@ export default function IntakeWizardPage() {
                         value={allergy.severity}
                         onChange={(e) => {
                           const newAllergies = [...formData.allergies];
-                          newAllergies[index].severity = e.target.value as 'mild' | 'moderate' | 'severe';
-                          setFormData({ ...formData, allergies: newAllergies });
+                          const targetAllergy = newAllergies[index];
+                          if (targetAllergy) {
+                            targetAllergy.severity = e.target.value as 'mild' | 'moderate' | 'severe';
+                            setFormData({ ...formData, allergies: newAllergies });
+                          }
                         }}
                         className="w-full px-3 py-2 border rounded-lg"
                       >

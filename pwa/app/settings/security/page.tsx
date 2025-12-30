@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -19,7 +18,6 @@ function hashPin(pin: string): Promise<string> {
 }
 
 export default function SecurityPage() {
-  const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [biometrics, setBiometrics] = useState(false);
   const [twoFactor, setTwoFactor] = useState(false);
@@ -30,8 +28,6 @@ export default function SecurityPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
-  if (!isAuthenticated) { router.push('/auth/login'); return null; }
-
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -39,17 +35,20 @@ export default function SecurityPage() {
       try {
         const { userRecord } = await getCurrentUserAndPatient();
         setUserId(userRecord.id);
-        setBiometrics(userRecord.biometric_enabled ?? false);
-        setTwoFactor(userRecord.two_factor_enabled ?? false);
-      } catch (err: any) {
+        const biometricEnabled = (userRecord as { biometric_enabled?: boolean }).biometric_enabled ?? false;
+        const twoFactorEnabled = (userRecord as { two_factor_enabled?: boolean }).two_factor_enabled ?? false;
+        setBiometrics(biometricEnabled);
+        setTwoFactor(twoFactorEnabled);
+      } catch (err: unknown) {
         console.error('Error loading security settings', err);
-        setError(err.message || 'Unable to load security settings.');
+        const message = err instanceof Error ? err.message : 'Unable to load security settings.';
+        setError(message);
       } finally {
         setLoading(false);
       }
     };
     load();
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated]);
 
   const handleSave = async () => {
     if (!userId) return;
@@ -57,17 +56,18 @@ export default function SecurityPage() {
     setError(null);
     setSuccess(null);
     try {
-      const pinHash = pin ? await hashPin(pin) : undefined;
+      const pinHash = pin ? await hashPin(pin) : null;
       await updateUserSettings(userId, {
         biometricEnabled: biometrics,
         twoFactorEnabled: twoFactor,
-        pinHash: pin ? pinHash! : undefined,
+        pinHash,
       });
       setSuccess('Security settings saved.');
       if (pin) setPin('');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving security settings', err);
-      setError(err.message || 'Unable to save security settings.');
+      const message = err instanceof Error ? err.message : 'Unable to save security settings.';
+      setError(message);
     } finally {
       setSaving(false);
     }
@@ -86,9 +86,10 @@ export default function SecurityPage() {
       const { error: pwError } = await supabase.auth.updateUser({ password: newPassword });
       if (pwError) throw pwError;
       setSuccess('Password updated.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error updating password', err);
-      setError(err.message || 'Unable to update password.');
+      const message = err instanceof Error ? err.message : 'Unable to update password.';
+      setError(message);
     } finally {
       setSaving(false);
     }

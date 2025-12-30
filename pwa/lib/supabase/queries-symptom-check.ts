@@ -9,7 +9,7 @@ export interface SymptomCheckPayload {
   category: string | null;
   redFlagsSelected: string[];
   triageLevel: TriageLevel;
-  answers: any[];
+  answers: Array<{ question: string; answer: string }>;
   summaryPatientSafe: string;
   summaryClinician: string;
   education: string[];
@@ -26,13 +26,13 @@ export async function createSymptomCheckWithTask(payload: SymptomCheckPayload) {
       .eq('id', payload.patientId)
       .single();
     patientUserId = patientRow?.user_id || null;
-  } catch (e) {
+  } catch {
     patientUserId = null;
   }
   try {
     const { data: { user } } = await supabase.auth.getUser();
     authUserId = user?.id || null;
-  } catch (e) {
+  } catch {
     authUserId = null;
   }
   if (!patientUserId && !authUserId) {

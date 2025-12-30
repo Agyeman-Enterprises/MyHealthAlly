@@ -87,19 +87,19 @@ export default function UploadDocumentPage() {
       }
       
       setShowCamera(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Camera error:', error);
       let errorMessage = 'Camera access denied or not available.';
       
-      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+      if (error instanceof Error && (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError')) {
         errorMessage = 'Camera permission denied. Please allow camera access in your browser settings and try again.';
-      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+      } else if (error instanceof Error && (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError')) {
         errorMessage = 'No camera found. Please use file upload instead.';
-      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+      } else if (error instanceof Error && (error.name === 'NotReadableError' || error.name === 'TrackStartError')) {
         errorMessage = 'Camera is already in use by another application. Please close other apps using the camera and try again.';
-      } else if (error.name === 'OverconstrainedError' || error.name === 'ConstraintNotSatisfiedError') {
+      } else if (error instanceof Error && (error.name === 'OverconstrainedError' || error.name === 'ConstraintNotSatisfiedError')) {
         errorMessage = 'Camera does not support the requested settings. Please use file upload instead.';
-      } else if (error.message) {
+      } else if (error instanceof Error && error.message) {
         errorMessage = error.message;
       }
       

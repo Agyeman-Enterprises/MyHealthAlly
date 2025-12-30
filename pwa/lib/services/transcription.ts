@@ -98,7 +98,10 @@ async function transcribeWithBrowserAPI(audioBlob: Blob): Promise<TranscriptionR
       return;
     }
 
-    const recognition = new SpeechRecognition();
+    type SpeechRecognizer = InstanceType<typeof SpeechRecognition>;
+    const recognition = new SpeechRecognition() as SpeechRecognizer & {
+      onend: ((this: SpeechRecognizer, ev: Event) => unknown) | null;
+    };
     recognition.continuous = true;
     recognition.interimResults = false;
     recognition.lang = 'en-US';
@@ -107,7 +110,10 @@ async function transcribeWithBrowserAPI(audioBlob: Blob): Promise<TranscriptionR
 
     recognition.onresult = (event: { resultIndex: number; results: Array<{ [key: number]: Array<{ transcript: string }>; isFinal: boolean }> }) => {
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        transcript += event.results[i][0].transcript;
+        const result = event.results[i] as unknown as { [key: number]: { transcript: string } };
+        const firstAlternative = result?.[0];
+        if (!firstAlternative) continue;
+        transcript += firstAlternative.transcript;
       }
     };
 

@@ -37,8 +37,8 @@ export class FirefoxAuthStorage {
     } catch (error) {
       console.error('Failed to store tokens:', error);
       // Last resort: in-memory (will be lost on refresh)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as Record<string, unknown>).__mha_tokens = { accessToken, refreshToken };
+      const tokenStore = window as unknown as Record<string, unknown>;
+      tokenStore['__mha_tokens'] = { accessToken, refreshToken };
     }
   }
 
@@ -63,10 +63,11 @@ export class FirefoxAuthStorage {
       }
       
       // Try in-memory fallback
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const inMemory = (window as Record<string, { accessToken: string; refreshToken: string }>).__mha_tokens;
-      if (inMemory) {
-        return { accessToken: inMemory.accessToken, refreshToken: inMemory.refreshToken };
+      const inMemory = (window as unknown as Record<string, { accessToken: string; refreshToken: string }> )['__mha_tokens'];
+      const storedTokens = (window as unknown as Record<string, { accessToken: string; refreshToken: string }> )['__mha_tokens'];
+      const tokenRecord = storedTokens ?? inMemory;
+      if (tokenRecord) {
+        return { accessToken: tokenRecord.accessToken, refreshToken: tokenRecord.refreshToken };
       }
     } catch (error) {
       console.error('Failed to retrieve tokens:', error);
@@ -81,8 +82,7 @@ export class FirefoxAuthStorage {
       localStorage.removeItem(this.REFRESH_KEY);
       sessionStorage.removeItem(this.TOKEN_KEY);
       sessionStorage.removeItem(this.REFRESH_KEY);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      delete (window as Record<string, unknown>).__mha_tokens;
+      delete (window as unknown as Record<string, unknown>)['__mha_tokens'];
     } catch (error) {
       console.error('Failed to clear tokens:', error);
     }

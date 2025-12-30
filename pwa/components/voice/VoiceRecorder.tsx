@@ -61,7 +61,9 @@ export function VoiceRecorder({
       return;
     }
 
-    const recognition = new SpeechRecognition();
+    const recognition = new SpeechRecognition() as SpeechRecognition & {
+      onend: ((this: SpeechRecognition, ev: Event) => unknown) | null;
+    };
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
@@ -75,8 +77,11 @@ export function VoiceRecorder({
       let finalTranscript = finalTranscriptRef.current;
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
+        const result = event.results[i] as unknown as { isFinal: boolean } & { [key: number]: { transcript: string } };
+        const firstAlternative = result?.[0];
+        if (!firstAlternative) continue;
+        const transcript = firstAlternative.transcript;
+        if (result.isFinal) {
           finalTranscript += transcript + ' ';
           finalTranscriptRef.current = finalTranscript;
         } else {

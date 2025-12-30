@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import Image from 'next/image';
 
 // Logo component with fallback
 function SignupLogo() {
@@ -15,9 +16,11 @@ function SignupLogo() {
 
   if (logoError && !usePng) {
     return (
-      <img
+      <Image
         src="/images/mha_logo_512.png"
         alt="MyHealth Ally"
+        width={80}
+        height={80}
         className="w-20 h-20 rounded-3xl mx-auto mb-4 shadow-lg object-cover"
         onError={() => setUsePng(true)}
       />
@@ -35,9 +38,11 @@ function SignupLogo() {
   }
 
   return (
-    <img
+    <Image
       src="/images/MHA_logo.jpg"
       alt="MyHealth Ally"
+      width={80}
+      height={80}
       className="w-20 h-20 rounded-3xl mx-auto mb-4 shadow-lg object-cover"
       onError={() => setLogoError(true)}
     />

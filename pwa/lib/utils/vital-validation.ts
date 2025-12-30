@@ -31,13 +31,15 @@ export interface VitalValidationResult {
 // Age group determination
 export function getAgeGroup(ageYears?: number, ageMonths?: number): AgeGroup {
   if (!ageYears && !ageMonths) return 'adult';
-  const totalMonths = (ageYears || 0) * 12 + (ageMonths || 0);
+  const years = ageYears ?? 0;
+  const months = ageMonths ?? 0;
+  const totalMonths = years * 12 + months;
   if (totalMonths < 1) return 'neonate';      // 0-28 days
   if (totalMonths < 12) return 'infant';      // 1-12 months
-  if (ageYears! < 3) return 'toddler';        // 1-3 years
-  if (ageYears! < 12) return 'child';         // 3-12 years
-  if (ageYears! < 18) return 'adolescent';     // 12-18 years
-  if (ageYears! < 65) return 'adult';         // 18-65 years
+  if (years < 3) return 'toddler';        // 1-3 years
+  if (years < 12) return 'child';         // 3-12 years
+  if (years < 18) return 'adolescent';     // 12-18 years
+  if (years < 65) return 'adult';         // 18-65 years
   return 'elderly';                            // 65+
 }
 
@@ -152,7 +154,9 @@ export function validateSpO2(value: number): VitalValidationResult {
  * 2 SD out = problem (approximately ±25 from mean of 95)
  * 🚨 ED: <50 mg/dL or >350 mg/dL
  */
-export function validateBloodGlucose(value: number, isFasting: boolean = false, context?: PatientContext): VitalValidationResult {
+export function validateBloodGlucose(value: number, _isFasting: boolean = false, context?: PatientContext): VitalValidationResult {
+  void _isFasting;
+  void context;
   if (isNaN(value) || value <= 0) {
     return {
       isValid: false,

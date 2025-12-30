@@ -163,7 +163,8 @@ export function validateDateOfBirth(value: string): ValidationResult {
     return { isValid: false, message: 'Please enter a valid date of birth' };
   }
 
-  return { isValid: true, formatted: date.toISOString().split('T')[0] };
+  const formatted = date.toISOString().split('T')[0] || '';
+  return { isValid: true, formatted };
 }
 
 /**
