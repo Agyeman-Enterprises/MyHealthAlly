@@ -7,6 +7,8 @@ import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { DisclaimerBanner } from '@/components/ui/DisclaimerBanner';
+import { translateText } from '@/lib/utils/translate';
+import { VoiceConsole } from '@/components/voice/VoiceConsole';
 
 const apptTypes = [
   { value: 'new_patient', label: 'New Patient Visit' },
@@ -22,6 +24,9 @@ export default function RequestAppointmentPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const [isDictating, setIsDictating] = useState(false);
+  const [detectedLang, setDetectedLang] = useState('en');
+  const [showVoice, setShowVoice] = useState(true);
   
   // Get date and time from query params (passed from calendar)
   const dateFromQuery = searchParams.get('date') || '';
@@ -36,6 +41,36 @@ export default function RequestAppointmentPage() {
     telehealth: false 
   });
   const [submitting, setSubmitting] = useState(false);
+
+  const parseDateTimeFromTranscript = (t: string) => {
+    const lower = t.toLowerCase();
+    // Date: ISO-like or month/day
+    const isoMatch = lower.match(/\b(\d{4}-\d{1,2}-\d{1,2})\b/);
+    const mdMatch = lower.match(/\b(\d{1,2})[\/\-](\d{1,2})([\/\-](\d{2,4}))?\b/);
+    let parsedDate = '';
+    if (isoMatch?.[1]) {
+      parsedDate = isoMatch[1];
+    } else if (mdMatch?.[1] && mdMatch?.[2]) {
+      const m = mdMatch[1].padStart(2, '0');
+      const d = mdMatch[2].padStart(2, '0');
+      const y = mdMatch[4] ? (mdMatch[4].length === 2 ? `20${mdMatch[4]}` : mdMatch[4]) : new Date().getFullYear().toString();
+      parsedDate = `${y}-${m}-${d}`;
+    }
+
+    // Time: HH:MM or HH AM/PM
+    const timeMatch = lower.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/);
+    let parsedTime = '';
+    if (timeMatch?.[1]) {
+      let hh = parseInt(timeMatch[1] ?? '0', 10);
+      const mm = timeMatch[2] || '00';
+      const suffix = timeMatch[3];
+      if (suffix === 'pm' && hh < 12) hh += 12;
+      if (suffix === 'am' && hh === 12) hh = 0;
+      parsedTime = `${hh.toString().padStart(2, '0')}:${mm}`;
+    }
+
+    return { parsedDate, parsedTime };
+  };
 
   // Update form when query params change (if user navigates with different params)
   useEffect(() => {
@@ -53,10 +88,77 @@ export default function RequestAppointmentPage() {
     e.preventDefault();
     if (!form.type) { alert('Please select an appointment type'); return; }
     setSubmitting(true);
-    await new Promise(r => setTimeout(r, 1500));
-    setSubmitting(false);
-    alert('Appointment request submitted! We will contact you to confirm.');
-    router.push('/appointments');
+    try {
+      const { detectedLang: lang } = await translateText(form.reason, 'en');
+      setDetectedLang(lang);
+      await new Promise(r => setTimeout(r, 800));
+      alert(`Appointment request submitted! (lang: ${lang}) We will contact you to confirm.`);
+      router.push('/appointments');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const startDictation = () => {
+    const SpeechRecognitionCtor =
+      typeof window !== 'undefined' &&
+      ((window as typeof window & { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).SpeechRecognition ||
+        (window as typeof window & { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).webkitSpeechRecognition);
+    if (!SpeechRecognitionCtor) {
+      alert('Voice input not supported in this browser.');
+      return;
+    }
+    try {
+      const recognition = new (SpeechRecognitionCtor as {
+        new (): {
+          lang: string;
+          interimResults: boolean;
+          continuous: boolean;
+          start: () => void;
+          stop: () => void;
+          onresult: ((event: unknown) => void) | null;
+          onerror: ((event: { error?: string }) => void) | null;
+          onend: (() => void) | null;
+        };
+      })();
+      const browserLang = typeof navigator !== 'undefined' && typeof navigator.language === 'string' ? navigator.language : 'en-US';
+      recognition.lang = browserLang;
+      recognition.interimResults = false;
+      recognition.continuous = true;
+      setIsDictating(true);
+      let sessionTranscript = '';
+      recognition.onresult = (event) => {
+        const evt = event as { resultIndex: number; results: Array<unknown> };
+        for (let i = evt.resultIndex; i < evt.results.length; i++) {
+          const res = evt.results[i] as unknown as { [key: number]: { transcript: string }; isFinal?: boolean };
+          const first = res?.[0];
+          if (!first?.transcript) continue;
+          sessionTranscript += `${first.transcript} `;
+        }
+      };
+      recognition.onerror = () => {
+        setIsDictating(false);
+      };
+      recognition.onend = () => {
+        setIsDictating(false);
+        const finalTranscript = sessionTranscript.trim();
+        if (!finalTranscript) return;
+        const { parsedDate, parsedTime } = parseDateTimeFromTranscript(finalTranscript);
+        setForm((prev) => {
+          const reason = prev.reason ? `${prev.reason} ${finalTranscript}`.trim() : finalTranscript;
+          return {
+            ...prev,
+            reason,
+            date: parsedDate || prev.date,
+            time: parsedTime || prev.time,
+          };
+        });
+      };
+      recognition.start();
+    } catch (err) {
+      setIsDictating(false);
+      alert(err instanceof Error ? err.message : 'Unable to start voice input.');
+    }
   };
 
   return (
@@ -64,7 +166,26 @@ export default function RequestAppointmentPage() {
       <Header />
       <main className="max-w-2xl mx-auto px-4 py-8">
         <DisclaimerBanner />
-        
+        {showVoice && (
+          <div className="mb-4">
+            <VoiceConsole
+              title="Voice appointment request (Vietnamese → English)"
+              onComplete={({ translated, detectedLang: lang }) => {
+                const { parsedDate, parsedTime } = parseDateTimeFromTranscript(translated);
+                setDetectedLang(lang);
+                setForm((prev) => ({
+                  ...prev,
+                  reason: prev.reason ? `${prev.reason} ${translated}`.trim() : translated,
+                  date: parsedDate || prev.date,
+                  time: parsedTime || prev.time,
+                }));
+                setShowVoice(false);
+              }}
+              onCancel={() => setShowVoice(false)}
+            />
+          </div>
+        )}
+
         <Card>
           <h1 className="text-xl font-bold text-navy-600 mb-4">Request Appointment</h1>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -78,6 +199,13 @@ export default function RequestAppointmentPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Reason for Visit</label>
               <textarea value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} rows={3} placeholder="Briefly describe why you need this appointment..." className="w-full px-4 py-3 border rounded-xl resize-none focus:ring-2 focus:ring-primary-400" />
+              <div className="flex items-center gap-2 mt-2">
+                <Button type="button" variant="secondary" onClick={startDictation} disabled={isDictating}>
+                  {isDictating ? 'Listening…' : 'Voice log'}
+                </Button>
+                <p className="text-xs text-gray-500">Speak in any language; we’ll transcribe and translate.</p>
+                <span className="text-xs text-gray-500">Detected: {detectedLang || 'en'}</span>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">Urgency Level</label>

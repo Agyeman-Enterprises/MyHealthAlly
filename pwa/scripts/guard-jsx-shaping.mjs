@@ -1,7 +1,7 @@
 /**
- * JSX Shaping Guard
- * Prevents inline data-shaping (.map/.filter/.reduce) in JSX return statements.
- * Forces refactoring into precomputed variables/services.
+ * JSX purity guard (advisory).
+ * Does NOT block verify; only surfaces obvious side effects inside JSX returns.
+ * Iteration (.map/.filter/.reduce) is allowed.
  */
 
 import fs from 'node:fs';
@@ -12,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..');
 const exts = new Set(['.tsx', '.jsx']);
-const banned = ['.map(', '.filter(', '.reduce('];
+const sideEffects = ['console.', 'await ', 'async ', '.then(', '.catch(', '++', '--', '+=', '-=', '*=', '/='];
 
 function walk(dir) {
   const out = [];
@@ -41,41 +41,34 @@ function walk(dir) {
   return out;
 }
 
-const violations = [];
-const srcDir = path.join(ROOT, 'app');
-const componentsDir = path.join(ROOT, 'components');
+const warnings = [];
+const scanRoots = ['app', 'components', 'src']
+  .map((d) => path.join(ROOT, d))
+  .filter((p) => fs.existsSync(p));
 
-for (const dir of [srcDir, componentsDir]) {
-  if (fs.existsSync(dir)) {
-    for (const file of walk(dir)) {
-      const text = fs.readFileSync(file, 'utf8');
-      // Check if file has JSX return statement
-      if (text.includes('return (') || text.includes('return<')) {
-        for (const b of banned) {
-          // Check if banned method appears after a return statement
-          const returnIndex = text.indexOf('return (');
-          const returnIndex2 = text.indexOf('return<');
-          const returnPos = returnIndex !== -1 ? returnIndex : returnIndex2;
-          
-          if (returnPos !== -1) {
-            const afterReturn = text.substring(returnPos);
-            if (afterReturn.includes(b)) {
-              violations.push(`${path.relative(ROOT, file)}: contains ${b} inside a component that returns JSX`);
-              break; // Only report once per file
-            }
-          }
-        }
+for (const dir of scanRoots) {
+  for (const file of walk(dir)) {
+    const text = fs.readFileSync(file, 'utf8');
+    const returnIndex = text.indexOf('return (');
+    const returnIndex2 = text.indexOf('return<');
+    const pos = returnIndex !== -1 ? returnIndex : returnIndex2;
+    if (pos === -1) continue;
+    const after = text.substring(pos);
+    for (const token of sideEffects) {
+      if (after.includes(token)) {
+        warnings.push(`${path.relative(ROOT, file)}: possible side-effect token "${token.trim()}" in JSX return`);
+        break;
       }
     }
   }
 }
 
-if (violations.length) {
-  console.warn('⚠️ JSX shaping guard (informational only):\n');
-  violations.forEach((v) => console.warn(`  - ${v}`));
-  console.warn('\nNote: Inline .map/.filter/.reduce in JSX is allowed for this build.');
+if (warnings.length) {
+  console.warn('⚠️ JSX purity (advisory only):');
+  warnings.forEach((w) => console.warn(`  - ${w}`));
+  console.warn('Iteration (.map/.filter/.reduce) is allowed. This check does not block verify.');
 } else {
-  console.log('✅ JSX shaping guard passed.');
+  console.log('✅ JSX purity check: no obvious side effects found in JSX returns.');
 }
 
 process.exit(0);

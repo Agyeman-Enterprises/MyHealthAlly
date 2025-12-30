@@ -22,9 +22,26 @@ const EnvSchema = z.object({
   STRIPE_SECRET_KEY: z.string().min(1).optional(),
   STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().min(1).optional(),
+  STRIPE_PRICE_ID_ESSENTIAL: z.string().min(1).optional(),
+  STRIPE_PRICE_ID_COMPLETE: z.string().min(1).optional(),
+  STRIPE_PRICE_ID_FAMILY: z.string().min(1).optional(),
+  STRIPE_PRICE_ID_PREMIUM: z.string().min(1).optional(),
+
+  // App URLs
+  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
 
   // OpenAI (for transcription)
   OPENAI_API_KEY: z.string().min(1).optional(),
+
+  // Inbound webhooks (SoloPractice -> MHA)
+  INBOUND_WEBHOOK_SECRET: z.string().min(1).optional(),
+
+  // Translation provider (server-side only)
+  TRANSLATE_API_URL: z.string().url().optional(),
+  TRANSLATE_API_KEY: z.string().min(1).optional(),
+
+  // Dev/test: allow bypassing login flow
+  NEXT_PUBLIC_BYPASS_LOGIN: z.enum(['true', 'false']).optional(),
 });
 
 // Note: This file IS the validated env - we parse process.env here

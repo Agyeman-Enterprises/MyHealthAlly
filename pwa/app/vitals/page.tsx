@@ -6,6 +6,7 @@ import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { VoiceConsole } from '@/components/voice/VoiceConsole';
 import { supabase } from '@/lib/supabase/client';
 import { apiClient } from '@/lib/api/solopractice-client';
 import { 
@@ -53,6 +54,8 @@ export default function VitalsPage() {
   const [validationResult, setValidationResult] = useState<VitalValidationResult | null>(null);
   const [recentReadings, setRecentReadings] = useState<VitalReading[]>([]);
   const [patientContext, setPatientContext] = useState<PatientContext | undefined>(undefined);
+  const [isDictating, setIsDictating] = useState(false);
+  const [voiceHelperVisible, setVoiceHelperVisible] = useState(true);
 
   // Load patient ID and context on mount
   useEffect(() => {
@@ -217,6 +220,74 @@ export default function VitalsPage() {
   }, [isAuthenticated, patientId]);
 
   if (!isAuthenticated) { router.push('/auth/login'); return null; }
+
+  const startVitalDictation = () => {
+    const SpeechRecognitionCtor =
+      typeof window !== 'undefined' &&
+      ((window as typeof window & { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).SpeechRecognition ||
+        (window as typeof window & { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).webkitSpeechRecognition);
+    if (!SpeechRecognitionCtor) {
+      setError('Voice input not supported in this browser.');
+      return;
+    }
+    try {
+      const recognition = new (SpeechRecognitionCtor as {
+        new (): {
+          lang: string;
+          interimResults: boolean;
+          continuous: boolean;
+          start: () => void;
+          stop: () => void;
+          onresult: ((event: unknown) => void) | null;
+          onerror: ((event: { error?: string }) => void) | null;
+          onend: (() => void) | null;
+        };
+      })();
+      const browserLang = typeof navigator !== 'undefined' && typeof navigator.language === 'string' ? navigator.language : 'en-US';
+      recognition.lang = browserLang;
+      recognition.interimResults = false;
+      recognition.continuous = true;
+      setIsDictating(true);
+      let sessionTranscript = '';
+      recognition.onresult = (event) => {
+        const evt = event as { results: Array<unknown> };
+        const res = evt.results?.[0] as unknown as { [key: number]: { transcript: string }; isFinal?: boolean } | undefined;
+        const transcript = res?.[0]?.transcript || '';
+        if (transcript) sessionTranscript += `${transcript} `;
+      };
+      recognition.onerror = (e) => {
+        setIsDictating(false);
+        const code = e.error || 'unknown';
+        const guidance = code === 'not-allowed'
+          ? 'Microphone access was blocked. Please allow mic permissions for this site (and ensure you are on HTTPS or localhost).'
+          : `Voice input error: ${code}`;
+        setError(guidance);
+      };
+      recognition.onend = () => {
+        setIsDictating(false);
+        const finalTranscript = sessionTranscript.trim();
+        if (!finalTranscript) return;
+        const numbers = (finalTranscript.match(/[\d\.]+/g) || [])
+          .map((n) => n.replace(/[^0-9.]/g, ''))
+          .filter(Boolean);
+        if (showForm === 'blood-pressure') {
+          if (numbers.length >= 2) {
+            setValue(numbers[0] ?? '');
+            setValue2(numbers[1] ?? '');
+          } else if (numbers.length === 1) {
+            setValue(numbers[0] ?? '');
+          }
+        } else if (numbers[0]) {
+          setValue(numbers[0] ?? '');
+        }
+        setValidationResult(null);
+      };
+      recognition.start();
+    } catch (err) {
+      setIsDictating(false);
+      setError(err instanceof Error ? err.message : 'Unable to start voice input.');
+    }
+  };
 
   const handleSave = async () => {
     if (!value) { 
@@ -532,6 +603,33 @@ export default function VitalsPage() {
     }
   };
 
+  const handleVoiceFill = (input: string) => {
+    const lower = input.toLowerCase();
+    const numbers = (input.match(/[\d\.]+/g) || []).map((n) => n.replace(/[^0-9.]/g, '')).filter(Boolean);
+
+    // Decide which form to target
+    let target = showForm;
+    if (!target) {
+      if (lower.includes('pressure') || lower.includes('/') || numbers.length >= 2) target = 'blood-pressure';
+      else if (lower.includes('resp') || lower.includes('breath')) target = 'respiratory-rate';
+      else if (lower.includes('pulse') || lower.includes('heart')) target = 'heart-rate';
+      else if (lower.includes('oxygen') || lower.includes('spo2') || lower.includes('o2')) target = 'oxygen';
+      else target = 'blood-pressure';
+      setShowForm(target);
+    }
+
+    if (target === 'blood-pressure') {
+      if (numbers.length >= 2) {
+        setValue(numbers[0] ?? '');
+        setValue2(numbers[1] ?? '');
+      }
+    } else if (target === 'heart-rate' || target === 'respiratory-rate' || target === 'oxygen' || target === 'temperature' || target === 'weight' || target === 'blood-glucose') {
+      if (numbers[0]) setValue(numbers[0]);
+    }
+    setValidationResult(null);
+    setError(null);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
       <Header />
@@ -542,6 +640,19 @@ export default function VitalsPage() {
             <p className="text-gray-600">Track and record your health measurements</p>
           </div>
         </div>
+
+        {voiceHelperVisible && (
+          <div className="mb-4">
+            <VoiceConsole
+              title="Voice log vitals (Vietnamese → English)"
+              onComplete={({ translated }) => {
+                handleVoiceFill(translated);
+                setVoiceHelperVisible(false);
+              }}
+              onCancel={() => setVoiceHelperVisible(false)}
+            />
+          </div>
+        )}
 
         {/* Record New Vital */}
         <Card className="mb-6">
@@ -626,6 +737,9 @@ export default function VitalsPage() {
                   </div>
                 )}
                 <span className="text-gray-500 pb-2">{vitalTypes.find(v => v.id === showForm)?.unit}</span>
+                <Button variant="secondary" onClick={startVitalDictation} disabled={isDictating}>
+                  {isDictating ? 'Listening…' : 'Voice log'}
+                </Button>
                 <Button variant="primary" onClick={handleSave} isLoading={saving}>Save</Button>
                 <Button variant="ghost" onClick={() => { setShowForm(null); setValue(''); setValue2(''); setValidationResult(null); }}>Cancel</Button>
               </div>

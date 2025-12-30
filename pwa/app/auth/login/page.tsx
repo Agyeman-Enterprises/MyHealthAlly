@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
+import { env } from '@/lib/env';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase/client';
 
@@ -27,6 +28,20 @@ export default function LoginPage() {
       router.replace(redirectTo);
     }
   }, [isInitialized, isAuthenticated, router, redirectTo]);
+
+  // Optional bypass for demos/tests
+  useEffect(() => {
+    if (!isInitialized || isAuthenticated) return;
+    if (env.NEXT_PUBLIC_BYPASS_LOGIN !== 'true') return;
+    const demoUser = {
+      id: 'demo-user',
+      email: 'demo@example.com',
+      firstName: 'Demo',
+      lastName: 'User',
+    };
+    login(demoUser);
+    router.replace(redirectTo);
+  }, [isInitialized, isAuthenticated, login, redirectTo, router]);
 
   const handleActivate = async (e: React.FormEvent) => {
     e.preventDefault();

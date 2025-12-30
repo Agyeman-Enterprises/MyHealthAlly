@@ -23,6 +23,7 @@
   "dependencies": {
     "@stripe/react-stripe-js": "^5.4.1",
     "@stripe/stripe-js": "^8.6.0",
+    "@supabase/auth-helpers-nextjs": "^0.15.0",
     "@supabase/supabase-js": "^2.89.0",
     "@tanstack/react-query": "^5.17.0",
     "axios": "^1.6.2",
@@ -42,7 +43,6 @@
     "zustand": "^4.4.7"
   },
   "devDependencies": {
-    "eslint-plugin-local": "file:./eslint-plugin-local",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.1",
     "@types/jest": "^30.0.0",
@@ -56,6 +56,7 @@
     "dotenv": "^17.2.3",
     "eslint": "^8.56.0",
     "eslint-config-next": "^15.1.0",
+    "eslint-plugin-local": "file:./eslint-plugin-local",
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
     "pg": "^8.16.3",

@@ -108,6 +108,103 @@ export interface Medication {
   last_filled?: string;
 }
 
+export type PlanTier = 'Essential' | 'Complete' | 'Family' | 'Premium';
+
+export type PatientRequestType = 'lab' | 'refill' | 'referral' | 'question' | 'appointment' | 'results';
+
+export type PatientRequestStatus = 'NEW' | 'PEND' | 'DONE';
+
+export interface PatientRequestPayload {
+  id?: string;
+  type: PatientRequestType;
+  patient: {
+    id: string;
+    name: string;
+    planTier: PlanTier;
+    planUsage?: string; // e.g., "3/4" for Essential
+  };
+  summary: string; // e.g., "CBC, CMP, A1C" or "Lisinopril 10mg"
+  details?: Record<string, unknown>;
+  priority?: 'red' | 'yellow' | 'green';
+  submitted_at?: string;
+  source?: 'mha';
+}
+
+export interface PatientRequestResponse {
+  id: string;
+  status: PatientRequestStatus;
+  received_at: string;
+}
+
+export interface SoloPracticeUpdate {
+  id: string;
+  type: PatientRequestType;
+  status: PatientRequestStatus;
+  actionTaken?: 'approve' | 'deny' | 'edit' | 'message' | 'schedule' | 'escalate';
+  messageToPatient?: string;
+  attachments?: Array<{ type: string; url: string; name?: string }>;
+  scheduledAt?: string;
+  reviewedBy?: string;
+  updatedAt?: string;
+  planTier?: PlanTier;
+  planUsage?: string;
+}
+
+// MHA -> SoloPractice DTOs
+export interface LabOrderRequest {
+  patient_id: string;
+  tests: string[];
+  priority?: 'routine' | 'urgent';
+  notes?: string;
+}
+
+export interface RefillRequestPayload {
+  patient_id: string;
+  medication_id: string;
+  medication_name?: string;
+  dosage?: string;
+  frequency?: string;
+  pharmacy?: string;
+  notes?: string;
+}
+
+export interface ReferralRequestPayload {
+  patient_id: string;
+  specialty: string;
+  reason?: string;
+  priority?: 'routine' | 'urgent';
+  notes?: string;
+}
+
+export interface AppointmentRequestPayload {
+  patient_id: string;
+  type: string;
+  preferred_date?: string;
+  preferred_time?: string;
+  reason?: string;
+  urgency?: string;
+}
+
+export interface HealthLogPayload {
+  patient_id: string;
+  category: string;
+  entry: Record<string, unknown>;
+  recorded_at?: string;
+}
+
+export interface PatientMessagePayload {
+  patient_id: string;
+  thread_id?: string;
+  body: string;
+  attachments?: Record<string, unknown>;
+}
+
+export interface PatientTierResponse {
+  patient_id: string;
+  tier: PlanTier;
+  usage?: string;
+}
+
 export class SoloPracticeApiError extends Error {
   constructor(
     message: string,
@@ -352,7 +449,107 @@ export class SoloPracticeApiClient {
     );
     return response.data;
   }
+
+  // Patient request queue (aligns with SoloPractice UI)
+  async submitPatientRequest(payload: PatientRequestPayload): Promise<PatientRequestResponse> {
+    const response = await this.client.post<PatientRequestResponse>(
+      '/api/portal/patient-requests',
+      payload
+    );
+    return response.data;
+  }
+
+  // Canon endpoints MHA -> SoloPractice
+  async createLabOrder(payload: LabOrderRequest): Promise<{ id: string }> {
+    const response = await this.client.post<{ id: string }>('/api/mha/lab-order', payload);
+    return response.data;
+  }
+
+  async createRefillRequest(payload: RefillRequestPayload): Promise<{ id: string }> {
+    const response = await this.client.post<{ id: string }>('/api/mha/refill-request', payload);
+    return response.data;
+  }
+
+  async createReferralRequest(payload: ReferralRequestPayload): Promise<{ id: string }> {
+    const response = await this.client.post<{ id: string }>('/api/mha/referral-request', payload);
+    return response.data;
+  }
+
+  async createAppointmentRequest(payload: AppointmentRequestPayload): Promise<{ id: string }> {
+    const response = await this.client.post<{ id: string }>('/api/mha/appointment-request', payload);
+    return response.data;
+  }
+
+  async createHealthLog(payload: HealthLogPayload): Promise<{ id: string }> {
+    const response = await this.client.post<{ id: string }>('/api/mha/health-log', payload);
+    return response.data;
+  }
+
+  async sendPatientMessage(payload: PatientMessagePayload): Promise<{ id: string; thread_id: string }> {
+    const response = await this.client.post<{ id: string; thread_id: string }>('/api/mha/message', payload);
+    return response.data;
+  }
+
+  async getPatientTier(patientId: string): Promise<PatientTierResponse> {
+    const response = await this.client.get<PatientTierResponse>(`/api/mha/patient/${patientId}/tier`);
+    return response.data;
+  }
 }
 
 // Singleton instance
 export const apiClient = new SoloPracticeApiClient();
+
+// Map SoloPractice updates to patient-facing timeline/notification text
+export function mapSoloPracticeUpdateToPatientMessage(update: SoloPracticeUpdate): {
+  title: string;
+  body: string;
+  category: 'lab' | 'refill' | 'referral' | 'appointment' | 'message' | 'general';
+} {
+  const { type, actionTaken, messageToPatient, status, scheduledAt } = update;
+
+  if (type === 'lab') {
+    if (status === 'DONE' && messageToPatient) return { title: 'Lab results reviewed', body: messageToPatient, category: 'lab' };
+    if (actionTaken === 'approve') return { title: 'Lab order placed', body: messageToPatient || 'Your lab order has been placed.', category: 'lab' };
+    if (actionTaken === 'deny') return { title: 'Lab request declined', body: messageToPatient || 'Please check your messages for details.', category: 'lab' };
+    return { title: 'Lab request update', body: messageToPatient || 'Your lab request is being reviewed.', category: 'lab' };
+  }
+
+  if (type === 'refill') {
+    if (actionTaken === 'approve') return { title: 'Refill approved', body: messageToPatient || 'Your prescription refill was approved.', category: 'refill' };
+    if (actionTaken === 'deny') return { title: 'Refill declined', body: messageToPatient || 'Please check your messages for next steps.', category: 'refill' };
+    return { title: 'Refill request update', body: messageToPatient || 'Your refill request is being reviewed.', category: 'refill' };
+  }
+
+  if (type === 'referral') {
+    if (actionTaken === 'schedule' && scheduledAt) {
+      return { title: 'Referral scheduled', body: `Appointment scheduled for ${new Date(scheduledAt).toLocaleString()}. ${messageToPatient || ''}`.trim(), category: 'referral' };
+    }
+    if (actionTaken === 'approve') {
+      return { title: 'Referral created', body: messageToPatient || 'Your referral has been created.', category: 'referral' };
+    }
+    if (actionTaken === 'deny') {
+      return { title: 'Referral declined', body: messageToPatient || 'Please check your messages for details.', category: 'referral' };
+    }
+    return { title: 'Referral update', body: messageToPatient || 'Your referral request is being reviewed.', category: 'referral' };
+  }
+
+  if (type === 'appointment') {
+    if (actionTaken === 'schedule' && scheduledAt) {
+      return { title: 'Appointment scheduled', body: `Your appointment is set for ${new Date(scheduledAt).toLocaleString()}. ${messageToPatient || ''}`.trim(), category: 'appointment' };
+    }
+    if (actionTaken === 'deny') {
+      return { title: 'Appointment request declined', body: messageToPatient || 'Please choose another time.', category: 'appointment' };
+    }
+    return { title: 'Appointment update', body: messageToPatient || 'Your appointment request is being reviewed.', category: 'appointment' };
+  }
+
+  if (type === 'question') {
+    return { title: 'Clinician response', body: messageToPatient || 'You have a new message from your care team.', category: 'message' };
+  }
+
+  if (type === 'results') {
+    return { title: 'Results update', body: messageToPatient || 'Your results have been updated.', category: 'general' };
+  }
+
+  return { title: 'Care update', body: messageToPatient || 'Your care team sent an update.', category: 'general' };
+}

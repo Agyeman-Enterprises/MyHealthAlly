@@ -6,22 +6,80 @@ import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { translateText } from '@/lib/utils/translate';
 
 export default function ContactPage() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [form, setForm] = useState({ subject: '', message: '' });
   const [sending, setSending] = useState(false);
+  const [isDictating, setIsDictating] = useState(false);
+  const [detectedLang, setDetectedLang] = useState('en');
 
   if (!isAuthenticated) { router.push('/auth/login'); return null; }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSending(true);
+    const { detectedLang: lang } = await translateText(form.message, 'en');
+    setDetectedLang(lang);
     await new Promise(r => setTimeout(r, 1500));
     setSending(false);
     alert('Message sent! We will respond within 1-2 business days.');
     setForm({ subject: '', message: '' });
+  };
+
+  const startDictation = () => {
+    const SpeechRecognitionCtor =
+      typeof window !== 'undefined' &&
+      ((window as typeof window & { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).SpeechRecognition ||
+        (window as typeof window & { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).webkitSpeechRecognition);
+    if (!SpeechRecognitionCtor) {
+      alert('Voice input not supported in this browser.');
+      return;
+    }
+    try {
+      const recognition = new (SpeechRecognitionCtor as {
+        new (): {
+          lang: string;
+          interimResults: boolean;
+          continuous: boolean;
+          start: () => void;
+          stop: () => void;
+          onresult: ((event: unknown) => void) | null;
+          onerror: ((event: { error?: string }) => void) | null;
+          onend: (() => void) | null;
+        };
+      })();
+      const browserLang = typeof navigator !== 'undefined' && typeof navigator.language === 'string' ? navigator.language : 'en-US';
+      recognition.lang = browserLang;
+      recognition.interimResults = false;
+      recognition.continuous = true;
+      setIsDictating(true);
+      let sessionTranscript = '';
+      recognition.onresult = (event) => {
+        const evt = event as { resultIndex: number; results: Array<unknown> };
+        for (let i = evt.resultIndex; i < evt.results.length; i++) {
+          const res = evt.results[i] as unknown as { [key: number]: { transcript: string }; isFinal?: boolean };
+          const first = res?.[0];
+          if (!first?.transcript) continue;
+          sessionTranscript += `${first.transcript} `;
+        }
+      };
+      recognition.onerror = () => {
+        setIsDictating(false);
+      };
+      recognition.onend = () => {
+        setIsDictating(false);
+        const finalTranscript = sessionTranscript.trim();
+        if (!finalTranscript) return;
+        setForm((prev) => ({ ...prev, message: prev.message ? `${prev.message} ${finalTranscript}`.trim() : finalTranscript }));
+      };
+      recognition.start();
+    } catch (err) {
+      setIsDictating(false);
+      alert(err instanceof Error ? err.message : 'Unable to start voice input.');
+    }
   };
 
   return (
@@ -63,6 +121,13 @@ export default function ContactPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
               <textarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} rows={4} placeholder="How can we help you?" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-400 resize-none" required />
+              <div className="flex items-center gap-2 mt-2">
+                <Button type="button" variant="secondary" onClick={startDictation} disabled={isDictating}>
+                  {isDictating ? 'Listening…' : 'Voice log'}
+                </Button>
+                <p className="text-xs text-gray-500">Speak in your language; we’ll translate.</p>
+                <span className="text-xs text-gray-500">Detected: {detectedLang || 'en'}</span>
+              </div>
             </div>
             <Button type="submit" variant="primary" className="w-full" isLoading={sending}>Send Message</Button>
           </form>

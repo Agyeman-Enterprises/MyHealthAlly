@@ -66,6 +66,7 @@ export default function IntakeWizardPage() {
   const [currentStep, setCurrentStep] = useState<IntakeStep>('demographics');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDictating, setIsDictating] = useState(false);
   
   const [formData, setFormData] = useState<IntakeData>({
     firstName: '',
@@ -185,6 +186,59 @@ export default function IntakeWizardPage() {
 
   const steps: IntakeStep[] = ['demographics', 'address', 'emergency', 'insurance', 'medical', 'review'];
   const currentStepIndex = steps.indexOf(currentStep);
+
+  const goNext = () => {
+    const nextStep = steps[currentStepIndex + 1];
+    if (nextStep) setCurrentStep(nextStep);
+  };
+
+  const goPrev = () => {
+    const prevStep = steps[currentStepIndex - 1];
+    if (prevStep) setCurrentStep(prevStep);
+  };
+
+  const startVoiceCommand = () => {
+    const SpeechRecognitionCtor =
+      typeof window !== 'undefined' &&
+      ((window as typeof window & { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).SpeechRecognition ||
+        (window as typeof window & { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).webkitSpeechRecognition);
+    if (!SpeechRecognitionCtor) {
+      setError('Voice input not supported in this browser.');
+      return;
+    }
+    try {
+      const recognition = new (SpeechRecognitionCtor as {
+        new (): {
+          lang: string;
+          interimResults: boolean;
+          continuous: boolean;
+          start: () => void;
+          stop: () => void;
+          onresult: ((event: unknown) => void) | null;
+          onerror: ((event: { error?: string }) => void) | null;
+          onend: (() => void) | null;
+        };
+      })();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.continuous = true;
+      setIsDictating(true);
+      recognition.onresult = (event) => {
+        const evt = event as { results: Array<unknown> };
+        const res = evt.results?.[0] as unknown as { [key: number]: { transcript: string } } | undefined;
+        const transcript = res?.[0]?.transcript || '';
+        const lower = transcript.toLowerCase();
+        if (lower.includes('next')) goNext();
+        if (lower.includes('back') || lower.includes('previous')) goPrev();
+      };
+      recognition.onerror = () => {};
+      recognition.onend = () => setIsDictating(false);
+      recognition.start();
+    } catch (err) {
+      setIsDictating(false);
+      setError(err instanceof Error ? err.message : 'Unable to start voice command.');
+    }
+  };
 
   const saveProgress = async (partialData?: Partial<IntakeData>) => {
     let currentPatientId = patientId;
@@ -818,6 +872,12 @@ export default function IntakeWizardPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-navy-600">Intake Forms</h1>
           <p className="text-gray-600">Step {currentStepIndex + 1} of {steps.length}</p>
+        </div>
+        <div className="flex items-center gap-3 mb-4">
+          <Button variant="secondary" onClick={startVoiceCommand} disabled={isDictating}>
+            {isDictating ? 'Listening…' : 'Voice command (say "next" or "back")'}
+          </Button>
+          <p className="text-xs text-gray-500">Hands-free navigation; speak your answers, then say &quot;next&quot;.</p>
         </div>
 
         {/* Progress Bar */}

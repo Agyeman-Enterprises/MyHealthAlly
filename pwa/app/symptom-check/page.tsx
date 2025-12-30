@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { createSymptomCheckWithTask } from '@/lib/supabase/queries-symptom-check';
 import type { TriageLevel } from '@/lib/supabase/queries-symptom-check';
+import { translateText } from '@/lib/utils/translate';
 
 type Step = 'disclaimer' | 'chief' | 'redflags' | 'intake' | 'review' | 'sent';
 
@@ -135,12 +136,14 @@ export default function SymptomCheckPage() {
   const { isAuthenticated } = useAuthStore();
   const [step, setStep] = useState<Step>('disclaimer');
   const [chiefConcern, setChiefConcern] = useState('');
+  const [isDictatingChief, setIsDictatingChief] = useState(false);
   const [category, setCategory] = useState<string | null>(null);
   const [disclaimerAckAt, setDisclaimerAckAt] = useState<string | null>(null);
   const [redFlags, setRedFlags] = useState<string[]>([]);
   const [answers, setAnswers] = useState<QA[]>([]);
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
   const [currentAnswer, setCurrentAnswer] = useState('');
+  const [isDictatingAnswer, setIsDictatingAnswer] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -163,6 +166,74 @@ export default function SymptomCheckPage() {
   const handleDisclaimerContinue = async () => {
     setDisclaimerAckAt(new Date().toISOString());
     setStep('chief');
+  };
+
+  const startDictation = (target: 'chief' | 'answer') => {
+    // Minimal Web Speech API dictation for quick voice logging
+    const SpeechRecognitionCtor =
+      typeof window !== 'undefined' &&
+      ((window as typeof window & { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).SpeechRecognition ||
+        (window as typeof window & { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).webkitSpeechRecognition);
+
+    if (!SpeechRecognitionCtor) {
+      setError('Voice input not supported in this browser.');
+      return;
+    }
+
+    try {
+      const recognition = new (SpeechRecognitionCtor as {
+        new (): {
+          lang: string;
+          interimResults: boolean;
+          continuous: boolean;
+          start: () => void;
+          stop: () => void;
+          onresult: ((event: unknown) => void) | null;
+          onerror: ((event: { error?: string }) => void) | null;
+          onend: (() => void) | null;
+        };
+      })();
+      const browserLang = typeof navigator !== 'undefined' && typeof navigator.language === 'string' ? navigator.language : 'en-US';
+      recognition.lang = browserLang;
+      recognition.interimResults = false;
+      recognition.continuous = true;
+
+      if (target === 'chief') setIsDictatingChief(true);
+      if (target === 'answer') setIsDictatingAnswer(true);
+
+      let sessionTranscript = '';
+      recognition.onresult = (event) => {
+        const evt = event as { resultIndex: number; results: Array<unknown> };
+        for (let i = evt.resultIndex; i < evt.results.length; i++) {
+          const res = evt.results[i] as unknown as { [key: number]: { transcript: string }; isFinal?: boolean };
+          const first = res?.[0];
+          if (!first?.transcript) continue;
+          sessionTranscript += `${first.transcript} `;
+        }
+      };
+
+      recognition.onerror = (e) => {
+        setError(`Voice input error: ${(e as { error?: string }).error || 'unknown'}`);
+      };
+
+      recognition.onend = () => {
+        if (target === 'chief') setIsDictatingChief(false);
+        if (target === 'answer') setIsDictatingAnswer(false);
+        const finalTranscript = sessionTranscript.trim();
+        if (!finalTranscript) return;
+        if (target === 'chief') {
+          setChiefConcern((prev) => (prev ? `${prev} ${finalTranscript}`.trim() : finalTranscript));
+        } else {
+          setCurrentAnswer((prev) => (prev ? `${prev} ${finalTranscript}`.trim() : finalTranscript));
+        }
+      };
+
+      recognition.start();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to start voice input.');
+      setIsDictatingChief(false);
+      setIsDictatingAnswer(false);
+    }
   };
 
   const toggleRedFlag = (rf: string) => {
@@ -201,7 +272,12 @@ export default function SymptomCheckPage() {
     setSuccess(null);
     try {
       const summaryPatient = generateSummaryPatient(chiefConcern.trim(), answers, redFlags, triageLevel);
-      const summaryClinician = generateSummaryClinician(chiefConcern.trim(), answers, redFlags, triageLevel);
+      // Translate patient narrative to English for care team; keep source language noted
+      const combined = [chiefConcern, ...answers.map((a) => a.answer)].join('\n');
+      const { translatedText } = await translateText(combined, 'en');
+      const translatedChief = translatedText || chiefConcern.trim();
+      const translatedAnswers = answers.map((a) => ({ ...a, answer: a.answer }));
+      const summaryClinician = generateSummaryClinician(translatedChief, translatedAnswers, redFlags, triageLevel);
       const education = generateEducation(triageLevel);
       await createSymptomCheckWithTask({
         patientId,
@@ -293,6 +369,12 @@ export default function SymptomCheckPage() {
                 className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-400"
                 placeholder="Briefly describe your concern (1–3 sentences)"
               />
+              <div className="flex items-center gap-2 mt-2">
+                <Button variant="secondary" onClick={() => startDictation('chief')} disabled={isDictatingChief}>
+                  {isDictatingChief ? 'Listening…' : 'Voice log'}
+                </Button>
+                <p className="text-xs text-gray-500">Speak to fill this field; we’ll transcribe it.</p>
+              </div>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-700 mb-2">Pick a category (optional)</p>
@@ -354,6 +436,12 @@ export default function SymptomCheckPage() {
                   className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-400"
                   placeholder="Type your answer"
                 />
+                <div className="flex items-center gap-2">
+                  <Button variant="secondary" onClick={() => startDictation('answer')} disabled={isDictatingAnswer}>
+                    {isDictatingAnswer ? 'Listening…' : 'Voice log'}
+                  </Button>
+                  <p className="text-xs text-gray-500">Use voice to log this answer.</p>
+                </div>
                 <div className="flex gap-2">
                   <Button variant="primary" onClick={handleAnswer} disabled={!currentAnswer.trim()}>Save answer</Button>
                   <Button variant="outline" onClick={() => setStep('review')}>Skip to review</Button>

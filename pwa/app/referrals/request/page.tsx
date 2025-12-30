@@ -11,6 +11,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { DisclaimerBanner } from '@/components/governance/DisclaimerBanner';
+import { translateText } from '@/lib/utils/translate';
 
 const SPECIALTIES = [
   'Cardiology',
@@ -38,6 +39,8 @@ export default function RequestReferralPage() {
     preferredProviderName: '',
     preferredLocation: '',
   });
+  const [isDictating, setIsDictating] = useState(false);
+  const [detectedLang, setDetectedLang] = useState('en');
 
   const requestReferralMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -82,13 +85,68 @@ export default function RequestReferralPage() {
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.specialty.trim()) {
       alert('Please select a specialty');
       return;
     }
+    const { detectedLang: lang } = await translateText(formData.reason, 'en');
+    setDetectedLang(lang);
     requestReferralMutation.mutate(formData);
+  };
+
+  const startDictation = () => {
+    const SpeechRecognitionCtor =
+      typeof window !== 'undefined' &&
+      ((window as typeof window & { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).SpeechRecognition ||
+        (window as typeof window & { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).webkitSpeechRecognition);
+    if (!SpeechRecognitionCtor) {
+      alert('Voice input not supported in this browser.');
+      return;
+    }
+    try {
+      const recognition = new (SpeechRecognitionCtor as {
+        new (): {
+          lang: string;
+          interimResults: boolean;
+          continuous: boolean;
+          start: () => void;
+          stop: () => void;
+          onresult: ((event: unknown) => void) | null;
+          onerror: ((event: { error?: string }) => void) | null;
+          onend: (() => void) | null;
+        };
+      })();
+      const browserLang = typeof navigator !== 'undefined' && typeof navigator.language === 'string' ? navigator.language : 'en-US';
+      recognition.lang = browserLang;
+      recognition.interimResults = false;
+      recognition.continuous = true;
+      setIsDictating(true);
+      let sessionTranscript = '';
+      recognition.onresult = (event) => {
+        const evt = event as { resultIndex: number; results: Array<unknown> };
+        for (let i = evt.resultIndex; i < evt.results.length; i++) {
+          const res = evt.results[i] as unknown as { [key: number]: { transcript: string }; isFinal?: boolean };
+          const first = res?.[0];
+          if (!first?.transcript) continue;
+          sessionTranscript += `${first.transcript} `;
+        }
+      };
+      recognition.onerror = () => {
+        setIsDictating(false);
+      };
+      recognition.onend = () => {
+        setIsDictating(false);
+        const finalTranscript = sessionTranscript.trim();
+        if (!finalTranscript) return;
+        setFormData((prev) => ({ ...prev, reason: prev.reason ? `${prev.reason} ${finalTranscript}`.trim() : finalTranscript }));
+      };
+      recognition.start();
+    } catch (err) {
+      setIsDictating(false);
+      alert(err instanceof Error ? err.message : 'Unable to start voice input.');
+    }
   };
 
   if (!isAuthenticated) {
@@ -134,6 +192,13 @@ export default function RequestReferralPage() {
                 className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 outline-none"
                 rows={4}
               />
+              <div className="flex items-center gap-2 mt-2">
+                <Button type="button" variant="secondary" onClick={startDictation} disabled={isDictating}>
+                  {isDictating ? 'Listening…' : 'Voice log'}
+                </Button>
+                <p className="text-xs text-gray-500">Speak in any language; we’ll transcribe and translate.</p>
+                <span className="text-xs text-gray-500">Detected: {detectedLang || 'en'}</span>
+              </div>
             </div>
 
             <div>

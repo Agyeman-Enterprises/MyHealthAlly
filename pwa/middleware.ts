@@ -15,6 +15,8 @@ export function middleware(request: NextRequest) {
     '/auth/login',
     '/auth/forgot-password',
     '/auth/reset-password',
+    '/',
+    '/pricing',
   ];
 
   // Check if this is a public route
