@@ -6,6 +6,7 @@ import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { RequirePractice } from '@/components/RequirePractice';
 
 const mockAppts = [
   { id: '1', type: 'Follow-up Visit', provider: 'Dr. Smith', date: '2025-01-05T10:00:00', location: 'Main Office', status: 'confirmed' },
@@ -24,10 +25,11 @@ export default function AppointmentsPage() {
 
   const hasAppts = appts.length > 0;
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
-      <Header />
-      <main className="max-w-4xl mx-auto px-4 py-8">
+  function AppointmentsPageInner() {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
+        <Header />
+        <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-navy-600">Your Appointments</h1>
@@ -97,8 +99,15 @@ export default function AppointmentsPage() {
           <p className="text-gray-600"><strong>Phone:</strong> <a href="tel:+16715550123" className="text-primary-600 hover:underline">(671) 555-0123</a></p>
           <p className="text-gray-600"><strong>Address:</strong> 123 Health Center Drive, Tamuning, GU 96913</p>
         </Card>
-      </main>
-      <BottomNav />
-    </div>
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  return (
+    <RequirePractice featureName="Appointments">
+      <AppointmentsPageInner />
+    </RequirePractice>
   );
 }

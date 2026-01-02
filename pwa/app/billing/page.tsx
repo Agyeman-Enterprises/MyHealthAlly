@@ -6,6 +6,7 @@ import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { RequirePractice } from '@/components/RequirePractice';
 
 const mockInvoices = [
   { id: '1', date: '2024-12-20', description: 'Office Visit - Follow-up', amount: 150.00, insurance: 120.00, patientOwes: 30.00, status: 'due' },
@@ -22,10 +23,11 @@ export default function BillingPage() {
 
   const totalDue = invoices.filter(i => i.status === 'due').reduce((sum, i) => sum + i.patientOwes, 0);
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
-      <Header />
-      <main className="max-w-4xl mx-auto px-4 py-8">
+  function BillingPageInner() {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
+        <Header />
+        <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-navy-600">Billing</h1>
           <p className="text-gray-600">View invoices and make payments</p>
@@ -93,11 +95,18 @@ export default function BillingPage() {
           <p className="text-sm text-gray-600 mb-3">Our billing team is here to help with insurance claims, payment plans, and more.</p>
           <div className="flex gap-3">
             <a href="tel:+16715550123" className="flex-1 px-4 py-2 bg-white border border-primary-400 text-primary-600 rounded-xl text-center font-medium hover:bg-primary-50">Call Billing</a>
-            <Button variant="primary" className="flex-1" onClick={() => router.push('/messages/new')}>Message Billing</Button>
+            <Button variant="primary" className="flex-1" onClick={() => router.push('/messages/new?recipient=billing&subject=Question about Billing&context=billing')}>Message Billing</Button>
           </div>
         </Card>
-      </main>
-      <BottomNav />
-    </div>
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  return (
+    <RequirePractice featureName="Billing">
+      <BillingPageInner />
+    </RequirePractice>
   );
 }

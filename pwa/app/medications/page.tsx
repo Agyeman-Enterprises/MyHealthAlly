@@ -1,11 +1,14 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { RequirePractice } from '@/components/RequirePractice';
+import { getPatientMedications, type Medication } from '@/lib/supabase/queries-medications';
+import { getRefillInfo, formatRefillStatus } from '@/lib/utils/medication-refills';
 
 const DOSING_FREQUENCIES = [
   'Once daily',
@@ -27,21 +30,50 @@ const DOSING_FREQUENCIES = [
   'Monthly',
 ];
 
-const mockMeds = [
-  { id: '1', name: 'Metformin', dosage: '500mg', frequency: 'Twice daily', refillsLeft: 2, status: 'active', prescriber: 'Dr. Smith' },
-  { id: '2', name: 'Lisinopril', dosage: '10mg', frequency: 'Once daily', refillsLeft: 0, status: 'active', prescriber: 'Dr. Smith' },
-  { id: '3', name: 'Atorvastatin', dosage: '20mg', frequency: 'At bedtime', refillsLeft: 3, status: 'active', prescriber: 'Dr. Smith' },
-];
+interface MedicationWithPrescriber extends Medication {
+  clinicians: { first_name: string; last_name: string } | null;
+}
 
 export default function MedicationsPage() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const [meds] = useState(mockMeds);
+  const patientId = useAuthStore((state) => state.patientId);
+  const [meds, setMeds] = useState<MedicationWithPrescriber[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newMed, setNewMed] = useState({ name: '', dosage: '', frequency: '', instructions: '' });
   const [saving, setSaving] = useState(false);
 
-  if (!isAuthenticated) { router.push('/auth/login'); return null; }
+  // Load medications from database
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/auth/login');
+      return;
+    }
+    const loadMedications = async () => {
+      if (!patientId) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const medications = await getPatientMedications(patientId);
+        setMeds(medications);
+      } catch (error) {
+        console.error('Error loading medications:', error);
+        // Continue with empty list on error
+        setMeds([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (isAuthenticated) {
+      loadMedications();
+    }
+  }, [isAuthenticated, patientId, router]);
+
+  if (!isAuthenticated) { return null; }
 
   const handleAddMed = async () => {
     if (!newMed.name) { alert('Please enter medication name'); return; }
@@ -53,12 +85,14 @@ export default function MedicationsPage() {
     setNewMed({ name: '', dosage: '', frequency: '', instructions: '' });
   };
 
-  const hasMeds = meds.length > 0;
+  const activeMeds = meds.filter(m => m.is_active);
+  const hasMeds = activeMeds.length > 0;
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
-      <Header />
-      <main className="max-w-4xl mx-auto px-4 py-8">
+  function MedicationsPageInner() {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
+        <Header />
+        <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-navy-600">Medications</h1>
@@ -99,30 +133,66 @@ export default function MedicationsPage() {
           </Card>
         )}
 
-        {hasMeds && (
+        {isLoading && (
+          <Card className="text-center py-12">
+            <div className="animate-spin w-8 h-8 border-4 border-primary-300 border-t-transparent rounded-full mx-auto mb-4" />
+            <p className="text-gray-500">Loading medications...</p>
+          </Card>
+        )}
+
+        {!isLoading && hasMeds && (
           <div className="space-y-3">
-            {meds.map((med) => (
-              <Card key={med.id}>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold text-navy-600">{med.name}</h3>
-                    <p className="text-gray-600">{med.dosage} • {med.frequency}</p>
-                    <p className="text-sm text-gray-500">Prescribed by {med.prescriber}</p>
+            {activeMeds.map((med) => {
+              const prescriberName = med.clinicians 
+                ? `${med.clinicians.first_name} ${med.clinicians.last_name}`
+                : 'Prescriber';
+              
+              const refillInfo = getRefillInfo(
+                med.refills_remaining || null,
+                med.last_refill_date,
+                med.days_supply || null,
+                null,
+                med.next_refill_due_date || null
+              );
+              
+              const refillStatus = formatRefillStatus(refillInfo);
+              const needsRefill = (med.refills_remaining !== null && med.refills_remaining <= 1) || refillInfo.isDueForRefill;
+
+              return (
+                <Card key={med.id}>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-navy-600">{med.name}</h3>
+                      <p className="text-gray-600">{med.dosage} {med.dosage_unit} • {med.frequency}</p>
+                      {med.instructions && (
+                        <p className="text-sm text-gray-500 mt-1">{med.instructions}</p>
+                      )}
+                      <p className="text-sm text-gray-500 mt-1">Prescribed by {prescriberName}</p>
+                      {refillStatus && (
+                        <p className={`text-sm mt-1 ${needsRefill ? 'text-amber-600 font-medium' : 'text-gray-500'}`}>
+                          {refillStatus}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right ml-4">
+                      <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
+                        ● Active
+                      </span>
+                      {needsRefill && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="mt-2" 
+                          onClick={() => router.push(`/medications/refill?med=${med.id}`)}
+                        >
+                          Request Refill
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className={`text-xs px-2 py-1 rounded-full ${med.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                      {med.status === 'active' ? '● Active' : 'Discontinued'}
-                    </span>
-                    <p className="text-sm text-gray-500 mt-1">{med.refillsLeft} refills left</p>
-                    {med.refillsLeft <= 1 && (
-                      <Button variant="outline" size="sm" className="mt-2" onClick={() => router.push(`/medications/refill?med=${med.id}`)}>
-                        Request Refill
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </div>
         )}
 
@@ -136,8 +206,15 @@ export default function MedicationsPage() {
             <Button variant="primary" onClick={() => setShowAddForm(true)}>Add Your First Medication</Button>
           </Card>
         )}
-      </main>
-      <BottomNav />
-    </div>
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  return (
+    <RequirePractice featureName="Medications">
+      <MedicationsPageInner />
+    </RequirePractice>
   );
 }

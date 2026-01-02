@@ -6,6 +6,7 @@ import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { RequirePractice } from '@/components/RequirePractice';
 
 export default function CalendarPage() {
   const router = useRouter();
@@ -67,10 +68,11 @@ export default function CalendarPage() {
 
   const timeSlots = generateTimeSlots();
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
-      <Header />
-      <main className="max-w-4xl mx-auto px-4 py-8">
+  function CalendarPageInner() {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
+        <Header />
+        <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-navy-600">{month}</h1>
           <Button variant="primary" onClick={() => router.push('/appointments/request')}>+ Request Appointment</Button>
@@ -155,8 +157,15 @@ export default function CalendarPage() {
             </div>
           </div>
         </Card>
-      </main>
-      <BottomNav />
-    </div>
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  return (
+    <RequirePractice featureName="Appointments">
+      <CalendarPageInner />
+    </RequirePractice>
   );
 }

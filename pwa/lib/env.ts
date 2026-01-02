@@ -42,6 +42,9 @@ const EnvSchema = z.object({
 
   // Dev/test: allow bypassing login flow
   NEXT_PUBLIC_BYPASS_LOGIN: z.enum(['true', 'false']).optional(),
+
+  // Google Maps API (for pharmacy autocomplete and geolocation)
+  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: z.string().min(1).optional(),
 });
 
 // Note: This file IS the validated env - we parse process.env here

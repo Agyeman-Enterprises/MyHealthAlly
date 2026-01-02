@@ -317,6 +317,12 @@ export default function ConsentPage() {
           </p>
         </div>
 
+        <Card className="mb-6 p-4 bg-blue-50 border-blue-500">
+          <p className="text-sm font-medium text-blue-900 mb-0">
+            <strong>Important:</strong> MyHealthAlly is a health navigation and concierge platform. Medical services are provided by independent, licensed practices.
+          </p>
+        </Card>
+
         {error && (
           <Card className="mb-6 p-4 bg-red-50 border-red-200">
             <div className="flex items-start justify-between">

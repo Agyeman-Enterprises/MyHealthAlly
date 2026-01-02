@@ -10,6 +10,7 @@ import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { RequirePractice } from '@/components/RequirePractice';
 import { DisclaimerBanner } from '@/components/governance/DisclaimerBanner';
 import { translateText } from '@/lib/utils/translate';
 
@@ -153,9 +154,10 @@ export default function RequestReferralPage() {
     return null;
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary-50/30 pb-20 md:pb-8">
-      <Header title="Request Referral" showBack />
+  function RequestReferralPageInner() {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary-50/30 pb-20 md:pb-8">
+        <Header title="Request Referral" showBack />
       
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <DisclaimerBanner type="standard" className="mb-6" />
@@ -261,10 +263,17 @@ export default function RequestReferralPage() {
             </div>
           </form>
         </Card>
-      </main>
+        </main>
 
-      <BottomNav />
-    </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  return (
+    <RequirePractice featureName="Referrals">
+      <RequestReferralPageInner />
+    </RequirePractice>
   );
 }
 

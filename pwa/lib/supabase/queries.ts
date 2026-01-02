@@ -54,6 +54,39 @@ export async function getPatient(patientId: string) {
   };
 }
 
+/**
+ * Get patient's primary clinician (MD owner of mailbox)
+ */
+export async function getPrimaryClinician(patientId: string) {
+  const { data: patient, error: patientError } = await supabase
+    .from('patients')
+    .select('primary_clinician_id')
+    .eq('id', patientId)
+    .single();
+
+  if (patientError || !patient?.primary_clinician_id) {
+    return null;
+  }
+
+  const { data: clinician, error: clinicianError } = await supabase
+    .from('clinicians')
+    .select('id, first_name, last_name, title')
+    .eq('id', patient.primary_clinician_id)
+    .single();
+
+  if (clinicianError || !clinician) {
+    return null;
+  }
+
+  return {
+    id: clinician.id,
+    firstName: clinician.first_name,
+    lastName: clinician.last_name,
+    title: clinician.title || 'MD',
+    displayName: `${clinician.title || 'Dr.'} ${clinician.first_name} ${clinician.last_name}`,
+  };
+}
+
 // ============================================
 // MESSAGES
 // ============================================

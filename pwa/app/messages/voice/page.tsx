@@ -10,6 +10,7 @@ import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { RequirePractice } from '@/components/RequirePractice';
 import { DisclaimerBanner } from '@/components/governance/DisclaimerBanner';
 
 export default function VoiceMessagePage() {
@@ -186,8 +187,9 @@ export default function VoiceMessagePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary-50/30 pb-20 md:pb-8">
-      <Header title="Record Voice Message" showBack />
+    <RequirePractice featureName="Messages">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary-50/30 pb-20 md:pb-8">
+        <Header title="Record Voice Message" showBack />
       
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <DisclaimerBanner type="standard" className="mb-6" />
@@ -285,9 +287,10 @@ export default function VoiceMessagePage() {
             </Card>
           </div>
         )}
-      </main>
+        </main>
 
-      <BottomNav />
-    </div>
+        <BottomNav />
+      </div>
+    </RequirePractice>
   );
 }

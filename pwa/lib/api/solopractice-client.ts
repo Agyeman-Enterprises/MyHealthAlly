@@ -8,8 +8,21 @@
 import axios from 'axios';
 import type { AxiosInstance, AxiosError } from 'axios';
 import { env } from '@/lib/env';
+import { supabase } from '@/lib/supabase/client';
+import { useAuthStore } from '@/lib/store/auth-store';
 
 const API_BASE_URL = env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+
+export type SPCreateOrGetPatientInput = {
+  tenantPracticeId: string; // maps to your practice_id
+  mhaUserId: string;
+  mhaPatientId: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string | null;
+  phone: string | null;
+  email: string | null;
+};
 
 export interface ActivateAccountRequest {
   token: string;
@@ -40,6 +53,9 @@ export interface SendMessageRequest {
   attachments?: Record<string, unknown>;
   detected_language?: string; // Language detected from voice/text (e.g., 'ko', 'es', 'ch')
   preferred_language?: string; // Patient's preferred language for responses
+  recipient?: string; // Recipient category: 'care-team', 'md-{clinicianId}', 'nurse', 'billing', 'scheduling'
+  subject?: string; // Message subject for routing and organization
+  category?: string; // Message category for routing: 'general', 'billing', 'clinical', 'scheduling'
 }
 
 export interface MessageResponse {
@@ -222,6 +238,36 @@ export class SoloPracticeApiClient {
   private accessToken: string | null = null;
   private refreshToken: string | null = null;
 
+  // --- HARD GUARD: call before any clinical mutation ---
+  private assertAttached(ctx: { attachmentStatus?: string; practiceId?: string; spPatientId?: string | null }) {
+    if (ctx.attachmentStatus !== 'ATTACHED' || !ctx.practiceId) {
+      throw new Error('Patient not attached to a practice');
+    }
+  }
+
+  /**
+   * Load patient attachment context for guard checks
+   * Uses getCurrentUserAndPatient() to get attachment state from DB (not Zustand)
+   */
+  private async loadPatientContext(): Promise<{ attachmentStatus?: string; practiceId?: string; spPatientId?: string | null }> {
+    try {
+      const { getCurrentUserAndPatient } = await import('@/lib/supabase/queries-settings');
+      const { patient } = await getCurrentUserAndPatient();
+
+      if (!patient) {
+        return {};
+      }
+
+      return {
+        attachmentStatus: patient.attachment_status,
+        practiceId: patient.practice_id,
+        spPatientId: patient.sp_patient_id,
+      };
+    } catch {
+      return {};
+    }
+  }
+
   constructor() {
     this.client = axios.create({
       baseURL: API_BASE_URL,
@@ -234,7 +280,8 @@ export class SoloPracticeApiClient {
     // Request interceptor - add auth token
     this.client.interceptors.request.use(
       (config) => {
-        // Get token from instance, localStorage, or auth store
+        // Get token from instance or localStorage
+        // Note: Auth store sync should be done via syncAuthTokensToApiClient() before API calls
         let token = this.accessToken;
         if (!token && typeof window !== 'undefined') {
           token = localStorage.getItem('access_token');
@@ -373,6 +420,29 @@ export class SoloPracticeApiClient {
     return response.data;
   }
 
+  /**
+   * Explicit SP patient provisioning.
+   * This must NOT be triggered by sending a message or recording vitals.
+   */
+  async createOrGetPatient(input: SPCreateOrGetPatientInput): Promise<{ spPatientId: string }> {
+    // You must implement this endpoint server-side in your SP service.
+    // It should be idempotent: if exists, return existing spPatientId.
+    const res = await fetch('/api/solopractice/patients/create-or-get', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(input),
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`SP createOrGetPatient failed: ${res.status} ${text}`);
+    }
+
+    const json = (await res.json()) as { spPatientId: string };
+    if (!json?.spPatientId) throw new Error('SP createOrGetPatient returned no spPatientId');
+    return json;
+  }
+
   // Messages
   async getThreads(): Promise<MessageThread[]> {
     const response = await this.client.get<MessageThread[]>('/api/portal/messages/threads');
@@ -390,6 +460,9 @@ export class SoloPracticeApiClient {
     threadId: string,
     request: SendMessageRequest
   ): Promise<MessageResponse> {
+    const ctx = await this.loadPatientContext();
+    this.assertAttached(ctx);
+    
     const response = await this.client.post<MessageResponse>(
       `/api/portal/messages/threads/${threadId}/messages`,
       request
@@ -408,6 +481,9 @@ export class SoloPracticeApiClient {
   }
 
   async requestRefill(medicationId: string): Promise<RefillRequestResponse> {
+    const ctx = await this.loadPatientContext();
+    this.assertAttached(ctx);
+    
     const response = await this.client.post<RefillRequestResponse>(
       '/api/portal/meds/refill-requests',
       { medication_id: medicationId }
@@ -417,6 +493,9 @@ export class SoloPracticeApiClient {
 
   // Measurements
   async recordMeasurement(request: RecordMeasurementRequest): Promise<MeasurementResponse> {
+    const ctx = await this.loadPatientContext();
+    this.assertAttached(ctx);
+    
     const response = await this.client.post<MeasurementResponse>(
       '/api/portal/measurements',
       request
@@ -443,6 +522,9 @@ export class SoloPracticeApiClient {
     reason?: string;
     urgency?: string;
   }): Promise<{ id: string; type: string; status: string; requested_at: string }> {
+    const ctx = await this.loadPatientContext();
+    this.assertAttached(ctx);
+    
     const response = await this.client.post(
       '/api/portal/appointments/request',
       request
@@ -452,6 +534,9 @@ export class SoloPracticeApiClient {
 
   // Patient request queue (aligns with SoloPractice UI)
   async submitPatientRequest(payload: PatientRequestPayload): Promise<PatientRequestResponse> {
+    const ctx = await this.loadPatientContext();
+    this.assertAttached(ctx);
+    
     const response = await this.client.post<PatientRequestResponse>(
       '/api/portal/patient-requests',
       payload
@@ -461,31 +546,49 @@ export class SoloPracticeApiClient {
 
   // Canon endpoints MHA -> SoloPractice
   async createLabOrder(payload: LabOrderRequest): Promise<{ id: string }> {
+    const ctx = await this.loadPatientContext();
+    this.assertAttached(ctx);
+    
     const response = await this.client.post<{ id: string }>('/api/mha/lab-order', payload);
     return response.data;
   }
 
   async createRefillRequest(payload: RefillRequestPayload): Promise<{ id: string }> {
+    const ctx = await this.loadPatientContext();
+    this.assertAttached(ctx);
+    
     const response = await this.client.post<{ id: string }>('/api/mha/refill-request', payload);
     return response.data;
   }
 
   async createReferralRequest(payload: ReferralRequestPayload): Promise<{ id: string }> {
+    const ctx = await this.loadPatientContext();
+    this.assertAttached(ctx);
+    
     const response = await this.client.post<{ id: string }>('/api/mha/referral-request', payload);
     return response.data;
   }
 
   async createAppointmentRequest(payload: AppointmentRequestPayload): Promise<{ id: string }> {
+    const ctx = await this.loadPatientContext();
+    this.assertAttached(ctx);
+    
     const response = await this.client.post<{ id: string }>('/api/mha/appointment-request', payload);
     return response.data;
   }
 
   async createHealthLog(payload: HealthLogPayload): Promise<{ id: string }> {
+    const ctx = await this.loadPatientContext();
+    this.assertAttached(ctx);
+    
     const response = await this.client.post<{ id: string }>('/api/mha/health-log', payload);
     return response.data;
   }
 
   async sendPatientMessage(payload: PatientMessagePayload): Promise<{ id: string; thread_id: string }> {
+    const ctx = await this.loadPatientContext();
+    this.assertAttached(ctx);
+    
     const response = await this.client.post<{ id: string; thread_id: string }>('/api/mha/message', payload);
     return response.data;
   }

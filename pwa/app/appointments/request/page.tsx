@@ -6,6 +6,7 @@ import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { RequirePractice } from '@/components/RequirePractice';
 import { DisclaimerBanner } from '@/components/ui/DisclaimerBanner';
 import { translateText } from '@/lib/utils/translate';
 import { VoiceConsole } from '@/components/voice/VoiceConsole';
@@ -161,8 +162,9 @@ export default function RequestAppointmentPage() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
+  function RequestAppointmentPageInner() {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
       <Header />
       <main className="max-w-2xl mx-auto px-4 py-8">
         <DisclaimerBanner />
@@ -247,5 +249,12 @@ export default function RequestAppointmentPage() {
       </main>
       <BottomNav />
     </div>
+    );
+  }
+
+  return (
+    <RequirePractice featureName="Appointments">
+      <RequestAppointmentPageInner />
+    </RequirePractice>
   );
 }

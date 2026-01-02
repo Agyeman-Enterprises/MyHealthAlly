@@ -7,9 +7,14 @@ import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { apiClient, type MessageThread } from '@/lib/api/solopractice-client';
+import { syncAuthTokensToApiClient } from '@/lib/api/message-helpers';
+import { SoloPracticeApiError } from '@/lib/api/solopractice-client';
+import { RequirePractice } from '@/components/RequirePractice';
 
 interface Message {
   id: string;
+  threadId: string;
   subject: string;
   preview: string;
   from: string;
@@ -18,24 +23,95 @@ interface Message {
   urgent: boolean;
 }
 
-const mockMessages: Message[] = [
-  { id: '1', subject: 'Lab Results Available', preview: 'Your recent lab results are now available for review...', from: 'Dr. Smith', date: '2024-12-26T10:30:00', read: false, urgent: false },
-  { id: '2', subject: 'Medication Reminder', preview: 'This is a reminder about your upcoming medication refill...', from: 'Care Team', date: '2024-12-25T14:00:00', read: true, urgent: false },
-  { id: '3', subject: 'Appointment Confirmation', preview: 'Your appointment has been confirmed for January 5th...', from: 'Scheduling', date: '2024-12-24T09:15:00', read: true, urgent: false },
-];
-
 export default function MessagesPage() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setTimeout(() => {
-      setMessages(mockMessages);
-      setIsLoading(false);
-    }, 500);
-  }, []);
+    const loadMessages = async () => {
+      try {
+        syncAuthTokensToApiClient();
+        const threads = await apiClient.getThreads();
+        
+        if (!threads || threads.length === 0) {
+          setMessages([]);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Get patient's preferred language for translation
+        const { user } = useAuthStore.getState();
+        const preferredLang = user?.preferredLanguage || 'en';
+        const { translateText } = await import('@/lib/utils/translate');
+        
+        // For each thread, get the last message to show preview
+        const messagePromises = threads.map(async (thread: MessageThread) => {
+          try {
+            const threadMessages = await apiClient.getThreadMessages(thread.id);
+            const lastMessage = threadMessages[threadMessages.length - 1];
+            
+            // Translate message preview from English to patient's preferred language
+            let preview = lastMessage?.content?.substring(0, 100) || 'No messages yet';
+            const isFromPatient = lastMessage?.sender_id === user?.id;
+            
+            if (!isFromPatient && preview !== 'No messages yet' && preferredLang !== 'en') {
+              const { translatedText } = await translateText(preview, preferredLang);
+              preview = translatedText || preview;
+            }
+            
+            // Translate subject if needed
+            let displaySubject = thread.subject || 'No subject';
+            if (displaySubject !== 'No subject' && preferredLang !== 'en') {
+              const { translatedText: translatedSubject } = await translateText(displaySubject, preferredLang);
+              displaySubject = translatedSubject || displaySubject;
+            }
+            
+            return {
+              id: thread.id,
+              threadId: thread.id,
+              subject: displaySubject,
+              preview: preview,
+              from: isFromPatient ? 'You' : 'Care Team',
+              date: lastMessage?.created_at || thread.created_at,
+              read: lastMessage?.read || false,
+              urgent: false,
+            };
+          } catch (err) {
+            console.error(`Error loading messages for thread ${thread.id}:`, err);
+            return {
+              id: thread.id,
+              threadId: thread.id,
+              subject: thread.subject || 'No subject',
+              preview: 'Error loading messages',
+              from: 'Care Team',
+              date: thread.created_at,
+              read: false,
+              urgent: false,
+            };
+          }
+        });
+        
+        const loadedMessages = await Promise.all(messagePromises);
+        setMessages(loadedMessages);
+        setIsLoading(false);
+      } catch (err) {
+        console.error('Error loading message threads:', err);
+        setError('Failed to load messages. Please try again.');
+        setIsLoading(false);
+        
+        if (err instanceof SoloPracticeApiError && err.code === 401) {
+          router.push('/auth/login');
+        }
+      }
+    };
+    
+    if (isAuthenticated) {
+      loadMessages();
+    }
+  }, [isAuthenticated, router]);
 
   if (!isAuthenticated) {
     router.push('/auth/login');
@@ -44,8 +120,9 @@ export default function MessagesPage() {
 
   const hasMessages = messages.length > 0;
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
+  function MessagesPageInner() {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
       <Header />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -61,6 +138,12 @@ export default function MessagesPage() {
           )}
         </div>
 
+        {error && (
+          <Card className="mb-6 bg-amber-50 border-amber-200">
+            <p className="text-amber-800 text-sm">{error}</p>
+          </Card>
+        )}
+
         {isLoading && (
           <Card className="text-center py-12">
             <div className="animate-spin w-8 h-8 border-4 border-primary-300 border-t-transparent rounded-full mx-auto mb-4" />
@@ -75,7 +158,7 @@ export default function MessagesPage() {
                 key={msg.id}
                 hover
                 className={`cursor-pointer ${!msg.read ? 'border-l-4 border-l-primary-500' : ''}`}
-                onClick={() => router.push(`/messages/${msg.id}`)}
+                onClick={() => router.push(`/messages/${msg.threadId}`)}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -123,5 +206,12 @@ export default function MessagesPage() {
 
       <BottomNav />
     </div>
+    );
+  }
+
+  return (
+    <RequirePractice featureName="Messages">
+      <MessagesPageInner />
+    </RequirePractice>
   );
 }

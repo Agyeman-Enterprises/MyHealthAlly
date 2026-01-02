@@ -94,6 +94,8 @@ export interface User {
 }
 
 // Patient
+export type AttachmentStatus = 'UNATTACHED' | 'REQUESTED' | 'ATTACHED';
+
 export interface Patient {
   id: string;
   user_id: string;
@@ -146,6 +148,12 @@ export interface Patient {
   medication_reminders: boolean;
   vital_reminders: boolean;
   avatar_url: string | null;
+  // Practice attachment fields
+  practice_id: string | null;
+  attachment_status: AttachmentStatus;
+  sp_patient_id: string | null;
+  attachment_requested_at: string | null;
+  attached_at: string | null;
   created_at: string;
   updated_at: string;
 }

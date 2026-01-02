@@ -65,7 +65,8 @@ export function useVoiceCapture(options: Options = {}) {
     }
     try {
       const recognition = new (SpeechRecognitionCtor as SpeechRecognitionCtor)();
-      recognition.lang = (typeof navigator !== "undefined" && navigator.language) || "en-US";
+      // Use targetLang if provided, otherwise fall back to navigator language or en-US
+      recognition.lang = targetLang || (typeof navigator !== "undefined" && navigator.language) || "en-US";
       recognition.interimResults = true;
       recognition.continuous = true;
       recognitionRef.current = recognition;

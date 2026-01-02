@@ -23,6 +23,12 @@ export default function TermsPage() {
               </p>
             </div>
 
+            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+              <p className="text-sm font-medium text-blue-900">
+                <strong>Important:</strong> MyHealthAlly is a health navigation and concierge platform. Medical services are provided by independent, licensed practices.
+              </p>
+            </div>
+
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Acceptance of Terms</h2>
               <p className="text-gray-700 mb-4">

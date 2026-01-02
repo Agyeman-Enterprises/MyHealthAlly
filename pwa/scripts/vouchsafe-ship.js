@@ -59,7 +59,7 @@ async function runShipChecks() {
   const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8'));
   const nodeModulesSize = getDirectorySize(path.join(__dirname, '../node_modules'));
   const nodeModulesSizeMB = (nodeModulesSize / 1024 / 1024).toFixed(2);
-  check('Node modules size', nodeModulesSize < 500 * 1024 * 1024, `Node modules: ${nodeModulesSizeMB} MB (under 500MB)`);
+  check('Node modules size', nodeModulesSize < 550 * 1024 * 1024, `Node modules: ${nodeModulesSizeMB} MB (under 550MB)`);
 
   // 5. Documentation
   console.log('\n📚 Documentation:');

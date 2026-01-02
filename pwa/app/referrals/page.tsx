@@ -6,6 +6,7 @@ import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { RequirePractice } from '@/components/RequirePractice';
 
 const mockReferrals = [
   { id: '1', specialty: 'Endocrinology', provider: 'Dr. Maria Santos', reason: 'Diabetes management consultation', date: '2024-12-20', status: 'pending', expires: '2025-03-20' },
@@ -36,10 +37,11 @@ export default function ReferralsPage() {
     setForm({ specialty: '', reason: '' });
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
-      <Header />
-      <main className="max-w-4xl mx-auto px-4 py-8">
+  function ReferralsPageInner() {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
+        <Header />
+        <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-navy-600">Referrals</h1>
@@ -108,8 +110,15 @@ export default function ReferralsPage() {
           <h3 className="font-semibold text-navy-600 mb-2">📋 About Referrals</h3>
           <p className="text-sm text-gray-600">Referrals are typically valid for 90 days. Please schedule your appointment with the specialist before the expiration date. Contact our office if you need a referral renewed.</p>
         </Card>
-      </main>
-      <BottomNav />
-    </div>
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  return (
+    <RequirePractice featureName="Referrals">
+      <ReferralsPageInner />
+    </RequirePractice>
   );
 }

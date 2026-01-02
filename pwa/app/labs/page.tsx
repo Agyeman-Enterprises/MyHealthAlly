@@ -7,30 +7,80 @@ import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { RequirePractice } from '@/components/RequirePractice';
+import { getPatientLabResults, type LabResult } from '@/lib/supabase/queries-results';
 
-const mockLabs = [
-  { id: '1', name: 'Comprehensive Metabolic Panel', date: '2024-12-20', status: 'completed', hasAbnormal: false },
-  { id: '2', name: 'Hemoglobin A1C', date: '2024-12-20', status: 'completed', hasAbnormal: true },
-  { id: '3', name: 'Lipid Panel', date: '2024-12-15', status: 'completed', hasAbnormal: false },
-  { id: '4', name: 'Thyroid Function Test', date: '2024-12-10', status: 'completed', hasAbnormal: false },
-];
+interface Lab {
+  id: string;
+  name: string;
+  date: string;
+  status: string;
+  hasAbnormal?: boolean;
+  hasResults?: boolean;
+  doctorNote?: string;
+}
 
 export default function LabsPage() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const [labs] = useState(mockLabs);
+  const patientId = useAuthStore((state) => state.patientId);
+  const [labs, setLabs] = useState<Lab[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setTimeout(() => setLoading(false), 500);
-  }, []);
+    const loadLabResults = async () => {
+      if (!patientId) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const labResults = await getPatientLabResults(patientId);
+        
+        // Transform to display format
+        const transformed: Lab[] = labResults.map((result: LabResult) => {
+          // Check if results have abnormal values
+          const hasAbnormal = result.results 
+            ? Object.values(result.results).some((test: unknown) => {
+                const t = test as { flag?: string };
+                return t.flag && t.flag !== 'normal';
+              })
+            : false;
+          
+          return {
+            id: result.id,
+            name: result.test_name,
+            date: result.result_date || result.created_at.split('T')[0],
+            status: result.status === 'completed' ? 'completed' : 'pending',
+            hasAbnormal,
+            hasResults: !!result.results,
+            doctorNote: result.doctor_note || undefined,
+          };
+        });
+        
+        setLabs(transformed);
+      } catch (err) {
+        console.error('Error loading lab results:', err);
+        setError('Failed to load lab results. Please try again.');
+        setLabs([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isAuthenticated) {
+      loadLabResults();
+    }
+  }, [isAuthenticated, patientId]);
 
   if (!isAuthenticated) { router.push('/auth/login'); return null; }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
-      <Header />
-      <main className="max-w-4xl mx-auto px-4 py-8">
+  function LabsPageInner() {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
+        <Header />
+        <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-navy-600">Lab Results</h1>
           <p className="text-gray-600">View your laboratory test results</p>
@@ -39,9 +89,15 @@ export default function LabsPage() {
         <Card className="mb-6 bg-primary-50 border-primary-200">
           <p className="text-sm text-navy-600">
             💡 <strong>Note:</strong> Lab results are typically available 1-3 days after your test. 
-            For questions about your results, please <Link href="/messages/new" className="text-primary-600 hover:underline">message your care team</Link>.
+            For questions about your results, please <Link href="/messages/new?recipient=care-team&subject=Question about Lab Results&context=lab results" className="text-primary-600 hover:underline">message your care team</Link>.
           </p>
         </Card>
+
+        {error && (
+          <Card className="mb-6 bg-amber-50 border-amber-200">
+            <p className="text-amber-800 text-sm">{error}</p>
+          </Card>
+        )}
 
         {loading && (
           <Card className="text-center py-12">
@@ -61,6 +117,9 @@ export default function LabsPage() {
                       {lab.hasAbnormal && <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full">Review Needed</span>}
                     </div>
                     <p className="text-sm text-gray-500">{new Date(lab.date).toLocaleDateString()}</p>
+                    {lab.doctorNote && (
+                      <p className="text-sm text-primary-600 mt-2 italic">📝 {lab.doctorNote.substring(0, 100)}{lab.doctorNote.length > 100 ? '...' : ''}</p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`text-xs px-2 py-1 rounded-full ${lab.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
@@ -83,11 +142,18 @@ export default function LabsPage() {
             </div>
             <h3 className="text-lg font-semibold text-navy-600 mb-2">No lab results yet</h3>
             <p className="text-gray-600 mb-6">Your lab results will appear here once available</p>
-            <Button variant="outline" onClick={() => router.push('/messages/new')}>Message Your Care Team</Button>
+            <Button variant="outline" onClick={() => router.push('/messages/new?recipient=care-team&subject=Question about Lab Results&context=lab results')}>Message Your Care Team</Button>
           </Card>
         )}
-      </main>
-      <BottomNav />
-    </div>
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  return (
+    <RequirePractice featureName="Lab Results">
+      <LabsPageInner />
+    </RequirePractice>
   );
 }

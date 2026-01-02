@@ -5,6 +5,7 @@ import { useAuthStore } from '@/lib/store/auth-store';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
+import { RequirePractice } from '@/components/RequirePractice';
 import { supabase } from '@/lib/supabase/client';
 import { getPatientCarePlans } from '@/lib/supabase/queries-careplans';
 
@@ -176,10 +177,11 @@ export default function CarePlanPage() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
-      <Header />
-      <main className="max-w-4xl mx-auto px-4 py-8">
+  function CarePlanPageInner() {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
+        <Header />
+        <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-navy-600">Care Plan</h1>
           <p className="text-gray-600">Track your health goals and activities</p>
@@ -273,8 +275,15 @@ export default function CarePlanPage() {
             ))}
           </div>
         )}
-      </main>
-      <BottomNav />
-    </div>
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  return (
+    <RequirePractice featureName="Care Plan">
+      <CarePlanPageInner />
+    </RequirePractice>
   );
 }

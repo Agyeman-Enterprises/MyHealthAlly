@@ -5,6 +5,7 @@ import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { RequirePractice } from '@/components/RequirePractice';
 
 const mockResults = [
   { name: 'Glucose', value: '98', unit: 'mg/dL', range: '70-100', status: 'normal' },
@@ -21,10 +22,11 @@ export default function LabDetailPage() {
 
   if (!isAuthenticated) { router.push('/auth/login'); return null; }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
-      <Header />
-      <main className="max-w-4xl mx-auto px-4 py-8">
+  function LabDetailPageInner() {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
+        <Header />
+        <main className="max-w-4xl mx-auto px-4 py-8">
         <Card className="mb-6">
           <h1 className="text-xl font-bold text-navy-600">Comprehensive Metabolic Panel</h1>
           <p className="text-gray-500">December 20, 2024 • Ordered by Dr. Smith</p>
@@ -65,10 +67,17 @@ export default function LabDetailPage() {
 
         <div className="flex gap-3">
           <Button variant="outline" onClick={() => router.push('/labs')}>Back to Labs</Button>
-          <Button variant="primary" onClick={() => router.push('/messages/new')}>Ask About Results</Button>
+          <Button variant="primary" onClick={() => router.push('/messages/new?recipient=care-team&subject=Question about Lab Results&context=lab results')}>Ask About Results</Button>
         </div>
-      </main>
-      <BottomNav />
-    </div>
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  return (
+    <RequirePractice featureName="Lab Results">
+      <LabDetailPageInner />
+    </RequirePractice>
   );
 }

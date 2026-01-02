@@ -30,7 +30,7 @@ export function VoiceConsole({ onComplete, onCancel, targetLang = "en", title }:
         <div>
           <p className="text-sm font-semibold text-navy-600">{title || "Voice capture"}</p>
           <p className="text-xs text-gray-500">
-            {listening ? "Listening…" : "Tap start and speak. Vietnamese auto-translated to English."}
+            {listening ? "Listening…" : "Tap start and speak. Your language will be auto-translated to English."}
           </p>
         </div>
         <div className="flex gap-2">

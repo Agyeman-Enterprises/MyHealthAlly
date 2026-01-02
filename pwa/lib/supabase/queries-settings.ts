@@ -58,7 +58,7 @@ export async function getCurrentUserAndPatient() {
 
   const { data: userRecord, error: userError } = await supabase
     .from('users')
-    .select('id, supabase_auth_id, email, phone, preferred_language, communication_language, notification_settings, appearance_preferences, two_factor_enabled, patients(id, first_name, last_name, date_of_birth, appointment_reminders, medication_reminders, address, emergency_contact)')
+    .select('id, supabase_auth_id, email, phone, preferred_language, communication_language, notification_settings, appearance_preferences, two_factor_enabled, patients(id, first_name, last_name, date_of_birth, appointment_reminders, medication_reminders, address, emergency_contact, attachment_status, practice_id, sp_patient_id)')
     .eq('supabase_auth_id', authData.user.id)
     .single();
 
@@ -72,7 +72,29 @@ export async function getCurrentUserAndPatient() {
       ? (patientRecord as { id?: string }).id ?? null
       : null;
 
-  return { authUser: authData.user, userRecord, patientId };
+  // Extract full patient object with attachment fields
+  const patient = patientRecord && typeof patientRecord === 'object' && 'id' in patientRecord
+    ? (patientRecord as any)
+    : null;
+
+  // Shape user object for attachPractice
+  // Use patient's first_name/last_name if available, otherwise undefined
+  const patientFirstName = patient && typeof patient === 'object' && 'first_name' in patient
+    ? (patient as any).first_name
+    : undefined;
+  const patientLastName = patient && typeof patient === 'object' && 'last_name' in patient
+    ? (patient as any).last_name
+    : undefined;
+
+  const user = {
+    id: userRecord.id,
+    email: userRecord.email || '',
+    firstName: patientFirstName,
+    lastName: patientLastName,
+    phone: userRecord.phone || null,
+  };
+
+  return { authUser: authData.user, userRecord, patientId, patient, user };
 }
 
 export async function updateUserSettings(userId: string, payload: UserSettingsPayload) {

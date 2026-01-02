@@ -122,7 +122,8 @@ export default function SignupPage() {
         throw new Error('Failed to create user record');
       }
 
-      // Create patient record
+      // Create patient record with UNATTACHED status
+      // ⚠️ DO NOT create or infer practice attachment
       const { error: patientError } = await supabase
         .from('patients')
         .insert({
@@ -131,6 +132,9 @@ export default function SignupPage() {
           last_name: formData.lastName,
           date_of_birth: formData.dateOfBirth || null,
           phone: formData.phone || null,
+          attachment_status: 'UNATTACHED',
+          practice_id: null,
+          sp_patient_id: null,
         });
 
       if (patientError) throw patientError;
