@@ -7,18 +7,15 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/auth-store';
+import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
 
 export default function ConnectPage() {
   const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-
-  if (!isAuthenticated) {
-    router.push('/auth/login');
+  const { isLoading } = useRequireAuth();
+  if (isLoading) {
     return null;
   }
 

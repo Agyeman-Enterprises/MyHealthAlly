@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useAuthStore } from '@/lib/store/auth-store';
+import { useLanguageStore } from '@/lib/i18n/language-store';
+import { LanguageProvider } from '@/components/layout/LanguageProvider';
+import { ThemeProvider } from '@/components/theme/ThemeProvider';
 
 interface ProvidersProps {
   children: ReactNode;
@@ -11,12 +14,23 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   const [isReady, setIsReady] = useState(false);
   const initialize = useAuthStore((state) => state.initialize);
+  const syncWithDatabase = useLanguageStore((state) => state.syncWithDatabase);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   useEffect(() => {
     // Initialize auth state from cookies/localStorage
     initialize();
     setIsReady(true);
   }, [initialize]);
+
+  useEffect(() => {
+    // Sync language preference from database when authenticated
+    if (isReady && isAuthenticated) {
+      syncWithDatabase().catch((err) => {
+        console.error('Error syncing language preference:', err);
+      });
+    }
+  }, [isReady, isAuthenticated, syncWithDatabase]);
 
   // Show loading spinner until auth is initialized
   if (!isReady) {
@@ -30,5 +44,11 @@ export function Providers({ children }: ProvidersProps) {
     );
   }
 
-  return <>{children}</>;
+  return (
+    <ThemeProvider>
+      <LanguageProvider>
+        {children}
+      </LanguageProvider>
+    </ThemeProvider>
+  );
 }

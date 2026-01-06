@@ -22,12 +22,62 @@ export function VoiceInputButton({
   const [liveTranscript, setLiveTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const recognitionRef = useRef<any>(null);
+  interface SpeechRecognition extends EventTarget {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    start: () => void;
+    stop: () => void;
+    abort: () => void;
+    onresult: ((event: SpeechRecognitionEvent) => void) | null;
+    onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+    onend: (() => void) | null;
+    onstart: (() => void) | null;
+  }
+
+  interface SpeechRecognitionEvent extends Event {
+    resultIndex: number;
+    results: SpeechRecognitionResultList;
+  }
+
+  interface SpeechRecognitionResultList {
+    length: number;
+    item: (index: number) => SpeechRecognitionResult;
+    [index: number]: SpeechRecognitionResult;
+  }
+
+  interface SpeechRecognitionResult {
+    length: number;
+    item: (index: number) => SpeechRecognitionAlternative;
+    [index: number]: SpeechRecognitionAlternative;
+    isFinal: boolean;
+  }
+
+  interface SpeechRecognitionAlternative {
+    transcript: string;
+    confidence: number;
+  }
+
+  interface SpeechRecognitionErrorEvent extends Event {
+    error: string;
+    message?: string;
+  }
+
+  interface SpeechRecognitionConstructor {
+    new (): SpeechRecognition;
+  }
+
+  interface WindowWithSpeechRecognition extends Window {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  }
+
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const finalTranscriptRef = useRef('');
   const { user } = useAuthStore();
 
   // Get user's preferred language
-  const userLanguage = language || user?.preferred_language || 'en-US';
+  const userLanguage = language || user?.preferredLanguage || 'en-US';
 
   useEffect(() => {
     return () => {
@@ -37,7 +87,8 @@ export function VoiceInputButton({
   }, []);
 
   const startSpeechRecognition = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const speechWindow = window as WindowWithSpeechRecognition;
+    const SpeechRecognition = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
       setError('Speech recognition not supported in this browser');
@@ -53,13 +104,15 @@ export function VoiceInputButton({
       setError(null);
     };
 
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
       let interimTranscript = '';
       let finalTranscript = finalTranscriptRef.current;
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const result = event.results[i];
-        const transcript = result[0]?.transcript || '';
+        const result = event.results.item(i);
+        if (!result) continue;
+        const firstAlternative = result.item(0);
+        const transcript = firstAlternative?.transcript || '';
         
         if (result.isFinal) {
           finalTranscript += transcript + ' ';
@@ -74,7 +127,7 @@ export function VoiceInputButton({
       onTranscript(fullTranscript);
     };
 
-    recognition.onerror = (event: any) => {
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       if (event.error === 'no-speech' || event.error === 'aborted') {
         return;
       }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -25,7 +26,7 @@ interface Message {
 
 export default function MessagesPage() {
   const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isAuthenticated, isLoading: authLoading } = useRequireAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -113,8 +114,7 @@ export default function MessagesPage() {
     }
   }, [isAuthenticated, router]);
 
-  if (!isAuthenticated) {
-    router.push('/auth/login');
+  if (authLoading) {
     return null;
   }
 

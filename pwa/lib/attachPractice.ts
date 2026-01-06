@@ -98,7 +98,7 @@ export async function attachPractice(input: AttachPracticeInput): Promise<Attach
       firstName: patient.first_name ?? '',
       lastName: patient.last_name ?? '',
       dateOfBirth: patient.date_of_birth ?? null,
-      phone: patient.address?.phone || null,
+      phone: (patient.address && typeof patient.address === 'object' && 'phone' in patient.address && typeof patient.address.phone === 'string' ? patient.address.phone : null),
       email: user.email ?? null,
     });
 

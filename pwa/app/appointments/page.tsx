@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/auth-store';
+import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
@@ -15,13 +15,15 @@ const mockAppts = [
 
 export default function AppointmentsPage() {
   const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isLoading } = useRequireAuth();
   const [appts] = useState(mockAppts);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { setTimeout(() => setLoading(false), 500); }, []);
 
-  if (!isAuthenticated) { router.push('/auth/login'); return null; }
+  if (isLoading) {
+    return null;
+  }
 
   const hasAppts = appts.length > 0;
 

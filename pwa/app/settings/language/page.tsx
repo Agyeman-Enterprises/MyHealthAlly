@@ -1,7 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { useAuthStore } from '@/lib/store/auth-store';
+import { useLanguageStore } from '@/lib/i18n/language-store';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
@@ -11,18 +14,19 @@ import { getCurrentUserAndPatient, updateUserSettings } from '@/lib/supabase/que
 const languages = [
   { code: 'en', name: 'English', native: 'English' },
   { code: 'ch', name: 'Chamorro', native: 'Chamoru' },
-  { code: 'cuk', name: 'Chuukese', native: 'Chuuk' },
+  { code: 'chu', name: 'Chuukese', native: 'Chuuk' },
   { code: 'mh', name: 'Marshallese', native: 'Kajin M̧ajeļ' },
-  { code: 'tl', name: 'Tagalog', native: 'Tagalog' },
-  { code: 'ko', name: 'Korean', native: '한국어' },
-  { code: 'ja', name: 'Japanese', native: '日本語' },
-  { code: 'zh', name: 'Chinese', native: '中文' },
+  { code: 'fil', name: 'Tagalog', native: 'Tagalog' },
   { code: 'es', name: 'Spanish', native: 'Español' },
 ];
 
+
 export default function LanguagePage() {
   const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isLoading: authLoading } = useRequireAuth();
+  const { updateUser } = useAuthStore();
+  const { setPreferredLanguage, setUILanguage, syncWithDatabase } = useLanguageStore();
+  const { t } = useTranslation();
   const [selected, setSelected] = useState('en');
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -31,24 +35,27 @@ export default function LanguagePage() {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated) { router.push('/auth/login'); return; }
+    if (authLoading) return;
     const load = async () => {
       setLoading(true);
       setError(null);
       try {
         const { userRecord } = await getCurrentUserAndPatient();
         setUserId(userRecord.id);
-        setSelected(userRecord.preferred_language || 'en');
+        const lang = userRecord.preferred_language || 'en';
+        setSelected(lang);
+        // Sync with language store
+        await syncWithDatabase();
       } catch (err: unknown) {
         console.error('Error loading language', err);
         const message = err instanceof Error ? err.message : 'Unable to load language preference.';
         setError(message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [isAuthenticated, router]);
+        } finally {
+          setLoading(false);
+        }
+      };
+      load();
+    }, [authLoading, router, syncWithDatabase]);
 
   const handleSave = async () => {
     if (!userId) return;
@@ -56,8 +63,22 @@ export default function LanguagePage() {
     setError(null);
     setSuccess(null);
     try {
+      // Update database
       await updateUserSettings(userId, { preferredLanguage: selected, communicationLanguage: selected });
+      
+      // Update language store
+      await setPreferredLanguage(selected);
+      setUILanguage(selected);
+      
+      // Update auth store
+      updateUser({ preferredLanguage: selected });
+      
       setSuccess('Language preference saved.');
+      
+      // Trigger page refresh to apply language changes
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (err: unknown) {
       console.error('Error saving language', err);
       const message = err instanceof Error ? err.message : 'Unable to save language preference.';
@@ -71,11 +92,11 @@ export default function LanguagePage() {
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 pb-20 md:pb-8">
       <Header />
       <main className="max-w-2xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-navy-600 mb-1">Language</h1>
-        <p className="text-gray-600 mb-2">Choose your preferred language for the app</p>
-        {loading && <p className="text-sm text-gray-500 mb-4">Loading preference…</p>}
+        <h1 className="text-2xl font-bold text-navy-600 mb-1">{t('language.title')}</h1>
+        <p className="text-gray-600 mb-2">{t('language.description')}</p>
+        {loading && <p className="text-sm text-gray-500 mb-4">{t('common.loading')}</p>}
         {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
-        {success && <p className="text-sm text-green-600 mb-4">{success}</p>}
+        {success && <p className="text-sm text-green-600 mb-4">{success || t('language.saved')}</p>}
 
         <Card className="mb-6 bg-primary-50 border-primary-200">
           <p className="text-sm text-navy-600">
@@ -106,7 +127,7 @@ export default function LanguagePage() {
         </Card>
 
         <Button variant="primary" className="w-full mt-6" onClick={handleSave} isLoading={saving} disabled={loading || saving}>
-          Save Preference
+          {t('language.save')}
         </Button>
       </main>
       <BottomNav />

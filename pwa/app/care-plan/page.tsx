@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -44,8 +44,7 @@ type CarePlan = {
 } | null;
 
 export default function CarePlanPage() {
-  const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isLoading } = useRequireAuth();
   const [patientId, setPatientId] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('overview');
   const [loading, setLoading] = useState(true);
@@ -114,12 +113,9 @@ export default function CarePlanPage() {
   }, [loadPatientId]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/auth/login');
-      return;
-    }
+    if (isLoading) return;
     void loadData();
-  }, [isAuthenticated, loadData, router]);
+  }, [isLoading, loadData]);
 
   const goals: Goal[] = useMemo(() => {
     if (!carePlan?.care_plan_sections) return [];

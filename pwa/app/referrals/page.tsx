@@ -1,7 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/auth-store';
+import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
@@ -18,14 +17,15 @@ const specialties = [
 ];
 
 export default function ReferralsPage() {
-  const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isLoading } = useRequireAuth();
   const [referrals] = useState(mockReferrals);
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [form, setForm] = useState({ specialty: '', reason: '' });
   const [submitting, setSubmitting] = useState(false);
 
-  if (!isAuthenticated) { router.push('/auth/login'); return null; }
+  if (isLoading) {
+    return null;
+  }
 
   const handleSubmit = async () => {
     if (!form.specialty || !form.reason) { alert('Please fill in all fields'); return; }

@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { supabase } from '@/lib/supabase/client';
 import { Header } from '@/components/layout/Header';
@@ -95,8 +95,7 @@ By signing below, I consent to receive medical treatment and acknowledge that I 
 };
 
 export default function ConsentPage() {
-  const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isAuthenticated, isLoading } = useRequireAuth();
   const patientId = useAuthStore((state) => state.patientId);
   const [selectedConsent, setSelectedConsent] = useState<ConsentType | null>(null);
   const [showSignature, setShowSignature] = useState(false);
@@ -182,7 +181,9 @@ export default function ConsentPage() {
     }
   }, [isAuthenticated, getPatientId]);
 
-  if (!isAuthenticated) { router.push('/auth/login'); return null; }
+  if (isLoading) {
+    return null;
+  }
 
   const handleSelectConsent = (type: ConsentType) => {
     if (signedConsents.has(type)) {

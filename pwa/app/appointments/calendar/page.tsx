@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/auth-store';
+import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
@@ -10,12 +10,14 @@ import { RequirePractice } from '@/components/RequirePractice';
 
 export default function CalendarPage() {
   const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isLoading } = useRequireAuth();
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [showTimePicker, setShowTimePicker] = useState(false);
 
-  if (!isAuthenticated) { router.push('/auth/login'); return null; }
+  if (isLoading) {
+    return null;
+  }
 
   const today = new Date();
   const month = today.toLocaleString('default', { month: 'long', year: 'numeric' });

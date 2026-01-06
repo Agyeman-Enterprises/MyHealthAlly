@@ -4,7 +4,7 @@ import { apiClient } from '@/lib/api/solopractice-client';
 
 export async function POST(req: Request) {
   try {
-    const ctx = await assertAttachedPatient(); // 🔒 HARD GATE
+    await assertAttachedPatient(); // 🔒 HARD GATE
     const body = await req.json();
 
     const { type, value, value2, unit, metadata } = body;

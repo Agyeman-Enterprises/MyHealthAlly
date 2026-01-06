@@ -50,7 +50,7 @@ export default function ConnectStatusPage() {
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">Connection Failed</h1>
               <p className="text-gray-600 mb-6">
-                We couldn't connect you to the practice. Please try again or contact support.
+                We couldn&apos;t connect you to the practice. Please try again or contact support.
               </p>
               <div className="space-y-3">
                 <Button

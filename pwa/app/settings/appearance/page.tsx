@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/auth-store';
+import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
@@ -13,7 +13,7 @@ type TextSize = 'small' | 'medium' | 'large';
 
 export default function AppearancePage() {
   const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isLoading } = useRequireAuth();
   const [theme, setTheme] = useState<Theme>('system');
   const [textSize, setTextSize] = useState<TextSize>('medium');
   const [highContrast, setHighContrast] = useState(false);
@@ -25,7 +25,7 @@ export default function AppearancePage() {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated) { router.push('/auth/login'); return; }
+    if (isLoading) return;
     const load = async () => {
       setLoading(true);
       setError(null);
@@ -46,7 +46,7 @@ export default function AppearancePage() {
       }
     };
     load();
-  }, [isAuthenticated, router]);
+  }, [isLoading, router]);
 
   const handleSave = async () => {
     if (!userId) return;
@@ -57,6 +57,11 @@ export default function AppearancePage() {
       const appearancePreferences = { theme, textSize, highContrast, reduceMotion };
       await updateUserSettings(userId, { appearancePreferences });
       setSuccess('Appearance settings saved.');
+      
+      // Trigger theme refresh by reloading page
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (err: unknown) {
       console.error('Error saving appearance settings', err);
       const message = err instanceof Error ? err.message : 'Unable to save appearance settings.';
@@ -86,7 +91,7 @@ export default function AppearancePage() {
               </button>
             ))}
           </div>
-          <p className="text-xs text-gray-500 mt-3">Dark mode is stored now; apply via theme switcher in layout if enabled.</p>
+          <p className="text-xs text-gray-500 mt-3">Theme preference will be applied after saving. System theme follows your device settings.</p>
         </Card>
 
         <Card className="mb-6">

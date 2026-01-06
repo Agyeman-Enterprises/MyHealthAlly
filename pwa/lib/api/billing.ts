@@ -1,23 +1,68 @@
+/**
+ * Billing API Client Functions
+ * 
+ * These functions are meant to be called from event handlers (onClick, onSubmit, etc.)
+ * or useEffect hooks, NOT during render. They perform async network operations.
+ * 
+ * Usage:
+ *   const handleCheckout = async () => {
+ *     const { url } = await createCheckoutSession('essential');
+ *     window.location.href = url;
+ *   };
+ */
+
 import { PlanId } from '@/lib/billing/plans';
 
-export async function createCheckoutSession(planId: PlanId) {
-  const res = await fetch('/api/billing/create-checkout', {
+interface CheckoutSessionResponse {
+  url: string;
+}
+
+interface PortalSessionResponse {
+  url: string;
+}
+
+/**
+ * Create a Stripe checkout session for a subscription plan.
+ * Call this from an event handler, not during render.
+ */
+export async function createCheckoutSession(planId: PlanId): Promise<CheckoutSessionResponse> {
+  const controller = new AbortController();
+  const requestInit: RequestInit = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ planId }),
-  });
-  if (!res.ok) {
-    const message = await res.text();
-    throw new Error(message || 'Unable to start checkout');
+    signal: controller.signal,
+  };
+  const response = await fetch('/api/billing/create-checkout', requestInit);
+  if (!response.ok) {
+    const errorMessage = await response.text();
+    throw new Error(errorMessage || 'Unable to start checkout');
   }
-  return res.json() as Promise<{ url: string }>;
+  const jsonData = await response.json();
+  const sessionResponse: CheckoutSessionResponse = {
+    url: jsonData.url,
+  };
+  return sessionResponse;
 }
 
-export async function createPortalSession() {
-  const res = await fetch('/api/billing/manage-portal', { method: 'POST' });
-  if (!res.ok) {
-    const message = await res.text();
-    throw new Error(message || 'Unable to open billing portal');
+/**
+ * Create a Stripe billing portal session.
+ * Call this from an event handler, not during render.
+ */
+export async function createPortalSession(): Promise<PortalSessionResponse> {
+  const controller = new AbortController();
+  const requestInit: RequestInit = {
+    method: 'POST',
+    signal: controller.signal,
+  };
+  const response = await fetch('/api/billing/manage-portal', requestInit);
+  if (!response.ok) {
+    const errorMessage = await response.text();
+    throw new Error(errorMessage || 'Unable to open billing portal');
   }
-  return res.json() as Promise<{ url: string }>;
+  const jsonData = await response.json();
+  const portalResponse: PortalSessionResponse = {
+    url: jsonData.url,
+  };
+  return portalResponse;
 }

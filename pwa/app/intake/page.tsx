@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { supabase } from '@/lib/supabase/client';
 import { Header } from '@/components/layout/Header';
@@ -18,7 +19,7 @@ interface FormStatus {
 
 export default function IntakePage() {
   const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isAuthenticated, isLoading } = useRequireAuth();
   const patientId = useAuthStore((state) => state.patientId);
   const [formList, setFormList] = useState<FormStatus[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,7 +122,9 @@ export default function IntakePage() {
     }
   }, [isAuthenticated, patientId]);
 
-  if (!isAuthenticated) { router.push('/auth/login'); return null; }
+  if (isLoading) {
+    return null;
+  }
 
   const completed = formList.filter(f => f.status === 'completed').length;
   const total = formList.length;

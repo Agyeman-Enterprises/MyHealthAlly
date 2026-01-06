@@ -100,38 +100,39 @@ function buildQuestions(category: string | null): { key: string; prompt: string 
 }
 
 function generateSummaryPatient(chief: string, answers: QA[], redFlags: string[], triage: TriageLevel) {
+  const answerLines = answers.map((a) => `${a.question} ${a.answer}`);
+  const redFlagLine = redFlags.length ? [`You flagged: ${redFlags.join(', ')}`] : [];
   const lines = [
     `Chief concern: ${chief}`,
     `Triage: ${triage === 'emergent' ? 'urgent review recommended' : triage === 'urgent' ? 'needs prompt review' : 'routine review'}.`,
+    ...answerLines,
+    ...redFlagLine,
+    'This is not a diagnosis or medical advice. Your care team will review.',
   ];
-  answers.forEach((a) => lines.push(`${a.question} ${a.answer}`));
-  if (redFlags.length) lines.push(`You flagged: ${redFlags.join(', ')}`);
-  lines.push('This is not a diagnosis or medical advice. Your care team will review.');
   return sanitizePatientFacing(lines.join(' '));
 }
 
 function generateSummaryClinician(chief: string, answers: QA[], redFlags: string[], triage: TriageLevel) {
+  const answerLines = answers.map((a) => `${a.key}: ${a.answer}`);
   const lines = [
     `Chief: ${chief}`,
     `Triage (non-binding): ${triage}`,
     `Red flags: ${redFlags.length ? redFlags.join(', ') : 'none'}`,
+    ...answerLines,
+    'Non-diagnostic considerations only; clinician to determine plan.',
   ];
-  answers.forEach((a) => lines.push(`${a.key}: ${a.answer}`));
-  lines.push('Non-diagnostic considerations only; clinician to determine plan.');
   return lines.join('\n');
 }
 
 function generateEducation(triage: TriageLevel) {
+  const urgentLine = triage !== 'routine' ? ['If symptoms worsen or you feel unsafe, seek urgent or emergency care.'] : [];
   const base = [
     'Keep track of symptom changes and any new issues.',
     'Have your medication list handy when your care team follows up.',
     'Note any recent travel, new foods, or exposures that could be relevant.',
+    ...urgentLine,
+    'For more information, visit our Health Library at /library',
   ];
-  if (triage !== 'routine') {
-    base.push('If symptoms worsen or you feel unsafe, seek urgent or emergency care.');
-  }
-  // Add library citation for relevant topics
-  base.push('For more information, visit our Health Library at /library');
   return base;
 }
 
@@ -372,7 +373,7 @@ export default function SymptomCheckInner() {
             </ul>
             <div className="flex gap-2">
               <Button variant="primary" onClick={handleDisclaimerContinue}>Continue</Button>
-              <Button variant="outline" onClick={() => { setRedFlags(['Emergency intent']); setStep('redflags'); }}>I'm having an emergency</Button>
+              <Button variant="outline" onClick={() => { setRedFlags(['Emergency intent']); setStep('redflags'); }}>I&apos;m having an emergency</Button>
             </div>
           </Card>
         )}
@@ -380,7 +381,7 @@ export default function SymptomCheckInner() {
         {step === 'chief' && (
           <Card className="space-y-4">
             <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 mb-2">What's going on today?</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">What&apos;s going on today?</label>
               <textarea
                 value={chiefConcern}
                 onChange={(e) => setChiefConcern(e.target.value)}

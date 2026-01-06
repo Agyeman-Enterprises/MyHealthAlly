@@ -25,12 +25,12 @@ export interface FollowUpInstruction {
  * - "Schedule appointment for lab review"
  * - "Urgent follow-up needed"
  */
-export function parseFollowUpInstructions(doctorNote: string): FollowUpInstruction {
+export function parseFollowUpInstructions(doctorNote: string | undefined | null): FollowUpInstruction {
   if (!doctorNote || doctorNote.trim().length === 0) {
     return { needsFollowUp: false };
   }
 
-  const note = doctorNote.toLowerCase();
+  const note = (doctorNote || '').toLowerCase();
   
   // Check for explicit follow-up keywords
   const followUpKeywords = [
@@ -81,8 +81,8 @@ export function parseFollowUpInstructions(doctorNote: string): FollowUpInstructi
   ];
 
   for (const { pattern, multiplier } of timeFramePatterns) {
-    const match = note.match(pattern);
-    if (match) {
+    const match = (note || '').match(pattern);
+    if (match && match[1]) {
       const days = parseInt(match[1], 10) * multiplier;
       const date = new Date();
       date.setDate(date.getDate() + days);
@@ -95,17 +95,27 @@ export function parseFollowUpInstructions(doctorNote: string): FollowUpInstructi
   const isTelehealth = note.includes('telehealth') || note.includes('telemedicine') || note.includes('virtual');
 
   // Extract reason (use first sentence or first 200 chars)
-  const sentences = doctorNote.split(/[.!?]/).filter(s => s.trim().length > 0);
-  const reason = sentences[0]?.trim().substring(0, 200) || doctorNote.substring(0, 200);
+  const sentences = (doctorNote || '').split(/[.!?]/).filter(s => s.trim().length > 0);
+  const reason = sentences[0]?.trim().substring(0, 200) || (doctorNote || '').substring(0, 200);
 
-  return {
+  const result: {
+    needsFollowUp: boolean;
+    appointmentType: string;
+    urgency: 'routine' | 'urgent' | 'soon';
+    reason: string;
+    suggestedDate?: string;
+    isTelehealth: boolean;
+  } = {
     needsFollowUp: true,
     appointmentType,
     urgency,
     reason,
-    suggestedDate,
     isTelehealth,
   };
+  if (suggestedDate) {
+    result.suggestedDate = suggestedDate;
+  }
+  return result;
 }
 
 /**
@@ -127,13 +137,23 @@ export async function scheduleFollowUpAppointment(
       ? `Follow-up for ${relatedTo.type}: ${relatedTo.description}. ${instructions.reason || ''}`
       : instructions.reason || 'Follow-up appointment';
 
-    const appointmentRequest = {
+    const appointmentRequest: {
+      type: string;
+      preferred_date?: string;
+      preferred_time?: string;
+      reason?: string;
+      urgency?: string;
+    } = {
       type: instructions.appointmentType || 'follow_up',
-      preferred_date: instructions.suggestedDate,
-      preferred_time: instructions.suggestedTime,
       reason: reason.substring(0, 500), // Limit reason length
       urgency: instructions.urgency || 'routine',
     };
+    if (instructions.suggestedDate) {
+      appointmentRequest.preferred_date = instructions.suggestedDate;
+    }
+    if (instructions.suggestedTime) {
+      appointmentRequest.preferred_time = instructions.suggestedTime;
+    }
 
     const response = await apiClient.requestAppointment(appointmentRequest);
 

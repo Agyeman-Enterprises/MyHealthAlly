@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/auth-store';
+import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
@@ -24,7 +24,7 @@ const apptTypes = [
 export default function RequestAppointmentPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isLoading: authLoading } = useRequireAuth();
   const [isDictating, setIsDictating] = useState(false);
   const [detectedLang, setDetectedLang] = useState('en');
   const [showVoice, setShowVoice] = useState(true);
@@ -83,7 +83,9 @@ export default function RequestAppointmentPage() {
     }
   }, [dateFromQuery, timeFromQuery]);
 
-  if (!isAuthenticated) { router.push('/auth/login'); return null; }
+  if (authLoading) {
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

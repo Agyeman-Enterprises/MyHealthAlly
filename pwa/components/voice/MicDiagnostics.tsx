@@ -9,6 +9,23 @@ import { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 
+function UserAgentInfo({ audioContextRef }: { audioContextRef: React.RefObject<AudioContext | null> }) {
+  const [userAgent, setUserAgent] = useState<string>('');
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
+      setUserAgent(navigator.userAgent);
+    }
+  }, []);
+  
+  return (
+    <div className="text-xs text-gray-400 pt-2 border-t">
+      <p>Browser: {userAgent || 'Loading...'}</p>
+      <p>Audio Context: {audioContextRef.current ? '✅ Available' : '❌ Unavailable'}</p>
+    </div>
+  );
+}
+
 export interface MicDiagnosticsProps {
   stream: MediaStream | null;
   isRecording: boolean;
@@ -216,10 +233,7 @@ export function MicDiagnostics({ stream, isRecording, error, onTestMic }: MicDia
               </Button>
             )}
 
-            <div className="text-xs text-gray-400 pt-2 border-t">
-              <p>Browser: {navigator.userAgent}</p>
-              <p>Audio Context: {audioContextRef.current ? '✅ Available' : '❌ Unavailable'}</p>
-            </div>
+            <UserAgentInfo audioContextRef={audioContextRef} />
           </div>
         )}
       </Card>

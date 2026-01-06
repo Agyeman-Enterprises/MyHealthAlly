@@ -28,7 +28,8 @@ export function calculateNextRefillDueDate(
     const lastRefill = new Date(lastRefillDate);
     const nextDue = new Date(lastRefill);
     nextDue.setDate(nextDue.getDate() + daysSupply);
-    return nextDue.toISOString().split('T')[0]; // Return as YYYY-MM-DD
+    const dateStr = nextDue.toISOString().split('T')[0];
+    return dateStr || null; // Return as YYYY-MM-DD
   } catch {
     return null;
   }

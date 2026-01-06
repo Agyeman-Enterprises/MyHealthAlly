@@ -4,15 +4,15 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/auth-store';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { attachPractice } from '@/lib/attachPractice';
 import { getCurrentUserAndPatient } from '@/lib/supabase/queries-settings';
+import type { Patient } from '@/lib/supabase/types';
 
 const MEDRX_PRACTICE_ID = 'medrx-practice-id'; // TODO: Replace with actual practice ID
 
@@ -34,15 +34,17 @@ export default function ConnectMedRxPage() {
         return;
       }
 
+      const userData: { id: string; email: string; firstName?: string; lastName?: string; phone?: string | null } = {
+        id: user.id,
+        email: user.email || '',
+      };
+      if (user.firstName) userData.firstName = user.firstName;
+      if (user.lastName) userData.lastName = user.lastName;
+      if (user.phone !== undefined) userData.phone = user.phone;
+      
       await attachPractice({
-        user: {
-          id: user.id,
-          email: user.email || '',
-          firstName: user.firstName,
-          lastName: user.lastName,
-          phone: user.phone,
-        },
-        patient: patient as any, // Type assertion needed due to query shape
+        user: userData,
+        patient: patient as Patient,
         practiceId: MEDRX_PRACTICE_ID,
         practiceName: 'MedRx',
         consentAccepted: true,

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/auth-store';
+import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
@@ -36,7 +36,7 @@ const defaultState: SettingsState = {
 
 export default function NotificationsPage() {
   const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isLoading } = useRequireAuth();
   const [settings, setSettings] = useState<SettingsState>(defaultState);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -46,7 +46,7 @@ export default function NotificationsPage() {
   const [patientId, setPatientId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated) { router.push('/auth/login'); return; }
+    if (isLoading) return;
 
     const load = async () => {
       setLoading(true);
@@ -85,7 +85,7 @@ export default function NotificationsPage() {
     };
 
     load();
-  }, [isAuthenticated, router]);
+  }, [isLoading, router]);
 
   const Toggle = ({ enabled, onChange }: { enabled: boolean; onChange: () => void }) => (
     <button onClick={onChange} className={`w-12 h-6 rounded-full transition-colors relative ${enabled ? 'bg-primary-500' : 'bg-gray-300'}`}>

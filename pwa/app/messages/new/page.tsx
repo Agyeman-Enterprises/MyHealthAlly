@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -24,7 +25,7 @@ const baseRecipients = [
 export default function NewMessagePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isLoading } = useRequireAuth();
   const { patientId } = useAuthStore();
   const [form, setForm] = useState({ recipient: '', subject: '', message: '' });
   const [detectedLang, setDetectedLang] = useState<string>('en');
@@ -79,7 +80,9 @@ export default function NewMessagePage() {
     }
   }, [searchParams]);
 
-  if (!isAuthenticated) { router.push('/auth/login'); return null; }
+  if (isLoading) {
+    return null;
+  }
 
   function NewMessagePageInner() {
     const handleSubmit = async (e: React.FormEvent) => {

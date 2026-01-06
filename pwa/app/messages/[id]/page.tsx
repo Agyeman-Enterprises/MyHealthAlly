@@ -25,7 +25,7 @@ interface Message {
 export default function MessageDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const threadId = params.id as string;
+  const threadId = (params as Record<string, string>)['id'] || '';
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const { patientId } = useAuthStore();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -49,7 +49,10 @@ export default function MessageDetailPage() {
         
         // Load thread info to get subject
         const threads = await apiClient.getThreads();
-        const thread = threads.find((t: MessageThread) => t.id === threadId);
+        const thread = threads.find((t: MessageThread) => {
+          const threadWithId = t as unknown as Record<string, unknown>;
+          return threadWithId['id'] === threadId;
+        });
         
         // Load primary clinician for display
         let recipientName = 'Care Team';
@@ -64,8 +67,9 @@ export default function MessageDetailPage() {
           }
         }
         
+        const threadSubject = thread?.subject;
         setThreadInfo({
-          subject: thread?.subject,
+          ...(threadSubject ? { subject: threadSubject } : {}),
           recipientName,
         });
         

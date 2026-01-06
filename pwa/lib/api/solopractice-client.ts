@@ -8,8 +8,6 @@
 import axios from 'axios';
 import type { AxiosInstance, AxiosError } from 'axios';
 import { env } from '@/lib/env';
-import { supabase } from '@/lib/supabase/client';
-import { useAuthStore } from '@/lib/store/auth-store';
 
 const API_BASE_URL = env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 
@@ -258,11 +256,15 @@ export class SoloPracticeApiClient {
         return {};
       }
 
-      return {
-        attachmentStatus: patient.attachment_status,
-        practiceId: patient.practice_id,
-        spPatientId: patient.sp_patient_id,
-      };
+      const result: {
+        attachmentStatus?: string;
+        practiceId?: string;
+        spPatientId?: string | null;
+      } = {};
+      if (patient.attachment_status) result.attachmentStatus = patient.attachment_status;
+      if (patient.practice_id) result.practiceId = patient.practice_id;
+      if (patient.sp_patient_id !== undefined) result.spPatientId = patient.sp_patient_id;
+      return result;
     } catch {
       return {};
     }

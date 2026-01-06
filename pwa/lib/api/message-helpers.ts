@@ -35,7 +35,7 @@ export async function getOrCreateDefaultThread(): Promise<string | null> {
         const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : new Date(b.created_at).getTime();
         return bTime - aTime;
       });
-      return sorted[0].id;
+      return sorted[0]?.id ?? null;
     }
     
     // No threads exist - Solopractice will create one on first message
@@ -61,7 +61,7 @@ export async function sendMessageToSolopractice(
   syncAuthTokensToApiClient();
   
   // Get or create thread
-  let targetThreadId = threadId;
+  let targetThreadId: string | null | undefined = threadId;
   if (!targetThreadId) {
     targetThreadId = await getOrCreateDefaultThread();
   }
@@ -92,10 +92,10 @@ export async function sendMessageToSolopractice(
   
   const request: SendMessageRequest = {
     body,
-    detected_language: detectedLanguage,
-    recipient: recipient,
-    subject: subject,
-    category: recipient ? categoryMap[recipient] || 'general' : undefined,
+    ...(detectedLanguage ? { detected_language: detectedLanguage } : {}),
+    ...(recipient ? { recipient } : {}),
+    ...(subject ? { subject } : {}),
+    ...(category ? { category } : {}),
   };
   
   const response = await apiClient.sendMessage(targetThreadId, request);
@@ -120,12 +120,20 @@ export function handleMessageStatus(response: MessageResponse): {
   }
   
   if (response.status === 'after_hours_deferred') {
-    return {
+    const result: {
+      success: boolean;
+      message: string;
+      action: 'show_deferred';
+      nextOpenAt?: string;
+    } = {
       success: true,
       message: `Your message has been received and will be delivered when the practice opens. ${response.next_open_at ? `Practice opens at ${new Date(response.next_open_at).toLocaleString()}.` : ''}`,
       action: 'show_deferred',
-      nextOpenAt: response.next_open_at,
     };
+    if (response.next_open_at) {
+      result.nextOpenAt = response.next_open_at;
+    }
+    return result;
   }
   
   if (response.status === 'blocked') {

@@ -45,6 +45,18 @@ const EnvSchema = z.object({
 
   // Google Maps API (for pharmacy autocomplete and geolocation)
   NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: z.string().min(1).optional(),
+
+  // Device OAuth Credentials
+  FITBIT_CLIENT_ID: z.string().min(1).optional(),
+  FITBIT_CLIENT_SECRET: z.string().min(1).optional(),
+  GOOGLE_FIT_CLIENT_ID: z.string().min(1).optional(),
+  GOOGLE_FIT_CLIENT_SECRET: z.string().min(1).optional(),
+  GARMIN_CLIENT_ID: z.string().min(1).optional(),
+  GARMIN_CLIENT_SECRET: z.string().min(1).optional(),
+  WITHINGS_CLIENT_ID: z.string().min(1).optional(),
+  WITHINGS_CLIENT_SECRET: z.string().min(1).optional(),
+  DEXCOM_CLIENT_ID: z.string().min(1).optional(),
+  DEXCOM_CLIENT_SECRET: z.string().min(1).optional(),
 });
 
 // Note: This file IS the validated env - we parse process.env here

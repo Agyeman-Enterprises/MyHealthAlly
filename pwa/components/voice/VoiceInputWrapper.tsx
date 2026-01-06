@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useRef, useEffect } from 'react';
+import { ReactNode, useRef, useEffect, cloneElement } from 'react';
 import { VoiceInputButton } from './VoiceInputButton';
 import { useAuthStore } from '@/lib/store/auth-store';
 
@@ -49,32 +49,29 @@ export function VoiceInputWrapper({
   };
 
   useEffect(() => {
-    if (typeof children === 'object' && children !== null && 'props' in children) {
-      const childProps = (children as any).props;
-      if (childProps.ref) {
-        inputRef.current = childProps.ref.current;
+    if (typeof children === 'object' && children !== null && 'props' in children && !('$$typeof' in children && children.$$typeof === Symbol.for('react.portal'))) {
+      const childElement = children as React.ReactElement;
+      const childProps = childElement.props as { ref?: React.Ref<HTMLTextAreaElement | HTMLInputElement> | { current: HTMLTextAreaElement | HTMLInputElement | null } };
+      if (childProps?.ref && typeof childProps.ref === 'object' && 'current' in childProps.ref) {
+        inputRef.current = (childProps.ref as { current: HTMLTextAreaElement | HTMLInputElement | null }).current;
       }
     }
   }, [children]);
 
-  const userLanguage = language || user?.preferred_language || 'en-US';
+  const userLanguage = language || user?.preferredLanguage || 'en-US';
 
-  const childrenWithRef = typeof children === 'object' && children !== null
-    ? {
-        ...children,
-        props: {
-          ...(children as any).props,
-          ref: (node: HTMLTextAreaElement | HTMLInputElement | null) => {
-            inputRef.current = node;
-            const originalRef = (children as any).props?.ref;
-            if (typeof originalRef === 'function') {
-              originalRef(node);
-            } else if (originalRef) {
-              originalRef.current = node;
-            }
-          },
+  const childrenWithRef = typeof children === 'object' && children !== null && 'props' in children && !('$$typeof' in children && children.$$typeof === Symbol.for('react.portal'))
+    ? cloneElement(children as React.ReactElement, {
+        ref: (node: HTMLTextAreaElement | HTMLInputElement | null) => {
+          inputRef.current = node;
+          const originalRef = (children as React.ReactElement).props?.ref;
+          if (typeof originalRef === 'function') {
+            originalRef(node);
+          } else if (originalRef && typeof originalRef === 'object' && 'current' in originalRef) {
+            (originalRef as { current: HTMLTextAreaElement | HTMLInputElement | null }).current = node;
+          }
         },
-      }
+      })
     : children;
 
   return (

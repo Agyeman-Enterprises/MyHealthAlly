@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -22,7 +23,7 @@ interface Lab {
 
 export default function LabsPage() {
   const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isAuthenticated, isLoading } = useRequireAuth();
   const patientId = useAuthStore((state) => state.patientId);
   const [labs, setLabs] = useState<Lab[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,15 +49,22 @@ export default function LabsPage() {
               })
             : false;
           
-          return {
+          const labDate = result.result_date;
+          const createdDate = result.created_at ? result.created_at.split('T')[0] : '';
+          const dateStr = labDate ? labDate.split('T')[0] : createdDate;
+          
+          const lab: Lab = {
             id: result.id,
             name: result.test_name,
-            date: result.result_date || result.created_at.split('T')[0],
+            date: dateStr || '',
             status: result.status === 'completed' ? 'completed' : 'pending',
             hasAbnormal,
             hasResults: !!result.results,
-            doctorNote: result.doctor_note || undefined,
           };
+          if (result.doctor_note) {
+            lab.doctorNote = result.doctor_note;
+          }
+          return lab;
         });
         
         setLabs(transformed);
@@ -74,7 +82,9 @@ export default function LabsPage() {
     }
   }, [isAuthenticated, patientId]);
 
-  if (!isAuthenticated) { router.push('/auth/login'); return null; }
+  if (isLoading) {
+    return null;
+  }
 
   function LabsPageInner() {
     return (

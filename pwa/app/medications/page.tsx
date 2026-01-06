@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -36,7 +37,7 @@ interface MedicationWithPrescriber extends Medication {
 
 export default function MedicationsPage() {
   const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isAuthenticated, isLoading: authLoading } = useRequireAuth();
   const patientId = useAuthStore((state) => state.patientId);
   const [meds, setMeds] = useState<MedicationWithPrescriber[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,10 +47,7 @@ export default function MedicationsPage() {
 
   // Load medications from database
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/auth/login');
-      return;
-    }
+    if (authLoading) return;
     const loadMedications = async () => {
       if (!patientId) {
         setIsLoading(false);
@@ -71,9 +69,11 @@ export default function MedicationsPage() {
     if (isAuthenticated) {
       loadMedications();
     }
-  }, [isAuthenticated, patientId, router]);
+  }, [authLoading, isAuthenticated, patientId, router]);
 
-  if (!isAuthenticated) { return null; }
+  if (authLoading) {
+    return null;
+  }
 
   const handleAddMed = async () => {
     if (!newMed.name) { alert('Please enter medication name'); return; }
@@ -156,7 +156,8 @@ export default function MedicationsPage() {
               );
               
               const refillStatus = formatRefillStatus(refillInfo);
-              const needsRefill = (med.refills_remaining !== null && med.refills_remaining <= 1) || refillInfo.isDueForRefill;
+              const refillsRemaining = med.refills_remaining ?? null;
+              const needsRefill = (refillsRemaining !== null && refillsRemaining <= 1) || refillInfo.isDueForRefill;
 
               return (
                 <Card key={med.id}>

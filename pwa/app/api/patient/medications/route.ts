@@ -51,7 +51,8 @@ function calculateNextRefillDueDate(
     const lastRefill = new Date(lastRefillDate);
     const nextDue = new Date(lastRefill);
     nextDue.setDate(nextDue.getDate() + daysSupply);
-    return nextDue.toISOString().split('T')[0]; // Return as YYYY-MM-DD
+    const dateStr = nextDue.toISOString().split('T')[0];
+    return dateStr || null; // Return as YYYY-MM-DD
   } catch {
     return null;
   }
@@ -164,14 +165,14 @@ export async function POST(req: Request) {
 
     // Handle discontinuation
     if (body.action === 'discontinue' || body.discontinued_at) {
-      medicationData.is_active = false;
-      medicationData.discontinued_at = body.discontinued_at || new Date().toISOString();
-      medicationData.discontinued_reason = body.discontinued_reason || null;
+      medicationData['is_active'] = false;
+      medicationData['discontinued_at'] = body.discontinued_at || new Date().toISOString();
+      medicationData['discontinued_reason'] = body.discontinued_reason || null;
     }
 
     // Handle prescriber
     if (body.prescriber_id) {
-      medicationData.prescriber_id = body.prescriber_id;
+      medicationData['prescriber_id'] = body.prescriber_id;
     }
 
     // Upsert medication

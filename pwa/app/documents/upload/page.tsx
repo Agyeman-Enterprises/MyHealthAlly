@@ -1,7 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/auth-store';
+import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
@@ -19,7 +19,7 @@ const docTypes = [
 
 export default function UploadDocumentPage() {
   const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isLoading: authLoading } = useRequireAuth();
   const [docType, setDocType] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -53,7 +53,9 @@ export default function UploadDocumentPage() {
     };
   }, [showCamera]);
 
-  if (!isAuthenticated) { router.push('/auth/login'); return null; }
+  if (authLoading) {
+    return null;
+  }
 
   const startCamera = async () => {
     try {

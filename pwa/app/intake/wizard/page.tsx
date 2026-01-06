@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { supabase } from '@/lib/supabase/client';
 import { Header } from '@/components/layout/Header';
@@ -61,7 +62,7 @@ interface IntakeData {
 
 export default function IntakeWizardPage() {
   const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isAuthenticated, isLoading } = useRequireAuth();
   const patientId = useAuthStore((state) => state.patientId);
   const [currentStep, setCurrentStep] = useState<IntakeStep>('demographics');
   const [saving, setSaving] = useState(false);
@@ -182,7 +183,9 @@ export default function IntakeWizardPage() {
     }
   }, [isAuthenticated, patientId]);
 
-  if (!isAuthenticated) { router.push('/auth/login'); return null; }
+  if (isLoading) {
+    return null;
+  }
 
   const steps: IntakeStep[] = ['demographics', 'address', 'emergency', 'insurance', 'medical', 'review'];
   const currentStepIndex = steps.indexOf(currentStep);

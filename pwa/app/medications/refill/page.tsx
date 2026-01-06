@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/auth-store';
+import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
@@ -14,14 +14,16 @@ import { VoiceConsole } from '@/components/voice/VoiceConsole';
 
 export default function RefillPage() {
   const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isLoading } = useRequireAuth();
   const [pharmacy, setPharmacy] = useState<Pharmacy | null>(null);
   const [notes, setNotes] = useState('');
   const [detectedLang, setDetectedLang] = useState('en');
   const [submitting, setSubmitting] = useState(false);
   const [showVoice, setShowVoice] = useState(true);
 
-  if (!isAuthenticated) { router.push('/auth/login'); return null; }
+  if (isLoading) {
+    return null;
+  }
 
   function RefillPageInner() {
     const handleSubmit = async (e: React.FormEvent) => {

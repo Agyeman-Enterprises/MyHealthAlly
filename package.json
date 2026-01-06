@@ -1,0 +1,15 @@
+{
+  "name": "myhealthally",
+  "version": "1.0.0",
+  "description": "MyHealth Ally - Patient and Provider Portal (Android + PWA)",
+  "private": true,
+  "scripts": {
+    "dev": "cd pwa && npm run dev",
+    "build": "cd pwa && npm run build",
+    "start": "cd pwa && npm run start",
+    "lint": "cd pwa && npm run lint",
+    "typecheck": "cd pwa && npm run typecheck",
+    "verify": "cd pwa && npm run verify",
+    "test": "cd pwa && npm run test"
+  }
+}

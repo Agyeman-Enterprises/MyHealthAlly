@@ -73,18 +73,23 @@ export async function getCurrentUserAndPatient() {
       : null;
 
   // Extract full patient object with attachment fields
+  type PatientWithAttachment = {
+    id: string;
+    first_name?: string;
+    last_name?: string;
+    attachment_status?: string;
+    practice_id?: string | null;
+    sp_patient_id?: string | null;
+  };
+
   const patient = patientRecord && typeof patientRecord === 'object' && 'id' in patientRecord
-    ? (patientRecord as any)
+    ? (patientRecord as PatientWithAttachment)
     : null;
 
   // Shape user object for attachPractice
   // Use patient's first_name/last_name if available, otherwise undefined
-  const patientFirstName = patient && typeof patient === 'object' && 'first_name' in patient
-    ? (patient as any).first_name
-    : undefined;
-  const patientLastName = patient && typeof patient === 'object' && 'last_name' in patient
-    ? (patient as any).last_name
-    : undefined;
+  const patientFirstName = patient?.first_name;
+  const patientLastName = patient?.last_name;
 
   const user = {
     id: userRecord.id,

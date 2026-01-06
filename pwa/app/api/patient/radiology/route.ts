@@ -71,17 +71,17 @@ export async function POST(req: Request) {
     const findings = body.findings || '';
     const impression = body.impression || '';
 
-    const { translatedText: translatedNote } = doctorNote
-      ? await translateText(doctorNote, preferredLang)
-      : { translatedText: '', detectedLang: preferredLang };
+    const translatedNote = doctorNote
+      ? (await translateText(doctorNote, preferredLang)).translatedText
+      : '';
 
-    const { translatedText: translatedFindings } = findings
-      ? await translateText(findings, preferredLang)
-      : { translatedText: '', detectedLang: preferredLang };
+    const translatedFindings = findings
+      ? (await translateText(findings, preferredLang)).translatedText
+      : '';
 
-    const { translatedText: translatedImpression } = impression
-      ? await translateText(impression, preferredLang)
-      : { translatedText: '', detectedLang: preferredLang };
+    const translatedImpression = impression
+      ? (await translateText(impression, preferredLang)).translatedText
+      : '';
 
     // Prepare radiology result data
     const radiologyData: Record<string, unknown> = {

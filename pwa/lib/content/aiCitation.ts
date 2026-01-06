@@ -1,4 +1,4 @@
-import { getPublishedContent, getHiddenModules, findRelevantContent, type ContentModule } from './loadContent';
+import { getPublishedContent, getHiddenModules, findRelevantContent } from './loadContent';
 
 /**
  * AI Citation Helper

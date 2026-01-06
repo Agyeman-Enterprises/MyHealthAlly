@@ -12,11 +12,11 @@ export default async function LibraryModulePage({
   params: { category: string; slug: string };
 }) {
   const modules = await getPublishedContent();
-  const module = modules.find(
+  const contentModule = modules.find(
     (m) => m.category === params.category && m.slug === params.slug
   );
 
-  if (!module) {
+  if (!contentModule) {
     notFound();
   }
 
@@ -43,7 +43,7 @@ export default async function LibraryModulePage({
 
         <Card className="p-6 mb-6">
           <div className="text-sm text-gray-500 mb-2">
-            {categoryNames[module.category] || module.category}
+            {categoryNames[contentModule.category] || contentModule.category}
           </div>
           <div className="prose prose-sm max-w-none">
             <ReactMarkdown
@@ -59,7 +59,7 @@ export default async function LibraryModulePage({
                 em: ({ children }) => <em className="italic text-gray-600">{children}</em>,
               }}
             >
-              {module.body}
+              {contentModule.body}
             </ReactMarkdown>
           </div>
         </Card>

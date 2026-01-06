@@ -79,7 +79,7 @@ export async function POST(req: Request) {
     const doctorNote = body.doctorNote || body.messageToPatient || '';
     const { translatedText: translatedNote } = doctorNote
       ? await translateText(doctorNote, preferredLang)
-      : { translatedText: '', detectedLang: preferredLang };
+      : { translatedText: '' };
 
     // Prepare lab result data
     const labResultData: Record<string, unknown> = {

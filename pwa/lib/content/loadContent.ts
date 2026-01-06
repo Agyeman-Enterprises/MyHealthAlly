@@ -54,10 +54,26 @@ export async function loadPublishedContent(): Promise<ContentModule[]> {
     return loadAllContentFromFiles({ includeHidden: false });
   }
 
+  type ContentRegistryEntry = {
+    slug: string;
+    category: string;
+    title: string;
+    body: string;
+    status: string;
+    reuse_allowed: boolean;
+    podcast_ready: boolean;
+    source: string;
+    publish_at?: string | null;
+    unpublish_at?: string | null;
+    release_group?: string | null;
+    license_tier_required?: string | null;
+  };
+
   // Filter by publish_at and unpublish_at in memory (PostgREST doesn't support complex OR with timestamps easily)
-  const activeRegistry = (registry || []).filter((r: any) => {
-    const publishAt = r.publish_at ? new Date(r.publish_at) : null;
-    const unpublishAt = r.unpublish_at ? new Date(r.unpublish_at) : null;
+  const activeRegistry = (registry || []).filter((r): r is ContentRegistryEntry => {
+    const entry = r as ContentRegistryEntry;
+    const publishAt = entry.publish_at ? new Date(entry.publish_at) : null;
+    const unpublishAt = entry.unpublish_at ? new Date(entry.unpublish_at) : null;
     
     const isPublished = !publishAt || publishAt <= nowDate;
     const isNotUnpublished = !unpublishAt || unpublishAt > nowDate;
@@ -71,8 +87,8 @@ export async function loadPublishedContent(): Promise<ContentModule[]> {
   }
 
   // Create map for quick lookup
-  const registryMap = new Map(
-    activeRegistry.map((r: any) => [`${r.category}/${r.slug}`, r])
+  const registryMap = new Map<string, ContentRegistryEntry>(
+    activeRegistry.map((r) => [`${r.category}/${r.slug}`, r])
   );
 
   // Load markdown files and match with registry
@@ -98,13 +114,11 @@ export async function loadPublishedContent(): Promise<ContentModule[]> {
       const reg = registryMap.get(key);
 
       if (!reg) continue; // Not published in DB
-
-      const regData = reg as any;
       
       // Prefer DB body if available, otherwise load from file
       let body: string;
-      if (regData.body) {
-        body = regData.body;
+      if (reg.body) {
+        body = reg.body;
       } else {
         // Fallback to file
         const fullPath = path.join(categoryDir, file);
@@ -112,20 +126,20 @@ export async function loadPublishedContent(): Promise<ContentModule[]> {
         body = extractBody(fileBody);
       }
       
-      const title = regData.title || extractTitle(body) || slug;
+      const title = reg.title || extractTitle(body) || slug;
 
       modules.push({
-        slug: regData.slug,
-        category: regData.category,
+        slug: reg.slug,
+        category: reg.category,
         title,
         body,
-        status: regData.status,
-        reuse_allowed: regData.reuse_allowed,
-        podcast_ready: regData.podcast_ready,
-        source: regData.source || 'manual',
+        status: reg.status,
+        reuse_allowed: reg.reuse_allowed,
+        podcast_ready: reg.podcast_ready,
+        source: reg.source || 'manual',
         // Optional fields
-        release_group: regData.release_group,
-        license_tier_required: regData.license_tier_required,
+        ...(reg.release_group ? { release_group: reg.release_group } : {}),
+        ...(reg.license_tier_required ? { license_tier_required: reg.license_tier_required } : {}),
       });
     }
   }
@@ -201,7 +215,7 @@ export function loadAllContentFromFiles(options?: { includeHidden?: boolean; adm
       const bodyContent = extractBody(body);
       const title = extractTitle(bodyContent) || file.replace(".md", "");
 
-      const module: ContentModule = {
+      const contentModule: ContentModule = {
         slug: file.replace(".md", ""),
         category,
         title,
@@ -214,13 +228,13 @@ export function loadAllContentFromFiles(options?: { includeHidden?: boolean; adm
       
       // Add optional fields only if they exist
       if (release_group) {
-        module.release_group = release_group;
+        contentModule.release_group = release_group;
       }
       if (license_tier_required) {
-        module.license_tier_required = license_tier_required;
+        contentModule.license_tier_required = license_tier_required;
       }
       
-      modules.push(module);
+      modules.push(contentModule);
     }
   }
 

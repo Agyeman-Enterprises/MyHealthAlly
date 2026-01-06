@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { supabaseService } from "@/lib/supabase/service";
 import { loadPublishedContent } from "@/lib/content/loadContent";
 
 /**
@@ -68,13 +67,13 @@ export async function GET(req: Request) {
     // Return filtered modules (without body for list requests, with body for single requests)
     if (slug && filteredModules.length === 1) {
       // Single module request - return full body
-      const module = filteredModules[0];
-      if (!module) {
+      const contentModule = filteredModules[0];
+      if (!contentModule) {
         return NextResponse.json({ error: "Module not found" }, { status: 404 });
       }
       return NextResponse.json({
-        module,
-        licenseTier: module.license_tier_required,
+        module: contentModule,
+        licenseTier: contentModule.license_tier_required,
       });
     }
 

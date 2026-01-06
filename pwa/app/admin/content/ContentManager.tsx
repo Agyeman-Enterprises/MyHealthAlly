@@ -66,7 +66,10 @@ export function ContentManager({ initialModules }: Props) {
     if (!acc[module.category]) {
       acc[module.category] = [];
     }
-    acc[module.category]!.push(module);
+    const categoryArray = acc[module.category];
+    if (categoryArray) {
+      categoryArray.push(module);
+    }
     return acc;
   }, {} as Record<string, ContentModule[]>);
 

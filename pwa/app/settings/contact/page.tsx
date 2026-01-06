@@ -1,7 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/auth-store';
+import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
@@ -9,24 +8,51 @@ import { Button } from '@/components/ui/Button';
 import { translateText } from '@/lib/utils/translate';
 
 export default function ContactPage() {
-  const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isLoading } = useRequireAuth();
   const [form, setForm] = useState({ subject: '', message: '' });
   const [sending, setSending] = useState(false);
   const [isDictating, setIsDictating] = useState(false);
   const [detectedLang, setDetectedLang] = useState('en');
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  if (!isAuthenticated) { router.push('/auth/login'); return null; }
+  if (isLoading) {
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSending(true);
-    const { detectedLang: lang } = await translateText(form.message, 'en');
-    setDetectedLang(lang);
-    await new Promise(r => setTimeout(r, 1500));
-    setSending(false);
-    alert('Message sent! We will respond within 1-2 business days.');
-    setForm({ subject: '', message: '' });
+    setError(null);
+    
+    try {
+      const { detectedLang: lang } = await translateText(form.message, 'en');
+      setDetectedLang(lang);
+      
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject: form.subject,
+          message: form.message,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send message');
+      }
+
+      const data = await response.json();
+      setSuccess(data.message || 'Message sent! We will respond within 1-2 business days.');
+      setForm({ subject: '', message: '' });
+      setError(null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to send message. Please try again.';
+      setError(message);
+    } finally {
+      setSending(false);
+    }
   };
 
   const startDictation = () => {
@@ -88,6 +114,8 @@ export default function ContactPage() {
       <main className="max-w-2xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-navy-600 mb-1">Contact Us</h1>
         <p className="text-gray-600 mb-6">Get in touch with our support team</p>
+        {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm">{error}</div>}
+        {success && <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl text-green-800 text-sm">{success}</div>}
 
         <div className="grid md:grid-cols-2 gap-4 mb-6">
           <Card className="text-center">

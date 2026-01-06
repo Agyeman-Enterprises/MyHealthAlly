@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -81,8 +81,7 @@ function ClinicalModeBanner() {
 }
 
 export default function VitalsPageInner() {
-  const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isAuthenticated, isLoading: authLoading } = useRequireAuth();
   const patientId = useAuthStore((state) => state.patientId);
   const user = useAuthStore((state) => state.user);
   const { loading: attachmentLoading, attached } = useAttachmentStatus();
@@ -219,9 +218,10 @@ export default function VitalsPageInner() {
     }
   };
 
-  if (!isAuthenticated) { 
-    router.push('/auth/login'); 
-    return null; 
+  // Auth is handled by useRequireAuth hook and middleware
+  // Show loading state while auth initializes
+  if (authLoading) {
+    return null;
   }
 
   if (attachmentLoading) {

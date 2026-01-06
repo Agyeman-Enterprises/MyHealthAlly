@@ -25,6 +25,63 @@ interface PharmacyAutocompleteProps {
   className?: string;
 }
 
+// Google Maps API type definitions
+interface GoogleMapsWindow extends Window {
+    google?: {
+      maps?: {
+        places?: {
+          AutocompleteService: new () => AutocompleteService;
+          PlacesService: new (element: HTMLElement) => PlacesService;
+          PlacesServiceStatus: { OK: string };
+        };
+        LatLng: new (lat: number, lng: number) => LatLng;
+      };
+    };
+  }
+
+  interface AutocompleteService {
+    getPlacePredictions(request: AutocompleteRequest, callback: (predictions: AutocompletePrediction[] | null, status: string) => void): void;
+  }
+
+  interface PlacesService {
+    getDetails(request: PlacesDetailsRequest, callback: (place: PlaceResult | null, status: string) => void): void;
+  }
+
+  interface LatLng {
+    lat(): number;
+    lng(): number;
+  }
+
+  interface AutocompleteRequest {
+    input: string;
+    types?: string[];
+    componentRestrictions?: { country: string };
+    location?: LatLng;
+    radius?: number;
+  }
+
+  interface AutocompletePrediction {
+    place_id: string;
+    structured_formatting: {
+      main_text: string;
+      secondary_text: string;
+    };
+  }
+
+  interface PlacesDetailsRequest {
+    placeId: string;
+    fields: string[];
+  }
+
+interface PlaceResult {
+  name?: string;
+  formatted_address?: string;
+  formatted_phone_number?: string;
+  geometry?: {
+    location?: LatLng;
+  };
+}
+
 // Load Google Maps API script
 const loadGoogleMapsScript = (apiKey: string): Promise<void> => {
   return new Promise((resolve, reject) => {
@@ -33,7 +90,8 @@ const loadGoogleMapsScript = (apiKey: string): Promise<void> => {
       return;
     }
 
-    if ((window as any).google && (window as any).google.maps) {
+    const googleWindow = window as GoogleMapsWindow;
+    if (googleWindow.google?.maps) {
       resolve();
       return;
     }
@@ -73,8 +131,8 @@ export function PharmacyAutocomplete({
   const [mapsError, setMapsError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
-  const autocompleteServiceRef = useRef<any>(null);
-  const placesServiceRef = useRef<any>(null);
+  const autocompleteServiceRef = useRef<AutocompleteService | null>(null);
+  const placesServiceRef = useRef<PlacesService | null>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load Google Maps API
@@ -87,9 +145,10 @@ export function PharmacyAutocomplete({
 
     loadGoogleMapsScript(apiKey)
       .then(() => {
-        if ((window as any).google?.maps?.places) {
-          autocompleteServiceRef.current = new (window as any).google.maps.places.AutocompleteService();
-          placesServiceRef.current = new (window as any).google.maps.places.PlacesService(
+        const googleWindow = window as GoogleMapsWindow;
+        if (googleWindow.google?.maps?.places) {
+          autocompleteServiceRef.current = new googleWindow.google.maps.places.AutocompleteService();
+          placesServiceRef.current = new googleWindow.google.maps.places.PlacesService(
             document.createElement('div')
           );
           setMapsLoaded(true);
@@ -149,15 +208,18 @@ export function PharmacyAutocomplete({
         fields: ['name', 'formatted_address', 'formatted_phone_number', 'geometry'],
       };
 
-      placesServiceRef.current.getDetails(request, (place: any, status: string) => {
-        if (status === (window as any).google.maps.places.PlacesServiceStatus.OK && place) {
-          resolve({
-            name: place.name,
-            formattedAddress: place.formatted_address,
-            phone: place.formatted_phone_number,
-            latitude: place.geometry?.location?.lat(),
-            longitude: place.geometry?.location?.lng(),
-          });
+      placesServiceRef.current.getDetails(request, (place: PlaceResult | null, status: string) => {
+        const googleWindow = window as GoogleMapsWindow;
+        if (status === googleWindow.google?.maps?.places?.PlacesServiceStatus.OK && place) {
+          const result: Partial<Pharmacy> = {};
+          if (place.name) result.name = place.name;
+          if (place.formatted_address) result.formattedAddress = place.formatted_address;
+          if (place.formatted_phone_number) result.phone = place.formatted_phone_number;
+          const lat = place.geometry?.location?.lat();
+          const lng = place.geometry?.location?.lng();
+          if (lat !== undefined) result.latitude = lat;
+          if (lng !== undefined) result.longitude = lng;
+          resolve(result);
         } else {
           resolve({});
         }
@@ -181,24 +243,25 @@ export function PharmacyAutocomplete({
     setIsLoading(true);
 
     try {
-      const request: any = {
+      const googleWindow = window as GoogleMapsWindow;
+      const request: AutocompleteRequest = {
         input: query,
         types: ['pharmacy', 'drugstore'],
         componentRestrictions: { country: 'us' },
       };
 
-      if (userLocation) {
-        request.location = new (window as any).google.maps.LatLng(userLocation.lat, userLocation.lng);
+      if (userLocation && googleWindow.google?.maps?.LatLng) {
+        request.location = new googleWindow.google.maps.LatLng(userLocation.lat, userLocation.lng);
         request.radius = 50000; // 50km radius
       }
 
-      autocompleteServiceRef.current.getPlacePredictions(request, (predictions: any[], status: string) => {
-        if (status === (window as any).google.maps.places.PlacesServiceStatus.OK && predictions) {
+      autocompleteServiceRef.current.getPlacePredictions(request, (predictions: AutocompletePrediction[] | null, status: string) => {
+        if (status === googleWindow.google?.maps?.places?.PlacesServiceStatus.OK && predictions) {
           const pharmacySuggestions = predictions.map((prediction) => ({
             placeId: prediction.place_id,
             name: prediction.structured_formatting.main_text,
             address: prediction.structured_formatting.secondary_text || '',
-            formattedAddress: prediction.description,
+            formattedAddress: prediction.structured_formatting.secondary_text || '',
             latitude: undefined,
             longitude: undefined,
             distance: undefined,
@@ -207,27 +270,45 @@ export function PharmacyAutocomplete({
           // Get details for each pharmacy to get coordinates and distance
           Promise.all(
             pharmacySuggestions.map((pharmacy) =>
-              getPharmacyDetails(pharmacy.placeId).then((details) => ({
-                ...pharmacy,
-                ...details,
-              }))
+              getPharmacyDetails(pharmacy.placeId).then((details) => {
+                const enrichedPharmacy: Pharmacy = {
+                  placeId: pharmacy.placeId,
+                  name: pharmacy.name,
+                  address: pharmacy.address,
+                  formattedAddress: pharmacy.formattedAddress,
+                };
+                if (details.phone) enrichedPharmacy.phone = details.phone;
+                if (details.latitude !== undefined) enrichedPharmacy.latitude = details.latitude;
+                if (details.longitude !== undefined) enrichedPharmacy.longitude = details.longitude;
+                return enrichedPharmacy;
+              })
             )
           ).then((enriched) => {
             // Sort by distance if location available
+            const enrichedWithDistance: Pharmacy[] = enriched.map((pharmacy) => {
+              const enrichedPharmacy: Pharmacy = {
+                placeId: pharmacy.placeId,
+                name: pharmacy.name,
+                address: pharmacy.address,
+                formattedAddress: pharmacy.formattedAddress,
+              };
+              if (pharmacy.phone) enrichedPharmacy.phone = pharmacy.phone;
+              if (pharmacy.latitude !== undefined) enrichedPharmacy.latitude = pharmacy.latitude;
+              if (pharmacy.longitude !== undefined) enrichedPharmacy.longitude = pharmacy.longitude;
+              if (userLocation && pharmacy.latitude !== undefined && pharmacy.longitude !== undefined) {
+                enrichedPharmacy.distance = calculateDistance(
+                  userLocation.lat,
+                  userLocation.lng,
+                  pharmacy.latitude,
+                  pharmacy.longitude
+                );
+              }
+              return enrichedPharmacy;
+            });
             if (userLocation) {
-              enriched.forEach((pharmacy) => {
-                if (pharmacy.latitude && pharmacy.longitude) {
-                  pharmacy.distance = calculateDistance(
-                    userLocation.lat,
-                    userLocation.lng,
-                    pharmacy.latitude,
-                    pharmacy.longitude
-                  );
-                }
-              });
-              enriched.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
+              enrichedWithDistance.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
             }
-            setSuggestions(enriched);
+            setSuggestions(enrichedWithDistance);
             setShowSuggestions(true);
           });
         } else {
@@ -272,18 +353,19 @@ export function PharmacyAutocomplete({
   // Handle pharmacy selection
   const handleSelectPharmacy = async (pharmacy: Pharmacy) => {
     // Get full details if not already loaded
-    if (!pharmacy.latitude || !pharmacy.phone) {
+    if (pharmacy.latitude === undefined || pharmacy.phone === undefined) {
       const details = await getPharmacyDetails(pharmacy.placeId);
       const fullPharmacy: Pharmacy = {
-        ...pharmacy,
-        name: details.name || pharmacy.name,
-        formattedAddress: details.formattedAddress || pharmacy.formattedAddress,
-        phone: details.phone || pharmacy.phone,
-        latitude: details.latitude || pharmacy.latitude,
-        longitude: details.longitude || pharmacy.longitude,
+        placeId: pharmacy.placeId,
+        name: details.name ?? pharmacy.name,
+        address: pharmacy.address,
+        formattedAddress: details.formattedAddress ?? pharmacy.formattedAddress,
+        ...(details.phone ? { phone: details.phone } : {}),
+        ...(details.latitude !== undefined ? { latitude: details.latitude } : {}),
+        ...(details.longitude !== undefined ? { longitude: details.longitude } : {}),
       };
       
-      if (userLocation && fullPharmacy.latitude && fullPharmacy.longitude) {
+      if (userLocation && fullPharmacy.latitude !== undefined && fullPharmacy.longitude !== undefined) {
         fullPharmacy.distance = calculateDistance(
           userLocation.lat,
           userLocation.lng,
@@ -332,7 +414,7 @@ export function PharmacyAutocomplete({
           }
         }}
         placeholder={mapsError ? "Enter pharmacy name manually" : "Search for a pharmacy (e.g., CVS, Walgreens)..."}
-        error={error || mapsError || undefined}
+        {...((error || mapsError) ? { error: String(error || mapsError || '') } : {})}
         required={required}
         enableVoice={false}
         icon={
