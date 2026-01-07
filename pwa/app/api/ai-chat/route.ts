@@ -10,8 +10,7 @@ import { chatWithAssistant, type ChatRequest } from '@/lib/services/ai-chat-serv
 import { 
   getOrCreateConversation, 
   saveMessage, 
-  loadConversation,
-  type ConversationMessage 
+  loadConversation
 } from '@/lib/services/ai-conversation-service';
 import { translateText } from '@/lib/utils/translate';
 import { createClient } from '@supabase/supabase-js';
@@ -55,6 +54,8 @@ async function isUserAdmin(userId: string): Promise<boolean> {
  * Get user's preferred language
  */
 async function getUserLanguage(userId: string): Promise<string> {
+  if (!supabase || !userId) return 'en';
+  
   try {
     const { data } = await supabase
       .from('users')
@@ -99,13 +100,15 @@ export async function POST(req: NextRequest) {
       if (!currentConversationId) {
         // Get patient ID if available
         let patientId: string | null = null;
-        const { data: patient } = await supabase
-          .from('patients')
-          .select('id')
-          .eq('user_id', userId)
-          .limit(1)
-          .single();
-        patientId = patient?.id || null;
+        if (supabase) {
+          const { data: patient } = await supabase
+            .from('patients')
+            .select('id')
+            .eq('user_id', userId)
+            .limit(1)
+            .single();
+          patientId = patient?.id || null;
+        }
 
         currentConversationId = await getOrCreateConversation(userId, patientId, userLanguage);
       }
@@ -132,8 +135,8 @@ export async function POST(req: NextRequest) {
     const request: ChatRequest = {
       message: englishMessage,
       conversationHistory: conversationHistory || [],
-      userId: userId || undefined, // For user-scoped caching
-      isAdmin: isAdmin, // For admin bypass
+      ...(userId && { userId }), // For user-scoped caching
+      ...(isAdmin && { isAdmin }), // For admin bypass
     };
 
     // Get AI response
@@ -163,7 +166,7 @@ export async function POST(req: NextRequest) {
           content: translatedResponse, // Response in user's language
           originalContent: aiResponse.response, // Original English response
           contentLanguage: userLanguage,
-          suggestedQuestions: aiResponse.suggestedQuestions,
+          ...(aiResponse.suggestedQuestions && { suggestedQuestions: aiResponse.suggestedQuestions }),
         });
       } catch (error) {
         console.error('Error saving messages:', error);

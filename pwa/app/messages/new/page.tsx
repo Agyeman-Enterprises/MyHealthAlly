@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { useAuthStore } from '@/lib/store/auth-store';
@@ -22,7 +22,7 @@ const baseRecipients = [
   { id: 'scheduling', name: 'Scheduling', desc: 'Appointments' },
 ];
 
-export default function NewMessagePage() {
+function NewMessagePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isLoading } = useRequireAuth();
@@ -212,5 +212,17 @@ export default function NewMessagePage() {
     <RequirePractice featureName="Messages">
       <NewMessagePageInner />
     </RequirePractice>
+  );
+}
+
+export default function NewMessagePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full" />
+      </div>
+    }>
+      <NewMessagePageContent />
+    </Suspense>
   );
 }

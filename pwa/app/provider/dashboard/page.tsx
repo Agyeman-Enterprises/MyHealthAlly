@@ -3,7 +3,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { getDashboardStats } from '@/lib/supabase/queries';
 import { format } from 'date-fns';
-import { Header } from '@/components/layout/Header';
 import { Card } from '@/components/ui/Card';
 
 export default function ProviderDashboardPage() {
@@ -15,13 +14,10 @@ export default function ProviderDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary-50/30">
-        <Header title="Dashboard" />
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-600 mx-auto mb-4"></div>
-            <p className="text-gray-500">Loading dashboard...</p>
-          </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -29,38 +25,30 @@ export default function ProviderDashboardPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary-50/30">
-        <Header title="Dashboard" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Card variant="elevated" className="border-l-4 border-l-red-500 bg-red-50">
-            <div className="flex items-center">
-              <svg className="w-6 h-6 text-red-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p className="text-red-800 font-medium">Error loading dashboard. Please try again.</p>
-            </div>
-          </Card>
+      <Card variant="elevated" className="border-l-4 border-l-red-500 bg-red-50">
+        <div className="flex items-center">
+          <svg className="w-6 h-6 text-red-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p className="text-red-800 font-medium">Error loading dashboard. Please try again.</p>
         </div>
-      </div>
+      </Card>
     );
   }
 
   if (!stats) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary-50/30">
-      <Header title="Provider Dashboard" />
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Overview</h2>
-          <p className="text-gray-600">
-            Last updated: {format(new Date(), 'PPpp')}
-          </p>
-        </div>
+    <div className="animate-fade-in">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Overview</h1>
+        <p className="text-gray-600">
+          Last updated: {format(new Date(), 'PPpp')}
+        </p>
+      </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
           {/* Messages Stats */}
           <Card variant="gradient" className="border-l-4 border-l-primary-500">
             <div className="flex items-center justify-between mb-4">
@@ -160,10 +148,10 @@ export default function ProviderDashboardPage() {
               </div>
             </div>
           </Card>
-        </div>
+      </div>
 
-        {/* Urgency Breakdown */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      {/* Urgency Breakdown */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Message Urgency */}
           <Card variant="elevated">
             <h3 className="text-lg font-bold text-gray-900 mb-6">Message Urgency</h3>
@@ -214,8 +202,7 @@ export default function ProviderDashboardPage() {
               </div>
             </div>
           </Card>
-        </div>
-      </main>
+      </div>
     </div>
   );
 }

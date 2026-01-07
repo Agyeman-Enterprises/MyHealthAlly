@@ -14,6 +14,9 @@ const filterPatterns = [
   /GET \/_next\/app-build-manifest\.json 404/,
   /GET \/_next\/static\/webpack\/.*\.webpack\.hot-update\.json 404/,
   /Fast Refresh had to perform a full reload/,
+  // Filter out common Turbopack/Next.js dev 404s (these are normal in development)
+  /GET \/_next\/static\/chunks\/.* 404/,
+  /GET \/_next\/static\/development\/.* 404/,
 ];
 
 function shouldFilterLine(line) {

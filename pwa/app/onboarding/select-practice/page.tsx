@@ -524,7 +524,7 @@ export default function OnboardingSelectPracticePage() {
 
         <Card className="bg-blue-50 border-blue-200">
           <p className="text-sm text-blue-800">
-            <strong>Note:</strong> Once you select a care team, you'll have full access to all app features including messages, 
+            <strong>Note:</strong> Once you select a care team, you&apos;ll have full access to all app features including messages, 
             lab results, medications, and appointments. You can change your care team later in settings.
           </p>
         </Card>

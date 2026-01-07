@@ -68,6 +68,7 @@ const EnvSchema = z.object({
   // Resend (Email service)
   RESEND_API_KEY: z.string().min(1).optional(),
   RESEND_FROM_EMAIL: z.string().email().optional(), // Default from address
+  ADMIN_EMAIL: z.string().email().optional(), // Admin email for error notifications
 });
 
 // Note: This file IS the validated env - we parse process.env here

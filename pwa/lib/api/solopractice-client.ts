@@ -7,7 +7,7 @@
 
 import axios from 'axios';
 import type { AxiosInstance, AxiosError } from 'axios';
-import { getApiBaseUrl, getApiBaseUrlBrowser, getApiBaseUrlServer } from '@/lib/utils/api-base-url';
+import { getApiBaseUrlBrowser, getApiBaseUrlServer } from '@/lib/utils/api-base-url';
 
 /**
  * Get API base URL - lazy evaluation for server-side

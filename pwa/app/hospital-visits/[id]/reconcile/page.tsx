@@ -32,11 +32,10 @@ interface MedicationReconciliation {
 export default function MedicationReconciliationPage() {
   const router = useRouter();
   const params = useParams();
-  const visitId = typeof params.id === 'string' ? params.id : '';
+  const visitId = typeof params['id'] === 'string' ? params['id'] : '';
   const { isLoading } = useRequireAuth();
   
   const [reconciliations, setReconciliations] = useState<MedicationReconciliation[]>([]);
-  const [currentMedications, setCurrentMedications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,9 +62,8 @@ export default function MedicationReconciliationPage() {
         if (recError) throw recError;
         setReconciliations(reconciliationsData || []);
 
-        // Load current medications
-        const meds = await getPatientMedications(patientId);
-        setCurrentMedications(meds);
+        // Load current medications (for reference, not stored in state)
+        await getPatientMedications(patientId);
       } catch (err) {
         console.error('Error loading reconciliation data:', err);
         setError(err instanceof Error ? err.message : 'Failed to load data');

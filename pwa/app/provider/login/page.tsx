@@ -318,14 +318,28 @@ function ProviderLoginContent() {
             </div>
           )}
 
-          {/* Patient login link */}
-          <div className="mt-6 text-center">
-            <Link
-              href="/auth/login"
-              className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
-            >
-              ← Patient Login
-            </Link>
+          {/* Need account / Patient login */}
+          <div className="mt-6 pt-6 border-t border-gray-200 space-y-3">
+            <div className="text-center">
+              <p className="text-sm text-gray-600">
+                Need a provider account? Contact your administrator or{' '}
+                <Link
+                  href="/auth/signup"
+                  className="font-medium text-primary-600 hover:text-primary-700 transition-colors"
+                >
+                  sign up as a patient
+                </Link>
+                {' '}first, then register your practice.
+              </p>
+            </div>
+            <div className="text-center">
+              <Link
+                href="/auth/login"
+                className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
+              >
+                ← Patient Login
+              </Link>
+            </div>
           </div>
         </Card>
 

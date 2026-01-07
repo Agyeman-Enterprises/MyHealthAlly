@@ -104,15 +104,18 @@ export async function loadConversation(
     createdAt: new Date(conv.created_at),
     updatedAt: new Date(conv.updated_at),
     lastMessageAt: new Date(conv.last_message_at),
-    messages: (messages || []).map((msg) => ({
-      id: msg.id,
-      role: msg.role as 'user' | 'assistant',
-      content: msg.content,
-      originalContent: msg.original_content || undefined,
-      contentLanguage: msg.content_language || 'en',
-      suggestedQuestions: msg.suggested_questions as string[] | undefined,
-      createdAt: new Date(msg.created_at),
-    })),
+    messages: (messages || []).map((msg) => {
+      const message: ConversationMessage = {
+        id: msg.id,
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content,
+        ...(msg.original_content && { originalContent: msg.original_content }),
+        ...(msg.content_language && { contentLanguage: msg.content_language }),
+        ...(msg.suggested_questions && { suggestedQuestions: msg.suggested_questions as string[] }),
+        createdAt: new Date(msg.created_at),
+      };
+      return message;
+    }),
   };
 }
 

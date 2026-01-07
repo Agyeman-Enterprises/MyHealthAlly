@@ -13,7 +13,7 @@ export default function ProviderLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
-  const { isAuthenticated, role, logout } = useAuthStore();
+  const { isAuthenticated, role, logout, isInitialized } = useAuthStore();
 
   // Handle client-side mounting
   useEffect(() => {
@@ -26,12 +26,12 @@ export default function ProviderLayout({
   // On login page, always render immediately
   const isLoginPage = pathname === '/provider/login';
   
-  if (!mounted || isLoginPage) {
-    // During SSR (!mounted) or on login page, render immediately
-    return <>{children}</>;
-  }
-
   useEffect(() => {
+    // Skip auth check during SSR or on login page
+    if (!mounted || isLoginPage) {
+      return;
+    }
+
     // Wait a moment for Zustand to hydrate from localStorage
     const checkAuth = setTimeout(() => {
       // Strong security: Check authentication and role
@@ -50,12 +50,37 @@ export default function ProviderLayout({
     }, 100); // Small delay to allow Zustand hydration
 
     return () => clearTimeout(checkAuth);
-  }, [isAuthenticated, role, router, pathname]);
+  }, [mounted, isLoginPage, isAuthenticated, role, router, pathname]);
+  
+  if (!mounted || isLoginPage) {
+    // During SSR (!mounted) or on login page, render immediately
+    return <>{children}</>;
+  }
+
+  // Wait for auth state to initialize from localStorage before checking
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Strong security: Don't render anything if not authorized
   // (login page already handled above)
   if (!isAuthenticated || (role !== 'provider' && role !== 'admin')) {
-    return null;
+    // Show loading while redirect happens (useEffect will redirect)
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting to login...</p>
+        </div>
+      </div>
+    );
   }
 
   const isActive = (path: string) => pathname === path;

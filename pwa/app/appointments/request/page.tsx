@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { Header } from '@/components/layout/Header';
@@ -21,7 +21,7 @@ const apptTypes = [
   { value: 'medication', label: 'Medication Management' },
 ];
 
-export default function RequestAppointmentPage() {
+function RequestAppointmentPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isLoading: authLoading } = useRequireAuth();
@@ -258,5 +258,17 @@ export default function RequestAppointmentPage() {
     <RequirePractice featureName="Appointments">
       <RequestAppointmentPageInner />
     </RequirePractice>
+  );
+}
+
+export default function RequestAppointmentPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full" />
+      </div>
+    }>
+      <RequestAppointmentPageContent />
+    </Suspense>
   );
 }

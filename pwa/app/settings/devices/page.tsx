@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { supabase } from '@/lib/supabase/client';
@@ -38,7 +38,7 @@ const deviceIcons: Record<DeviceType, string> = {
   apple_health: '🍎',
 };
 
-export default function DevicesPage() {
+function DevicesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isLoading: authLoading } = useRequireAuth();
@@ -313,5 +313,17 @@ export default function DevicesPage() {
       </main>
       <BottomNav />
     </div>
+  );
+}
+
+export default function DevicesPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full" />
+      </div>
+    }>
+      <DevicesPageContent />
+    </Suspense>
   );
 }

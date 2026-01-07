@@ -93,7 +93,7 @@ export default function PracticeRegistrationPage() {
         country: formData.country || 'USA',
       };
 
-      const { data, error: insertError } = await supabase
+      const { error: insertError } = await supabase
         .from('practices')
         .insert({
           practice_id: formData.practiceId.trim(),

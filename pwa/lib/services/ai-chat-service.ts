@@ -158,10 +158,9 @@ function sanitizeResponse(text: string): string {
 /**
  * Generate suggested follow-up questions
  */
-function generateSuggestedQuestions(message: string, response: string): string[] {
+function generateSuggestedQuestions(message: string): string[] {
   const suggestions: string[] = [];
   const lowerMessage = message.toLowerCase();
-  const lowerResponse = response.toLowerCase();
 
   // Symptom-related questions
   if (lowerMessage.includes('symptom') || lowerMessage.includes('pain') || lowerMessage.includes('ache')) {
@@ -230,7 +229,7 @@ export async function chatWithAssistant(
   if (cached) {
     return {
       response: cached,
-      suggestedQuestions: generateSuggestedQuestions(request.message, cached),
+      suggestedQuestions: generateSuggestedQuestions(request.message),
     };
   }
 
@@ -275,7 +274,7 @@ export async function chatWithAssistant(
     await redis.setCache(cacheKey, sanitized, CACHE_TTL_SECONDS);
 
     // Generate suggested questions
-    const suggestedQuestions = generateSuggestedQuestions(request.message, sanitized);
+    const suggestedQuestions = generateSuggestedQuestions(request.message);
 
     return {
       response: sanitized,

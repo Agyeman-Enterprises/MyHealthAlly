@@ -15,18 +15,24 @@ The AI chat service now uses **Upstash Redis** for production-grade rate limitin
 2. Create a new Redis database
 3. Go to "REST API" section
 4. Copy:
-   - **REST URL** (e.g., `https://amused-newt-31437.upstash.io`)
-   - **REST Token** (e.g., `AXrNAAIncDI1NzdlYjA2Y2RmOTM0ZTE4YTU0OWM3OTk4MmQ1MmViY3AyMzE0Mzc`)
+   - **REST URL** (e.g., `https://your-database.upstash.io`)
+   - **REST Token** (a long alphanumeric string)
+
+**⚠️ SECURITY**: Keep these credentials secure and never commit them to version control!
 
 ### 2. Add Environment Variables
 
-Add to your `.env.local` file:
+Add to your `.env.local` file (create it if it doesn't exist):
 
 ```env
 # Upstash Redis (for AI chat rate limiting and caching)
-UPSTASH_REDIS_REST_URL=https://amused-newt-31437.upstash.io
-UPSTASH_REDIS_REST_TOKEN=AXrNAAIncDI1NzdlYjA2Y2RmOTM0ZTE4YTU0OWM3OTk4MmQ1MmViY3AyMzE0Mzc
+UPSTASH_REDIS_REST_URL=https://your-database.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your-token-here
 ```
+
+**⚠️ IMPORTANT**: 
+- `.env.local` is already in `.gitignore` - never commit this file!
+- Use different credentials for development and production
 
 ### 3. Install Dependencies
 

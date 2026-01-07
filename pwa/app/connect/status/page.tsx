@@ -4,13 +4,14 @@
 
 'use client';
 
+import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 
-export default function ConnectStatusPage() {
+function ConnectStatusPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const success = searchParams.get('success') === 'true';
@@ -78,3 +79,14 @@ export default function ConnectStatusPage() {
   );
 }
 
+export default function ConnectStatusPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full" />
+      </div>
+    }>
+      <ConnectStatusPageContent />
+    </Suspense>
+  );
+}

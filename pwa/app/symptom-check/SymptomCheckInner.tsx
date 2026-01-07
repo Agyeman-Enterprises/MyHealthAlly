@@ -315,7 +315,7 @@ export default function SymptomCheckInner() {
     setSuccess(null);
     try {
       // Generate AI-powered summaries (with fallback)
-      const { summaryPatient: aiSummaryPatient, summaryClinician: aiSummaryClinician, education: aiEducation, insights } = await generateAIAnalysis();
+      const { summaryPatient: aiSummaryPatient, summaryClinician: aiSummaryClinician, education: aiEducation } = await generateAIAnalysis();
       
       const combined = [chiefConcern, ...answers.map((a) => a.answer)].join('\n');
       const { translatedText } = await translateText(combined, 'en');

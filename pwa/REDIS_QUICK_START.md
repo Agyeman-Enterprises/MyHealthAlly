@@ -1,10 +1,15 @@
 # Redis Quick Start
 
-## ✅ You Have Everything!
+## ✅ Setup Required
 
-Your Upstash Redis credentials:
-- **REST URL**: `https://amused-newt-31437.upstash.io`
-- **REST Token**: `AXrNAAIncDI1NzdlYjA2Y2RmOTM0ZTE4YTU0OWM3OTk4MmQ1MmViY3AyMzE0Mzc`
+You need to get your Upstash Redis credentials from the [Upstash Dashboard](https://console.upstash.com/).
+
+1. Sign up or log in at [Upstash](https://upstash.com)
+2. Create a new Redis database
+3. Go to "REST API" section
+4. Copy your:
+   - **REST URL** (e.g., `https://your-database.upstash.io`)
+   - **REST Token** (a long alphanumeric string)
 
 ## Next Steps
 
@@ -14,9 +19,11 @@ Create or edit `pwa/.env.local`:
 
 ```env
 # Upstash Redis (for AI chat rate limiting and caching)
-UPSTASH_REDIS_REST_URL=https://amused-newt-31437.upstash.io
-UPSTASH_REDIS_REST_TOKEN=AXrNAAIncDI1NzdlYjA2Y2RmOTM0ZTE4YTU0OWM3OTk4MmQ1MmViY3AyMzE0Mzc
+UPSTASH_REDIS_REST_URL=https://your-database.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your-token-here
 ```
+
+**⚠️ SECURITY WARNING**: Never commit `.env.local` to git! These credentials are sensitive.
 
 ### 3. Restart Dev Server
 

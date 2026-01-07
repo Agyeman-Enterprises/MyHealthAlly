@@ -50,11 +50,11 @@ export async function POST(req: Request) {
       : undefined;
     
     await sendContactFormEmail({
-      from: userRecord.email || 'unknown@myhealthally.com',
+      from: userRecord.email || 'unknown@myhealthally.co',
       subject,
       message,
-      userName,
-      patientId: patientId || undefined,
+      ...(userName && { userName }),
+      ...(patientId && { patientId }),
     }).catch((err) => {
       // Log but don't fail the request if email fails
       console.error('Failed to send contact form email:', err);

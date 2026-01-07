@@ -200,7 +200,9 @@ Please send this information to the hospital/facility as requested.`;
       <Header title="Send Records to Hospital/ED" showBack />
     
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <DisclaimerBanner className="mb-6" />
+        <div className="mb-6">
+          <DisclaimerBanner />
+        </div>
 
         <Card variant="elevated" className="p-6 mb-6">
           <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">

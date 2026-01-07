@@ -27,7 +27,7 @@ RESEND_API_KEY=re_your_api_key_here
 RESEND_FROM_EMAIL=noreply@yourdomain.com
 ```
 
-**Note:** `RESEND_FROM_EMAIL` is optional. If not set, defaults to `noreply@myhealthally.com`.
+**Note:** `RESEND_FROM_EMAIL` is optional. If not set, defaults to `noreply@myhealthally.co`.
 
 ### 3. Verify Domain (Production)
 
@@ -98,8 +98,36 @@ await sendPracticeRegistrationEmail({
 ## Fallback Behavior
 
 - **If Resend is not configured**: Emails are skipped, functionality continues normally
-- **If email send fails**: Error is logged, but doesn't break the request
+- **If email send fails**: Error is logged to server console/logs, but doesn't break the request
 - **No hard failures**: All email sending is optional and graceful
+
+### Error Notification
+
+**When Resend fails, admins are automatically notified:**
+
+1. **Email Notification** (if Resend is still working):
+   - Admin receives email alert about the failure
+   - Includes: email type, recipient, error message, timestamp
+   - Sent to: `ADMIN_EMAIL` env var OR all users with `role='admin'` from database
+
+2. **Database Logging** (fallback if email notification fails):
+   - Failure logged to `contact_messages` table
+   - Admins can review in admin dashboard
+   - Includes full error context
+
+3. **Console Logging**:
+   - Errors logged to server console/logs
+   - Visible in development console and production logs
+
+**Configuration:**
+- Set `ADMIN_EMAIL` in `.env.local` for primary admin notification
+- Or ensure at least one user in database has `role='admin'`
+- If neither is configured, falls back to `RESEND_FROM_EMAIL`
+
+**Example `.env.local`:**
+```env
+ADMIN_EMAIL=admin@myhealthally.co
+```
 
 ## Cost
 

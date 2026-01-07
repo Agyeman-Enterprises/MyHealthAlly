@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { env } from '@/lib/env';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase/client';
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, isAuthenticated, isInitialized } = useAuthStore();
@@ -344,6 +345,29 @@ export default function LoginPage() {
               Development mode only - bypasses authentication
             </p>
           </div>
+
+          {/* Sign up link */}
+          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+            <p className="text-sm text-gray-600 mb-2">
+              Don&apos;t have an account?{' '}
+              <Link
+                href="/auth/signup"
+                className="font-medium text-[#9B8AB8] hover:text-[#7E6BA1] transition-colors"
+              >
+                Sign up
+              </Link>
+            </p>
+          </div>
+
+          {/* Provider login link */}
+          <div className="mt-4 text-center">
+            <Link
+              href="/provider/login"
+              className="text-sm font-medium text-[#9B8AB8] hover:text-[#7E6BA1] transition-colors"
+            >
+              Provider/Admin Login →
+            </Link>
+          </div>
         </div>
 
         <p className="text-center text-gray-500 text-sm mt-8">
@@ -351,5 +375,17 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#F5F3F7] via-white to-[#E8E4ED]">
+        <div className="animate-spin w-10 h-10 border-4 border-[#B8A9C9] border-t-transparent rounded-full" />
+      </div>
+    }>
+      <LoginPageContent />
+    </Suspense>
   );
 }

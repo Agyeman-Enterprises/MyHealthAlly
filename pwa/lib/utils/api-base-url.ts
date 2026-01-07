@@ -45,7 +45,7 @@ export function getApiBaseUrlServer(request?: Request | { headers: Headers }): s
   }
 
   // 2. Try Vercel URL (automatic in Vercel deployments)
-  const vercelUrl = process.env.VERCEL_URL;
+  const vercelUrl = process.env['VERCEL_URL'];
   if (vercelUrl) {
     return `https://${vercelUrl}`;
   }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { useLanguageStore } from '@/lib/i18n/language-store';
 import { LanguageProvider } from '@/components/layout/LanguageProvider';
@@ -12,10 +13,38 @@ interface ProvidersProps {
   children: ReactNode;
 }
 
+// Create QueryClient function - ensures one instance per app
+function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 1000 * 60 * 5, // 5 minutes
+        refetchOnWindowFocus: false,
+        retry: 1,
+      },
+    },
+  });
+}
+
+// Browser: create singleton instance
+let browserQueryClient: QueryClient | undefined = undefined;
+function getQueryClient() {
+  if (typeof window === 'undefined') {
+    // Server: always make a new query client
+    return makeQueryClient();
+  } else {
+    // Browser: use singleton pattern to keep the same query client
+    if (!browserQueryClient) browserQueryClient = makeQueryClient();
+    return browserQueryClient;
+  }
+}
+
 // Public routes that don't require auth initialization
 const PUBLIC_ROUTES = ['/provider/login', '/auth/login', '/auth/signup', '/auth/forgot-password', '/auth/reset-password', '/auth/verify-email', '/'];
 
 export function Providers({ children }: ProvidersProps) {
+  // Create QueryClient instance
+  const queryClient = getQueryClient();
   const [isReady, setIsReady] = useState(false);
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
@@ -61,31 +90,37 @@ export function Providers({ children }: ProvidersProps) {
   // For private routes, show loading until auth is ready
   if (!mounted || isPublicRoute) {
     return (
-      <ThemeProvider>
-        <LanguageProvider>
-          {children}
-        </LanguageProvider>
-      </ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <LanguageProvider>
+            {children}
+          </LanguageProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
     );
   }
 
   // For private routes, show loading until auth is initialized
   if (!isReady) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#F5F3F7] via-white to-[#E8E4ED]">
-        <div className="text-center">
-          <div className="animate-spin w-10 h-10 border-4 border-[#B8A9C9] border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-gray-500">Loading...</p>
+      <QueryClientProvider client={queryClient}>
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#F5F3F7] via-white to-[#E8E4ED]">
+          <div className="text-center">
+            <div className="animate-spin w-10 h-10 border-4 border-[#B8A9C9] border-t-transparent rounded-full mx-auto mb-4" />
+            <p className="text-gray-500">Loading...</p>
+          </div>
         </div>
-      </div>
+      </QueryClientProvider>
     );
   }
 
   return (
-    <ThemeProvider>
-      <LanguageProvider>
-        {children}
-      </LanguageProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <LanguageProvider>
+          {children}
+        </LanguageProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }

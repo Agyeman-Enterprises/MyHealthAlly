@@ -59,13 +59,21 @@ You could also use:
 
 But **Upstash Redis** is the best fit for our Next.js/Vercel setup.
 
-## What You Have
+## Getting Started
 
-You have everything you need! ✅
-- ✅ **Upstash Redis REST URL**: `https://amused-newt-31437.upstash.io`
-- ✅ **Upstash Redis REST Token**: `AXrNAAIncDI1NzdlYjA2Y2RmOTM0ZTE4YTU0OWM3OTk4MmQ1MmViY3AyMzE0Mzc`
+To use Upstash Redis:
 
-Just add these to your `.env.local` file and you're ready to go!
+1. Sign up at [Upstash](https://upstash.com) (free tier available)
+2. Create a new Redis database
+3. Get your REST API credentials from the dashboard
+4. Add them to your `.env.local` file:
+
+```env
+UPSTASH_REDIS_REST_URL=https://your-database.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your-token-here
+```
+
+**⚠️ SECURITY**: Never commit your `.env.local` file or share your credentials!
 
 ## Summary
 

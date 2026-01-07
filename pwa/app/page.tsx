@@ -43,6 +43,12 @@ export default function Home() {
         <div className="flex items-center gap-3">
           <Link href="/pricing" className="text-sm font-semibold text-primary-700 hover:text-primary-800">Pricing</Link>
           <Link
+            href="/provider/login"
+            className="text-sm font-semibold text-primary-700 hover:text-primary-800"
+          >
+            Provider Login
+          </Link>
+          <Link
             href="/auth/signup"
             className="text-sm font-semibold text-primary-700 hover:text-primary-800 border border-primary-200 rounded-lg px-3 py-2"
           >

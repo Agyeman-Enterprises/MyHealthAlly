@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { loadPublishedContent } from "@/lib/content/loadContent";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Public Content API
  * Serves content modules to external organizations based on license tier

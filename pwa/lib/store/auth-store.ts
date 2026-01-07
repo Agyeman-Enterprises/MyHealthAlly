@@ -175,9 +175,6 @@ export const useAuthStore = create<AuthStore>()(
               const authResult = await supabase.auth.signInWithPassword({
                 email,
                 password,
-                options: {
-                  persistSession: true,
-                },
               });
               
               // Throw if there's an error (so retry logic can catch it)
@@ -205,7 +202,7 @@ export const useAuthStore = create<AuthStore>()(
 
           // Check for errors after retry
           if (result.error) {
-            const error = result.error;
+            const error = result.error as { message: string };
             // Improve error messages
             if (error.message.includes('Invalid login credentials')) {
               throw new Error('Invalid email or password. Please check your credentials and try again.');

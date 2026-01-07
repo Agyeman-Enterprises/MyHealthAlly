@@ -11,6 +11,7 @@ import { env } from '@/lib/env';
 const inMemoryCache = new Map<string, { value: string; expiresAt: number }>();
 const inMemoryRateLimit = new Map<string, { count: number; resetAt: number }>();
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let redisClient: any = null;
 let useRedis = false;
 
@@ -18,6 +19,7 @@ let useRedis = false;
 if (env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN) {
   try {
     // Dynamic import to avoid bundling in client-side code
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { Redis } = require('@upstash/redis');
     redisClient = new Redis({
       url: env.UPSTASH_REDIS_REST_URL,

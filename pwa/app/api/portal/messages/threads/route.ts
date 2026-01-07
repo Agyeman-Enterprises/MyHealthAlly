@@ -7,21 +7,14 @@
  */
 
 import { NextResponse } from 'next/server';
-import { getCurrentUserAndPatient } from '@/lib/supabase/queries-settings';
+import { assertAttachedPatient } from '@/lib/server/assertAttachedPatient';
 import { env } from '@/lib/env';
 import { supabase } from '@/lib/supabase/client';
 
 export async function GET() {
   try {
     // Ensure user is authenticated and has patient attached
-    const { userRecord, patientId } = await getCurrentUserAndPatient();
-    
-    if (!userRecord || !patientId) {
-      return NextResponse.json(
-        { error: 'Unauthorized - patient not attached' },
-        { status: 401 }
-      );
-    }
+    await assertAttachedPatient(); // 🔒 HARD GATE
 
     // Get auth token from Supabase session
     const { data: { session } } = await supabase.auth.getSession();
@@ -37,7 +30,7 @@ export async function GET() {
     // Get SoloPractice backend URL
     // NOTE: This should point to the SoloPractice backend server, not the Next.js server
     // In production, set NEXT_PUBLIC_API_BASE_URL to your SoloPractice backend URL
-    const SP_BASE_URL = env.NEXT_PUBLIC_API_BASE_URL || process.env.SOLOPRACTICE_BASE_URL || 'http://localhost:8000';
+    const SP_BASE_URL = env.NEXT_PUBLIC_API_BASE_URL || process.env['SOLOPRACTICE_BASE_URL'] || 'http://localhost:8000';
     
     // Prevent proxy loop - if SP_BASE_URL points to this server, return error
     if (typeof window === 'undefined' && SP_BASE_URL.includes('localhost:3000')) {

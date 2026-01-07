@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { supabase } from '@/lib/supabase/client';
@@ -10,7 +10,7 @@ import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import type { User } from '@/lib/store/auth-store';
 
-export default function MfaPage() {
+function MfaPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const emailFromQuery = searchParams.get('email') || '';
@@ -128,5 +128,17 @@ export default function MfaPage() {
       </main>
       <BottomNav />
     </div>
+  );
+}
+
+export default function MfaPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full" />
+      </div>
+    }>
+      <MfaPageContent />
+    </Suspense>
   );
 }
