@@ -13,13 +13,26 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { attachPractice } from '@/lib/attachPractice';
 import { getCurrentUserAndPatient } from '@/lib/supabase/queries-settings';
+import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import type { Patient } from '@/lib/supabase/types';
 
 export default function ConnectInvitePage() {
   const router = useRouter();
+  const { isLoading } = useRequireAuth();
   const [inviteCode, setInviteCode] = useState('');
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-sky-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-10 h-10 border-4 border-primary-300 border-t-transparent rounded-full mx-auto mb-4" />
+          <p className="text-gray-500">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleConnect = async () => {
     if (!inviteCode.trim()) {
