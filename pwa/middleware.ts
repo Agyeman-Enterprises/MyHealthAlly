@@ -15,6 +15,9 @@ export function middleware(request: NextRequest) {
     '/auth/login',
     '/auth/forgot-password',
     '/auth/reset-password',
+    '/auth/signup',
+    '/auth/verify-email',
+    '/provider/login', // Provider login page - public access
     '/',
     '/pricing',
   ];

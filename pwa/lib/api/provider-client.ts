@@ -8,9 +8,10 @@
 import axios from 'axios';
 import type { AxiosInstance, AxiosError } from 'axios';
 import { apiClient, SoloPracticeApiError } from './solopractice-client';
-import { env } from '@/lib/env';
+import { getApiBaseUrl } from '@/lib/utils/api-base-url';
 
-const API_BASE_URL = env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+// API base URL - autoconfigured (no hardcoded fallbacks)
+const API_BASE_URL = getApiBaseUrl();
 
 // Provider-specific types
 export interface ProviderMessage {

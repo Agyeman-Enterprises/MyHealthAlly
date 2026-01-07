@@ -6,13 +6,14 @@
  */
 
 import { NextResponse } from 'next/server';
-import { env } from '@/lib/env';
+import { getApiBaseUrlFromRequest } from '@/lib/utils/api-base-url';
 
-// TODO: replace with your real SP base URL + auth
-const SP_BASE_URL = env.NEXT_PUBLIC_API_BASE_URL || (process.env as Record<string, string | undefined>)['SOLOPRACTICE_BASE_URL'] || 'http://localhost:3000';
+// API key from environment (optional)
 const SP_API_KEY = (process.env as Record<string, string | undefined>)['SOLOPRACTICE_API_KEY'] || '';
 
 export async function POST(req: Request) {
+  // Autoconfig API base URL from request headers
+  const SP_BASE_URL = getApiBaseUrlFromRequest(req);
   try {
     const body = await req.json();
 

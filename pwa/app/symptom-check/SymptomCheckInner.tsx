@@ -187,6 +187,9 @@ export default function SymptomCheckInner() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [patientId, setPatientId] = useState<string | null>(null);
+  const [aiInsights, setAiInsights] = useState<string | null>(null);
+  const [aiEducation, setAiEducation] = useState<string[]>([]);
+  const [usingAI, setUsingAI] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -234,9 +237,70 @@ export default function SymptomCheckInner() {
   };
 
   // NAVIGATION MODE: Show education only (no submission)
-  const handleNavigationComplete = () => {
-    setStep('sent');
-    setSuccess('Review complete. Connect to a care team to share this information with a clinician.');
+  // Note: patientId not required for navigation mode - just shows education
+  const handleNavigationComplete = async () => {
+    setLoading(true);
+    try {
+      // Generate AI insights even in navigation mode (no patient ID required)
+      const { education: aiEducation, insights } = await generateAIAnalysis();
+      if (aiEducation.length > 0) {
+        setAiEducation(aiEducation);
+      }
+      if (insights) {
+        setAiInsights(insights);
+      }
+    } catch (err) {
+      console.warn('AI analysis unavailable in navigation mode:', err);
+    } finally {
+      setLoading(false);
+      setStep('sent');
+      setSuccess('Review complete. Connect to a care team to share this information with a clinician.');
+    }
+  };
+
+  // Generate AI-powered analysis (with fallback to templates)
+  const generateAIAnalysis = async (): Promise<{
+    summaryPatient: string;
+    summaryClinician: string;
+    education: string[];
+    insights: string | null;
+  }> => {
+    try {
+      setUsingAI(true);
+      const res = await fetch('/api/symptom-check/analyze', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          chiefConcern: chiefConcern.trim(),
+          category,
+          redFlags,
+          answers,
+          triageLevel,
+        }),
+      });
+
+      if (res.ok) {
+        const analysis = await res.json();
+        setAiInsights(analysis.insights);
+        setAiEducation(analysis.educationContent);
+        return {
+          summaryPatient: analysis.summaryPatient,
+          summaryClinician: analysis.summaryClinician,
+          education: analysis.educationContent,
+          insights: analysis.insights,
+        };
+      }
+    } catch (err) {
+      console.warn('AI analysis unavailable, using template summaries:', err);
+    } finally {
+      setUsingAI(false);
+    }
+
+    // Fallback to template-based summaries
+    const summaryPatient = generateSummaryPatient(chiefConcern.trim(), answers, redFlags, triageLevel);
+    const summaryClinician = generateSummaryClinician(chiefConcern.trim(), answers, redFlags, triageLevel);
+    const education = generateEducation(triageLevel);
+    return { summaryPatient, summaryClinician, education, insights: null };
   };
 
   // CLINICAL MODE: Send to care team via API
@@ -250,13 +314,18 @@ export default function SymptomCheckInner() {
     setError(null);
     setSuccess(null);
     try {
-      const summaryPatient = generateSummaryPatient(chiefConcern.trim(), answers, redFlags, triageLevel);
+      // Generate AI-powered summaries (with fallback)
+      const { summaryPatient: aiSummaryPatient, summaryClinician: aiSummaryClinician, education: aiEducation, insights } = await generateAIAnalysis();
+      
       const combined = [chiefConcern, ...answers.map((a) => a.answer)].join('\n');
       const { translatedText } = await translateText(combined, 'en');
       const translatedChief = translatedText || chiefConcern.trim();
       const translatedAnswers = answers.map((a) => ({ ...a, answer: a.answer }));
-      const summaryClinician = generateSummaryClinician(translatedChief, translatedAnswers, redFlags, triageLevel);
-      const education = generateEducation(triageLevel);
+      
+      // Use AI summaries if available, otherwise use translated templates
+      const summaryPatient = aiSummaryPatient || generateSummaryPatient(translatedChief, translatedAnswers, redFlags, triageLevel);
+      const summaryClinician = aiSummaryClinician || generateSummaryClinician(translatedChief, translatedAnswers, redFlags, triageLevel);
+      const education = aiEducation.length > 0 ? aiEducation : generateEducation(triageLevel);
 
       // Save locally first
       const { data: symptom, error: symptomError } = await supabase
@@ -339,11 +408,11 @@ export default function SymptomCheckInner() {
     <Card className="mb-4">
       <h2 className="text-lg font-semibold text-navy-600">AI-Assisted Symptom Navigator</h2>
       <p className="text-sm text-gray-700 mt-2">
-        This tool helps organize your symptoms and share them with your care team. It does not provide a diagnosis or medical advice.
+        This AI-powered tool helps organize your symptoms and share them with your care team. It does not provide a diagnosis or medical advice.
         If you think you may be having an emergency, call your local emergency number or go to the nearest emergency department.
       </p>
       <p className="text-xs text-gray-600 mt-2 italic">
-        <strong>This is not a diagnosis.</strong>
+        <strong>This is not a diagnosis. AI insights are advisory only.</strong>
       </p>
     </Card>
   );
@@ -491,15 +560,21 @@ export default function SymptomCheckInner() {
                 </div>
               ))}
             </div>
+            {aiInsights && (
+              <Card className="bg-blue-50 border-blue-200">
+                <p className="text-xs font-semibold text-blue-800 mb-1">AI Insights (Non-Diagnostic)</p>
+                <p className="text-sm text-blue-700">{aiInsights}</p>
+              </Card>
+            )}
             <div className="flex gap-2">
               <Button variant="outline" onClick={handleEditAnswers}>Edit my answers</Button>
               {!attached ? (
-                <Button variant="primary" onClick={handleNavigationComplete} disabled={!patientId}>
+                <Button variant="primary" onClick={handleNavigationComplete}>
                   Complete Review
                 </Button>
               ) : (
                 <Button variant="primary" onClick={sendToCareTeam} isLoading={loading || sending} disabled={loading || sending || !patientId}>
-                  Share with My Care Team
+                  {usingAI ? 'Generating AI Summary...' : 'Share with My Care Team'}
                 </Button>
               )}
             </div>
@@ -518,10 +593,16 @@ export default function SymptomCheckInner() {
                 : 'This information is for your personal reference. Connect to a care team to share with a clinician.'}
             </p>
             <div className="space-y-1">
-              {generateEducation(triageLevel).map((tip, idx) => (
+              {(aiEducation.length > 0 ? aiEducation : generateEducation(triageLevel)).map((tip, idx) => (
                 <p key={idx} className="text-sm text-gray-700">• {tip}</p>
               ))}
             </div>
+            {aiInsights && (
+              <Card className="bg-blue-50 border-blue-200">
+                <p className="text-xs font-semibold text-blue-800 mb-1">AI Insights (Non-Diagnostic)</p>
+                <p className="text-sm text-blue-700">{aiInsights}</p>
+              </Card>
+            )}
             {attached ? (
               <div className="flex gap-2">
                 <Button variant="primary" onClick={() => router.push('/messages')}>Message care team</Button>

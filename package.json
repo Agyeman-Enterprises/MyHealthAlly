@@ -11,5 +11,8 @@
     "typecheck": "cd pwa && npm run typecheck",
     "verify": "cd pwa && npm run verify",
     "test": "cd pwa && npm run test"
+  },
+  "devDependencies": {
+    "next": "^14.0.4"
   }
 }

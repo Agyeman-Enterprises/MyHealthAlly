@@ -33,8 +33,11 @@ const withPWA = require('next-pwa')({
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  // Note: API base URL is now autoconfigured via getApiBaseUrl() utility
+  // No need to set default here - autoconfig handles it
   env: {
-    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000',
+    // Only set if explicitly provided - autoconfig will handle the rest
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
   },
   // Security headers
   async headers() {

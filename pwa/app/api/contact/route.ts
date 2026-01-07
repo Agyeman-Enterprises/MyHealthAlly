@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUserAndPatient } from '@/lib/supabase/queries-settings';
 import { supabase } from '@/lib/supabase/client';
+import { sendContactFormEmail } from '@/lib/services/email-service';
 
 /**
  * Contact form submission endpoint
@@ -19,10 +20,9 @@ export async function POST(req: Request) {
     }
 
     // Get user info
-    const { userRecord, patientId } = await getCurrentUserAndPatient();
+    const { userRecord, patientId, user } = await getCurrentUserAndPatient();
     
     // Save contact message to database
-    // In production, this could also send an email notification
     const { data, error } = await supabase
       .from('contact_messages')
       .insert({
@@ -43,6 +43,22 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
+
+    // Send email notification via Resend (if configured)
+    const userName = user?.firstName && user?.lastName 
+      ? `${user.firstName} ${user.lastName}` 
+      : undefined;
+    
+    await sendContactFormEmail({
+      from: userRecord.email || 'unknown@myhealthally.com',
+      subject,
+      message,
+      userName,
+      patientId: patientId || undefined,
+    }).catch((err) => {
+      // Log but don't fail the request if email fails
+      console.error('Failed to send contact form email:', err);
+    });
 
     return NextResponse.json({
       success: true,

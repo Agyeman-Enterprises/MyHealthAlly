@@ -1,14 +1,20 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { useRequireAuth } from '@/lib/auth/use-require-auth';
+import { getCurrentUserAndPatient } from '@/lib/supabase/queries-settings';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 import { DisclaimerBanner } from '@/components/ui/DisclaimerBanner';
 
 const quickActions = [
+  { name: 'AI Assistant', description: 'Ask health questions', href: '/ai-assistant', icon: '🤖', color: 'from-violet-400 to-violet-600' },
   { name: 'Messages', description: 'Contact care team', href: '/messages', icon: '💬', color: 'from-primary-400 to-primary-500' },
+  { name: 'Hospital/ED', description: 'Send records to hospital', href: '/hospital-records-request', icon: '🏥', color: 'from-red-400 to-red-600' },
+  { name: 'Visit History', description: 'View hospital visits', href: '/hospital-visits', icon: '📋', color: 'from-orange-400 to-orange-600' },
+  { name: 'Follow-up Reminders', description: 'Post-discharge care', href: '/follow-up-reminders', icon: '🔔', color: 'from-purple-400 to-purple-600' },
   { name: 'Vitals', description: 'Record health data', href: '/vitals', icon: '📊', color: 'from-sky-400 to-sky-500' },
   { name: 'Medications', description: 'View prescriptions', href: '/medications', icon: '💊', color: 'from-pink-400 to-pink-500' },
   { name: 'Appointments', description: 'Schedule & view', href: '/appointments', icon: '📅', color: 'from-amber-400 to-amber-500' },
@@ -27,8 +33,36 @@ const quickActions = [
 export default function DashboardPage() {
   const router = useRouter();
   const { isLoading } = useRequireAuth();
+  const [checkingAttachment, setCheckingAttachment] = useState(true);
 
-  if (isLoading) {
+  // Check if user needs to complete onboarding (not attached to a practice)
+  useEffect(() => {
+    const checkAttachment = async () => {
+      if (isLoading) return;
+      
+      try {
+        const { patient } = await getCurrentUserAndPatient();
+        
+        // If not attached, redirect to onboarding
+        if (!patient || patient.attachment_status !== 'ATTACHED' || !patient.practice_id) {
+          router.replace('/onboarding/select-practice');
+          return;
+        }
+        
+        setCheckingAttachment(false);
+      } catch (err) {
+        console.error('Error checking attachment:', err);
+        // On error, allow access (fail open)
+        setCheckingAttachment(false);
+      }
+    };
+
+    if (!isLoading) {
+      checkAttachment();
+    }
+  }, [isLoading, router]);
+
+  if (isLoading || checkingAttachment) {
     return null;
   }
 

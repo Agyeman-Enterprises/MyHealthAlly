@@ -33,6 +33,9 @@ const EnvSchema = z.object({
   // OpenAI (for transcription)
   OPENAI_API_KEY: z.string().min(1).optional(),
 
+  // Anthropic (for symptom analysis and AI features)
+  ANTHROPIC_API_KEY: z.string().min(1).optional(),
+
   // Inbound webhooks (SoloPractice -> MHA)
   INBOUND_WEBHOOK_SECRET: z.string().min(1).optional(),
 
@@ -57,6 +60,14 @@ const EnvSchema = z.object({
   WITHINGS_CLIENT_SECRET: z.string().min(1).optional(),
   DEXCOM_CLIENT_ID: z.string().min(1).optional(),
   DEXCOM_CLIENT_SECRET: z.string().min(1).optional(),
+
+  // Redis (Upstash) - for production rate limiting and caching
+  UPSTASH_REDIS_REST_URL: z.string().url().optional(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
+
+  // Resend (Email service)
+  RESEND_API_KEY: z.string().min(1).optional(),
+  RESEND_FROM_EMAIL: z.string().email().optional(), // Default from address
 });
 
 // Note: This file IS the validated env - we parse process.env here

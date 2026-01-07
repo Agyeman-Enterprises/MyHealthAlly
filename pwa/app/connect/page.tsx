@@ -55,6 +55,18 @@ export default function ConnectPage() {
               </div>
             </Card>
 
+            <Card hover className="cursor-pointer" onClick={() => router.push('/connect/bookadoc2u')}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-navy-600">BookADoc2U</h3>
+                  <p className="text-sm text-gray-500 mt-1">Healthcare services and appointments</p>
+                </div>
+                <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </Card>
+
             <Card hover className="cursor-pointer" onClick={() => router.push('/connect/invite')}>
               <div className="flex items-center justify-between">
                 <div>

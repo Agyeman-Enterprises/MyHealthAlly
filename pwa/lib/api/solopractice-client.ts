@@ -7,9 +7,28 @@
 
 import axios from 'axios';
 import type { AxiosInstance, AxiosError } from 'axios';
-import { env } from '@/lib/env';
+import { getApiBaseUrl, getApiBaseUrlBrowser, getApiBaseUrlServer } from '@/lib/utils/api-base-url';
 
-const API_BASE_URL = env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+/**
+ * Get API base URL - lazy evaluation for server-side
+ * Browser: uses window.location.origin immediately
+ * Server: evaluated per-request or uses autoconfig
+ * NO HARDCODED FALLBACKS - fully autoconfigured!
+ */
+function getApiBaseUrlLazy(): string {
+  // Browser: can use immediately
+  if (typeof window !== 'undefined') {
+    return getApiBaseUrlBrowser();
+  }
+  // Server: try autoconfig (Vercel URL, env var)
+  // Note: For per-request URLs, use getApiBaseUrlFromRequest() instead
+  // If autoconfig fails, it will throw - no hardcoded fallbacks!
+  return getApiBaseUrlServer();
+}
+
+// API base URL - fully autoconfigured (NO hardcoded URLs)
+// Note: For server-side API routes, use getApiBaseUrlFromRequest(request) for per-request URLs
+const API_BASE_URL = getApiBaseUrlLazy();
 
 export type SPCreateOrGetPatientInput = {
   tenantPracticeId: string; // maps to your practice_id

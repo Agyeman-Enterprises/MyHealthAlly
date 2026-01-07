@@ -9,11 +9,14 @@ import { Button } from '@/components/ui/Button';
 import { DisclaimerBanner } from '@/components/ui/DisclaimerBanner';
 
 const docTypes = [
+  { value: 'discharge_summary', label: 'Discharge Summary (Hospital/ED)' },
   { value: 'insurance_front', label: 'Insurance Card - Front' },
   { value: 'insurance_back', label: 'Insurance Card - Back' },
   { value: 'id', label: 'Photo ID' },
   { value: 'referral', label: 'Referral Letter' },
   { value: 'records', label: 'Medical Records' },
+  { value: 'lab_result', label: 'Lab Results' },
+  { value: 'imaging', label: 'Imaging Results' },
   { value: 'other', label: 'Other' },
 ];
 
@@ -160,6 +163,16 @@ export default function UploadDocumentPage() {
 
         <Card>
           <h1 className="text-xl font-bold text-navy-600 mb-4">Upload Document</h1>
+          
+          {docType === 'discharge_summary' && (
+            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
+              <p className="text-sm text-blue-800">
+                <strong>Discharge Summary Upload:</strong> Upload your discharge summary from a hospital or emergency department visit. 
+                Your care team will review this document and update your medical records accordingly.
+              </p>
+            </div>
+          )}
+
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Document Type *</label>

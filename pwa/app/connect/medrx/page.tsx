@@ -39,6 +39,22 @@ export default function ConnectMedRxPage() {
     setError(null);
 
     try {
+      // Ensure Supabase session is valid before calling getCurrentUserAndPatient
+      const { supabase } = await import('@/lib/supabase/client');
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        // Try to refresh the session
+        const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError || !refreshedSession) {
+          setError('Your session has expired. Please log in again.');
+          setConnecting(false);
+          router.push('/auth/login');
+          return;
+        }
+      }
+
       const { user, patient } = await getCurrentUserAndPatient();
 
       if (!user || !patient) {

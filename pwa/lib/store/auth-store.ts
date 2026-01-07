@@ -38,11 +38,11 @@ export interface AuthStore {
   practiceId: string | null;
   
   // Patient Actions
-  login: (user: User, token?: string) => void;
+  login: (user: User, token?: string, rememberMe?: boolean) => void;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
-  initialize: () => void;
-  completeMfa: (session: Session, user: User) => void;
+  initialize: () => Promise<void>;
+  completeMfa: (session: Session, user: User, rememberMe?: boolean) => void;
   requestMfaCode: (email: string) => Promise<void>;
   
   // Provider Actions
@@ -55,17 +55,21 @@ export interface AuthStore {
   ) => void;
   
   // Supabase Auth
-  signInWithSupabase: (email: string, password: string) => Promise<void>;
+  signInWithSupabase: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
 }
 
 const AUTH_TOKEN_KEY = 'auth-token';
 
 /**
  * Set auth token as a cookie (readable by middleware)
+ * Extended duration for remember me functionality
  */
-function setAuthCookie(token: string): void {
+function setAuthCookie(token: string, rememberMe: boolean = false): void {
   if (typeof document !== 'undefined') {
-    document.cookie = `${AUTH_TOKEN_KEY}=${token}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days
+    const maxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7; // 30 days or 7 days
+    // Use Secure flag in production (HTTPS), SameSite for CSRF protection
+    const secureFlag = typeof window !== 'undefined' && window.location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `${AUTH_TOKEN_KEY}=${token}; path=/; max-age=${maxAge}; SameSite=Lax${secureFlag}`;
   }
 }
 
@@ -115,9 +119,9 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       // Patient login
-      login: (user: User, token?: string) => {
+      login: (user: User, token?: string, rememberMe: boolean = false) => {
         const authToken = token || generateMockToken(user.id);
-        setAuthCookie(authToken);
+        setAuthCookie(authToken, rememberMe);
         
         set({ 
           user, 
@@ -158,18 +162,65 @@ export const useAuthStore = create<AuthStore>()(
         });
       },
 
-      // Supabase sign in
-      signInWithSupabase: async (email: string, password: string) => {
+      // Supabase sign in with retry logic for network errors
+      signInWithSupabase: async (email: string, password: string, rememberMe: boolean = false) => {
         // Dynamic import to avoid SSR issues
         const { supabase } = await import('@/lib/supabase/client');
+        const { retryWithBackoff } = await import('@/lib/utils/network-retry');
         
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+        try {
+          // Retry on network failures
+          const result = await retryWithBackoff(
+            async () => {
+              const authResult = await supabase.auth.signInWithPassword({
+                email,
+                password,
+                options: {
+                  persistSession: true,
+                },
+              });
+              
+              // Throw if there's an error (so retry logic can catch it)
+              if (authResult.error) {
+                // Don't retry on authentication errors (invalid credentials, etc.)
+                if (
+                  authResult.error.message.includes('Invalid login credentials') ||
+                  authResult.error.message.includes('Email not confirmed') ||
+                  authResult.error.message.includes('User not found')
+                ) {
+                  throw authResult.error; // Throw immediately, don't retry
+                }
+                // Network errors will be retried
+                throw authResult.error;
+              }
+              
+              return authResult;
+            },
+            {
+              maxRetries: 3,
+              initialDelay: 1000,
+              retryableErrors: ['fetch', 'network', 'ECONNRESET', 'ETIMEDOUT'],
+            }
+          );
 
-        if (error) throw error;
-        if (!data.user) throw new Error('No user returned');
+          // Check for errors after retry
+          if (result.error) {
+            const error = result.error;
+            // Improve error messages
+            if (error.message.includes('Invalid login credentials')) {
+              throw new Error('Invalid email or password. Please check your credentials and try again.');
+            } else if (error.message.includes('Email not confirmed')) {
+              throw new Error('Please verify your email address before signing in. Check your inbox for a verification link.');
+            } else if (error.message.includes('Too many requests')) {
+              throw new Error('Too many login attempts. Please wait a few minutes and try again.');
+            } else if (error.message.includes('fetch') || error.message.includes('network')) {
+              throw new Error('Network error: Unable to connect to the server. Please check your internet connection and try again.');
+            }
+            throw error;
+          }
+          
+          const { data } = result;
+          if (!data?.user) throw new Error('No user returned from authentication');
 
         // Load patient ID from users table
         let patientId: string | undefined;
@@ -230,22 +281,34 @@ export const useAuthStore = create<AuthStore>()(
           return;
         }
 
-        setAuthCookie(data.session?.access_token || generateMockToken(user.id));
+          // Set auth cookie with extended duration if remember me
+          const cookieMaxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7; // 30 days or 7 days
+          const authToken = data.session?.access_token || generateMockToken(user.id);
+          if (typeof document !== 'undefined') {
+            document.cookie = `${AUTH_TOKEN_KEY}=${authToken}; path=/; max-age=${cookieMaxAge}; SameSite=Lax; Secure`;
+          }
 
-        const metaRole = typeof meta['role'] === 'string' ? (meta['role'] as string) : undefined;
-        const resolvedRole: 'patient' | 'provider' | 'admin' | null =
-          metaRole === 'provider' || metaRole === 'admin' ? metaRole : 'patient';
+          const metaRole = typeof meta['role'] === 'string' ? (meta['role'] as string) : undefined;
+          const resolvedRole: 'patient' | 'provider' | 'admin' | null =
+            metaRole === 'provider' || metaRole === 'admin' ? metaRole : 'patient';
 
-        set({
-          user,
-          isAuthenticated: true,
-          isInitialized: true,
-          mfaRequired: false,
-          mfaEmail: null,
-          role: resolvedRole,
-          accessToken: data.session?.access_token || null,
-          refreshToken: data.session?.refresh_token || null,
-        });
+          set({
+            user,
+            isAuthenticated: true,
+            isInitialized: true,
+            mfaRequired: false,
+            mfaEmail: null,
+            role: resolvedRole,
+            accessToken: data.session?.access_token || null,
+            refreshToken: data.session?.refresh_token || null,
+          });
+        } catch (err) {
+          // Re-throw with better error handling
+          if (err instanceof Error) {
+            throw err;
+          }
+          throw new Error('Authentication failed. Please try again.');
+        }
       },
 
       // Logout
@@ -281,8 +344,8 @@ export const useAuthStore = create<AuthStore>()(
         });
       },
 
-      completeMfa: (session: Session, user: User) => {
-        setAuthCookie(session?.access_token || generateMockToken(user.id));
+      completeMfa: (session: Session, user: User, rememberMe: boolean = false) => {
+        setAuthCookie(session?.access_token || generateMockToken(user.id), rememberMe);
         set({
           user,
           isAuthenticated: true,
@@ -300,9 +363,68 @@ export const useAuthStore = create<AuthStore>()(
         await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
       },
 
-      // Initialize from storage
-      initialize: () => {
-        // Zustand persist handles this automatically
+      // Initialize from storage and restore Supabase session
+      initialize: async () => {
+        // Zustand persist handles state restoration automatically
+        set({ isInitialized: false }); // Set to false first to prevent premature redirects
+        
+        try {
+          // Try to restore Supabase session
+          const { supabase } = await import('@/lib/supabase/client');
+          const { data: { session }, error } = await supabase.auth.getSession();
+          
+          if (!error && session) {
+            // Session exists, restore user state
+            const { data: { user: authUser } } = await supabase.auth.getUser();
+            
+            if (authUser) {
+              // Load user record
+              const { data: userRecord } = await supabase
+                .from('users')
+                .select('id, patients(id), role')
+                .eq('supabase_auth_id', authUser.id)
+                .single();
+              
+              if (userRecord) {
+                const patientsArray = userRecord.patients 
+                  ? (Array.isArray(userRecord.patients) ? userRecord.patients : [userRecord.patients])
+                  : [];
+                const patientId = patientsArray[0]?.id || null;
+                
+                const meta = (authUser.user_metadata || {}) as Record<string, unknown>;
+                const user: User = {
+                  id: authUser.id,
+                  email: authUser.email || '',
+                  firstName: typeof meta['first_name'] === 'string' ? (meta['first_name'] as string) : '',
+                  lastName: typeof meta['last_name'] === 'string' ? (meta['last_name'] as string) : '',
+                  patientId: patientId,
+                  role: userRecord.role || 'patient',
+                };
+                
+                const metaRole = typeof meta['role'] === 'string' ? (meta['role'] as string) : undefined;
+                const resolvedRole: 'patient' | 'provider' | 'admin' | null =
+                  metaRole === 'provider' || metaRole === 'admin' ? metaRole : (userRecord.role || 'patient');
+                
+                setAuthCookie(session.access_token || generateMockToken(user.id));
+                
+                set({
+                  user,
+                  isAuthenticated: true,
+                  isInitialized: true,
+                  role: resolvedRole,
+                  accessToken: session.access_token || null,
+                  refreshToken: session.refresh_token || null,
+                });
+                return;
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Error restoring session:', err);
+          // Continue with initialization even if session restore fails
+        }
+        
+        // Mark as initialized (even if no session found)
         set({ isInitialized: true });
       },
     }),

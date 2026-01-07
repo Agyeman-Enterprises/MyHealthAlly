@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import Link from 'next/link';
@@ -12,14 +12,26 @@ export default function ProviderLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
   const { isAuthenticated, role, logout } = useAuthStore();
 
+  // Handle client-side mounting
   useEffect(() => {
-    // Skip auth check on login page
-    if (pathname === '/provider/login') {
-      return;
-    }
+    setMounted(true);
+  }, []);
 
+  // CRITICAL: ALWAYS allow login page to render FIRST (before any auth checks)
+  // This prevents blocking during Zustand hydration or SSR
+  // During SSR (!mounted), always render children to avoid hydration mismatch
+  // On login page, always render immediately
+  const isLoginPage = pathname === '/provider/login';
+  
+  if (!mounted || isLoginPage) {
+    // During SSR (!mounted) or on login page, render immediately
+    return <>{children}</>;
+  }
+
+  useEffect(() => {
     // Wait a moment for Zustand to hydrate from localStorage
     const checkAuth = setTimeout(() => {
       // Strong security: Check authentication and role
@@ -40,14 +52,10 @@ export default function ProviderLayout({
     return () => clearTimeout(checkAuth);
   }, [isAuthenticated, role, router, pathname]);
 
-  // Strong security: Don't render anything if not authorized (except login page)
-  if (pathname !== '/provider/login' && (!isAuthenticated || (role !== 'provider' && role !== 'admin'))) {
+  // Strong security: Don't render anything if not authorized
+  // (login page already handled above)
+  if (!isAuthenticated || (role !== 'provider' && role !== 'admin')) {
     return null;
-  }
-
-  // Don't show layout header/nav on login page
-  if (pathname === '/provider/login') {
-    return <>{children}</>;
   }
 
   const isActive = (path: string) => pathname === path;
