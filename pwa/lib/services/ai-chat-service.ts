@@ -7,6 +7,9 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { env } from '@/lib/env';
 import * as redis from '@/lib/redis/client';
+import { recordAIUsage } from './ai-usage-tracking';
+import { throttleAIUsage } from './usage-throttle';
+import { getOveragePolicy } from './usage-policies';
 
 const anthropic = env.ANTHROPIC_API_KEY
   ? new Anthropic({
@@ -23,7 +26,9 @@ export interface ChatMessage {
 export interface ChatRequest {
   message: string;
   conversationHistory?: ChatMessage[];
-  userId?: string; // For user-scoped caching
+  userId?: string; // For user-scoped caching and usage tracking
+  subscriptionId?: string; // For user subscription usage tracking
+  practiceSubscriptionId?: string; // For practice subscription usage tracking
   isAdmin?: boolean; // For admin bypass
 }
 
@@ -232,6 +237,33 @@ export async function chatWithAssistant(
     );
   }
 
+  // Check usage limits (throttling) - only for non-admin users
+  if (!request.isAdmin) {
+    // Get plan policy for overage handling
+    let planId: string | undefined;
+    if (request.subscriptionId || request.practiceSubscriptionId || request.userId) {
+      // We'll get the plan ID from the subscription, but for now use default policy
+      planId = 'individual'; // Default, will be fetched from subscription in production
+    }
+    
+    const policy = planId ? getOveragePolicy(planId) : 'allow_with_billing';
+    const throttleResult = await throttleAIUsage(
+      request.subscriptionId,
+      request.practiceSubscriptionId,
+      request.userId,
+      policy
+    );
+
+    if (!throttleResult.allowed) {
+      throw new Error(throttleResult.reason || 'Usage limit exceeded');
+    }
+
+    // If overage is allowed but we're over limit, log a warning
+    if (throttleResult.overageAllowed && throttleResult.remaining === 0) {
+      console.warn(`User exceeded usage limit but overage billing is enabled. Usage will be tracked for billing.`);
+    }
+  }
+
   // Check cache (user-scoped, Redis-backed)
   const userId = request.userId || userIdentifier;
   const cacheKey = `cache:ai-chat:${generateCacheKey(userId, request.message, request.conversationHistory)}`;
@@ -276,6 +308,46 @@ export async function chatWithAssistant(
       response.content[0]?.type === 'text'
         ? response.content[0].text
         : "I'm sorry, I couldn't generate a response. Please try again.";
+
+    // Track AI usage for billing (non-blocking)
+    try {
+      const inputTokens = response.usage?.input_tokens || 0;
+      const outputTokens = response.usage?.output_tokens || 0;
+      const totalTokens = inputTokens + outputTokens;
+
+      // Record usage (async, don't block response)
+      const usageRecord: {
+        userId?: string;
+        subscriptionId?: string;
+        practiceSubscriptionId?: string;
+        interactionType: 'chat';
+        tokensUsed: number;
+        inputTokens: number;
+        outputTokens: number;
+        costCents: number;
+        metadata: Record<string, unknown>;
+      } = {
+        interactionType: 'chat',
+        tokensUsed: totalTokens,
+        inputTokens,
+        outputTokens,
+        costCents: 0, // Will be calculated by service
+        metadata: {
+          cacheKey,
+          model: 'claude-3-5-sonnet-20241022',
+        },
+      };
+      
+      if (request.userId) usageRecord.userId = request.userId;
+      if (request.subscriptionId) usageRecord.subscriptionId = request.subscriptionId;
+      if (request.practiceSubscriptionId) usageRecord.practiceSubscriptionId = request.practiceSubscriptionId;
+      
+      recordAIUsage(usageRecord).catch((err) => {
+        console.error('Failed to record AI usage:', err);
+      });
+    } catch (usageError) {
+      console.error('Error tracking AI usage:', usageError);
+    }
 
     // Sanitize response
     const sanitized = sanitizeResponse(responseText);
