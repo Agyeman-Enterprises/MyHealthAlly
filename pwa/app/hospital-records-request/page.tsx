@@ -33,15 +33,24 @@ export default function HospitalRecordsRequestPage() {
   });
   const [medications, setMedications] = useState<Medication[]>([]);
   const [allergies, setAllergies] = useState<Array<{ allergen: string; reaction: string; severity: string }>>([]);
+  const [chronicConditions, setChronicConditions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Load patient medications and allergies
+  // Load patient medications, allergies, and past medical history
   useEffect(() => {
     const loadPatientData = async () => {
       try {
+        // Check for session first
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          setError('Please log in to access this page');
+          setLoadingData(false);
+          return;
+        }
+
         const { patientId } = await getCurrentUserAndPatient();
         if (!patientId) {
           setLoadingData(false);
@@ -52,18 +61,26 @@ export default function HospitalRecordsRequestPage() {
         const meds = await getPatientMedications(patientId);
         setMedications(meds.filter(m => m.is_active)); // Only active medications
 
-        // Load allergies from patient record
+        // Load allergies and chronic conditions from patient record
         const { data: patient } = await supabase
           .from('patients')
-          .select('allergies')
+          .select('allergies, chronic_conditions')
           .eq('id', patientId)
           .single();
 
         if (patient?.allergies && Array.isArray(patient.allergies)) {
           setAllergies(patient.allergies);
         }
+
+        if (patient?.chronic_conditions && Array.isArray(patient.chronic_conditions)) {
+          setChronicConditions(patient.chronic_conditions);
+        }
       } catch (err) {
         console.error('Error loading patient data:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load patient data';
+        if (errorMessage.includes('not authenticated') || errorMessage.includes('session')) {
+          setError('Please log in to access this page');
+        }
       } finally {
         setLoadingData(false);
       }
@@ -116,6 +133,30 @@ export default function HospitalRecordsRequestPage() {
       .join('\n');
   };
 
+  const formatPastMedicalHistory = (): string => {
+    if (chronicConditions.length === 0) {
+      return 'No chronic conditions on record.';
+    }
+
+    return chronicConditions
+      .map((condition) => `• ${condition}`)
+      .join('\n');
+  };
+
+  const formatVisitNotes = (): string => {
+    const notes: string[] = [];
+    
+    if (formData.reason) {
+      notes.push(`Reason for Visit: ${formData.reason}`);
+    }
+    
+    if (formData.additionalNotes) {
+      notes.push(`Additional Notes: ${formData.additionalNotes}`);
+    }
+    
+    return notes.length > 0 ? notes.join('\n\n') : 'No visit notes provided.';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.hospitalName.trim() || !formData.visitDate) {
@@ -128,15 +169,21 @@ export default function HospitalRecordsRequestPage() {
     setSuccess(null);
 
     try {
-      // Format medication and allergy history
+      // Format all patient information
       const medicationHistory = formatMedicationList();
       const allergyHistory = formatAllergyList();
+      const pastMedicalHistory = formatPastMedicalHistory();
+      const visitNotes = formatVisitNotes();
 
       // Format authorization message for care team
-      const message = `Hospital Records Request - Authorization to Send Medication & Allergy History
+      const message = `Hospital Records Request - Authorization to Send Medical Records
 
 PATIENT AUTHORIZATION:
-I authorize my care team to send my medication history and allergy information to the hospital/facility listed below.
+I authorize my care team to send my complete medical information to the hospital/facility listed below, including:
+- Past Medical History (Chronic Conditions)
+- Current Medications
+- Allergies
+- Visit Notes
 
 HOSPITAL/FACILITY INFORMATION:
 Name: ${formData.hospitalName}
@@ -148,7 +195,9 @@ Contact Email: ${formData.contactEmail || 'Not provided'}
 VISIT INFORMATION:
 Visit Date: ${formData.visitDate}
 Visit Type: ${formData.visitType}
-Reason for Visit: ${formData.reason || 'Not provided'}
+
+PAST MEDICAL HISTORY (to be sent):
+${pastMedicalHistory}
 
 CURRENT MEDICATION HISTORY (to be sent):
 ${medicationHistory}
@@ -156,8 +205,8 @@ ${medicationHistory}
 CURRENT ALLERGY HISTORY (to be sent):
 ${allergyHistory}
 
-ADDITIONAL NOTES:
-${formData.additionalNotes || 'None'}
+VISIT NOTES (to be sent):
+${visitNotes}
 
 Please send this information to the hospital/facility as requested.`;
 
@@ -207,8 +256,9 @@ Please send this information to the hospital/facility as requested.`;
         <Card variant="elevated" className="p-6 mb-6">
           <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
             <p className="text-sm text-blue-800">
-              <strong>Send Medical Records to Hospital/ED:</strong> Authorize your care team to send your current medication history 
-              and allergy information to a hospital or emergency department. This helps ensure the hospital has your complete medical information.
+              <strong>Send Medical Records to Hospital/ED:</strong> Authorize your care team to send your complete medical information 
+              to a hospital or emergency department, including past medical history (chronic conditions), current medications, allergies, 
+              and visit notes. This helps ensure the hospital has your complete medical information.
             </p>
           </div>
 
@@ -225,6 +275,14 @@ Please send this information to the hospital/facility as requested.`;
             <h3 className="font-semibold text-navy-600 mb-3">Your Current Allergy History</h3>
             <div className="text-sm text-gray-700 whitespace-pre-wrap font-mono">
               {allergies.length > 0 ? formatAllergyList() : 'No known allergies on record.'}
+            </div>
+          </Card>
+
+          {/* Display Past Medical History */}
+          <Card className="mb-6 bg-gray-50">
+            <h3 className="font-semibold text-navy-600 mb-3">Your Past Medical History (Chronic Conditions)</h3>
+            <div className="text-sm text-gray-700 whitespace-pre-wrap font-mono">
+              {chronicConditions.length > 0 ? formatPastMedicalHistory() : 'No chronic conditions on record.'}
             </div>
           </Card>
 
@@ -351,9 +409,9 @@ Please send this information to the hospital/facility as requested.`;
 
             <Card className="bg-yellow-50 border-yellow-200">
               <p className="text-sm text-yellow-800">
-                <strong>Authorization:</strong> By submitting this form, you authorize your care team to send your medication history 
-                and allergy information to the hospital/facility listed above. This information will be sent securely to help ensure 
-                the hospital has your complete medical information.
+                <strong>Authorization:</strong> By submitting this form, you authorize your care team to send your complete medical information 
+                (past medical history, medications, allergies, and visit notes) to the hospital/facility listed above. This information will be 
+                sent securely to help ensure the hospital has your complete medical information.
               </p>
             </Card>
 

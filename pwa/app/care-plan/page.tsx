@@ -5,7 +5,7 @@ import { useAuthStore } from '@/lib/store/auth-store';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
-import { RequirePractice } from '@/components/RequirePractice';
+import { useAttachmentStatus } from '@/lib/hooks/useAttachmentStatus';
 import { supabase } from '@/lib/supabase/client';
 import { getPatientCarePlans } from '@/lib/supabase/queries-careplans';
 
@@ -45,6 +45,7 @@ type CarePlan = {
 
 export default function CarePlanPage() {
   const { isLoading } = useRequireAuth();
+  const { attached } = useAttachmentStatus();
   const [patientId, setPatientId] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('overview');
   const [loading, setLoading] = useState(true);
@@ -180,8 +181,16 @@ export default function CarePlanPage() {
         <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-navy-600">Care Plan</h1>
-          <p className="text-gray-600">Track your health goals and activities</p>
+          <p className="text-gray-600">
+            {attached ? 'Track your health goals and activities' : 'Create and track your personal health goals and activities'}
+          </p>
         </div>
+
+        {!attached && (
+          <div className="mb-6 rounded-md border border-yellow-300 bg-yellow-50 p-4 text-sm">
+            <strong>Wellness Mode:</strong> Create and track your own care plan for personal wellness.
+          </div>
+        )}
 
         {loading && <p className="text-sm text-gray-500 mb-4">Loading care plan…</p>}
         {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
@@ -190,7 +199,9 @@ export default function CarePlanPage() {
         <Card className="mb-6 bg-gradient-to-r from-primary-100 to-sky-100 border-primary-200">
           <p className="text-xs text-primary-700 uppercase tracking-wide mb-1">ACTIVE PLAN</p>
           <h2 className="text-lg font-bold text-navy-600">{carePlan?.title || 'No active plan'}</h2>
-          <p className="text-gray-600 text-sm">{carePlan?.description || 'Work with your care team to set up your plan.'}</p>
+          <p className="text-gray-600 text-sm">
+            {carePlan?.description || 'Create your own care plan to track your health goals and activities.'}
+          </p>
           <div className="grid grid-cols-3 gap-4 mt-4 text-center">
             <div><p className="text-2xl font-bold text-primary-600">{goals.length}</p><p className="text-xs text-gray-500">Goals</p></div>
             <div><p className="text-2xl font-bold text-primary-600">{completedActivities}/{activities.length}</p><p className="text-xs text-gray-500">Done today</p></div>
@@ -277,9 +288,5 @@ export default function CarePlanPage() {
     );
   }
 
-  return (
-    <RequirePractice featureName="Care Plan">
-      <CarePlanPageInner />
-    </RequirePractice>
-  );
+  return <CarePlanPageInner />;
 }

@@ -8,7 +8,7 @@ import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { RequirePractice } from '@/components/RequirePractice';
+import { useAttachmentStatus } from '@/lib/hooks/useAttachmentStatus';
 import { getPatientLabResults, type LabResult } from '@/lib/supabase/queries-results';
 
 interface Lab {
@@ -25,6 +25,7 @@ export default function LabsPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading } = useRequireAuth();
   const patientId = useAuthStore((state) => state.patientId);
+  const { attached } = useAttachmentStatus();
   const [labs, setLabs] = useState<Lab[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -93,15 +94,26 @@ export default function LabsPage() {
         <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-navy-600">Lab Results</h1>
-          <p className="text-gray-600">View your laboratory test results</p>
+          <p className="text-gray-600">
+            {attached ? 'View your laboratory test results' : 'Track your laboratory test results for personal wellness'}
+          </p>
         </div>
 
-        <Card className="mb-6 bg-primary-50 border-primary-200">
-          <p className="text-sm text-navy-600">
-            💡 <strong>Note:</strong> Lab results are typically available 1-3 days after your test. 
-            For questions about your results, please <Link href="/messages/new?recipient=care-team&subject=Question about Lab Results&context=lab results" className="text-primary-600 hover:underline">message your care team</Link>.
-          </p>
-        </Card>
+        {!attached && (
+          <div className="mb-6 rounded-md border border-yellow-300 bg-yellow-50 p-4 text-sm">
+            <strong>Wellness Mode:</strong> These lab results are for your personal tracking only.
+            <Link href="/connect" className="ml-1 text-blue-600 underline">Connect to a care team</Link> to share results with your provider.
+          </div>
+        )}
+
+        {attached && (
+          <Card className="mb-6 bg-primary-50 border-primary-200">
+            <p className="text-sm text-navy-600">
+              💡 <strong>Note:</strong> Lab results are typically available 1-3 days after your test. 
+              For questions about your results, please <Link href="/messages/new?recipient=care-team&subject=Question about Lab Results&context=lab results" className="text-primary-600 hover:underline">message your care team</Link>.
+            </p>
+          </Card>
+        )}
 
         {error && (
           <Card className="mb-6 bg-amber-50 border-amber-200">
@@ -151,8 +163,26 @@ export default function LabsPage() {
               <span className="text-3xl">🔬</span>
             </div>
             <h3 className="text-lg font-semibold text-navy-600 mb-2">No lab results yet</h3>
-            <p className="text-gray-600 mb-6">Your lab results will appear here once available</p>
-            <Button variant="outline" onClick={() => router.push('/messages/new?recipient=care-team&subject=Question about Lab Results&context=lab results')}>Message Your Care Team</Button>
+            <p className="text-gray-600 mb-6">
+              {attached 
+                ? 'Your lab results will appear here once available'
+                : 'You can enter lab results manually for personal tracking, or connect to a care team to receive results from your provider'
+              }
+            </p>
+            {attached ? (
+              <Button variant="outline" onClick={() => router.push('/messages/new?recipient=care-team&subject=Question about Lab Results&context=lab results')}>
+                Message Your Care Team
+              </Button>
+            ) : (
+              <div className="flex gap-3 justify-center">
+                <Button variant="outline" onClick={() => router.push('/connect')}>
+                  Connect to Care Team
+                </Button>
+                <Button variant="primary" onClick={() => router.push('/labs/enter')}>
+                  Enter Lab Result
+                </Button>
+              </div>
+            )}
           </Card>
         )}
         </main>
@@ -161,9 +191,5 @@ export default function LabsPage() {
     );
   }
 
-  return (
-    <RequirePractice featureName="Lab Results">
-      <LabsPageInner />
-    </RequirePractice>
-  );
+  return <LabsPageInner />;
 }

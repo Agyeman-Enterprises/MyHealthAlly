@@ -12,6 +12,9 @@ const anthropic = env.ANTHROPIC_API_KEY
     })
   : null;
 
+// Development mode: Stricter token limits to conserve API usage
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 export interface SymptomAnalysisRequest {
   chiefConcern: string;
   category: string | null;
@@ -81,7 +84,7 @@ ${answers.map((a) => `${a.question}: ${a.answer}`).join('\n')}
     // Generate patient-safe summary
     const patientSummaryResponse = await anthropic.messages.create({
       model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 500,
+      max_tokens: isDevelopment ? 250 : 500,
       system: SYSTEM_PROMPT,
       messages: [
         {
@@ -101,7 +104,7 @@ ${symptomContext}`,
     // Generate clinician summary
     const clinicianSummaryResponse = await anthropic.messages.create({
       model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 800,
+      max_tokens: isDevelopment ? 400 : 800,
       system: SYSTEM_PROMPT,
       messages: [
         {
@@ -121,7 +124,7 @@ ${symptomContext}`,
     // Generate educational content
     const educationResponse = await anthropic.messages.create({
       model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 400,
+      max_tokens: isDevelopment ? 200 : 400,
       system: SYSTEM_PROMPT,
       messages: [
         {
@@ -155,7 +158,7 @@ ${symptomContext}`,
     // Generate general insights (non-diagnostic)
     const insightsResponse = await anthropic.messages.create({
       model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 300,
+      max_tokens: isDevelopment ? 150 : 300,
       system: SYSTEM_PROMPT,
       messages: [
         {

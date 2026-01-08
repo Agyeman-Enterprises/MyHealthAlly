@@ -109,7 +109,9 @@ export function VoiceInput({ onTranscript, disabled = false, className = '', siz
     }
 
     const recognition = new SpeechRecognition();
-    recognition.continuous = true;
+    // For form fields: non-continuous - stops after user pauses
+    // This ensures each field only gets its own input, not all fields
+    recognition.continuous = false;
     recognition.interimResults = true;
     recognition.lang = userLanguage;
 
@@ -131,9 +133,15 @@ export function VoiceInput({ onTranscript, disabled = false, className = '', siz
         }
       }
 
+      // Only show interim results in UI, don't call onTranscript yet
       const fullTranscript = (finalTranscript + interimTranscript).trim();
       setLiveTranscript(fullTranscript);
-      onTranscript(fullTranscript);
+      
+      // Only call onTranscript with final results (when user stops speaking)
+      // This prevents all fields from getting the same transcript
+      if (finalTranscriptRef.current.trim()) {
+        // Don't call onTranscript here - wait for onend
+      }
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
@@ -147,12 +155,20 @@ export function VoiceInput({ onTranscript, disabled = false, className = '', siz
     };
 
     recognition.onend = () => {
-      if (isRecording && recognitionRef.current) {
-        try {
-          recognition.start();
-        } catch {
-          // Already started
-        }
+      // When recognition ends (user stopped speaking), send the final transcript to the field
+      const finalText = finalTranscriptRef.current.trim();
+      if (finalText) {
+        onTranscript(finalText);
+        finalTranscriptRef.current = ''; // Clear for next recording
+        setLiveTranscript(''); // Clear live transcript
+      }
+      
+      // Stop recording when recognition ends (non-continuous mode)
+      // User can click mic again to record more
+      setIsRecording(false);
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
       }
     };
 

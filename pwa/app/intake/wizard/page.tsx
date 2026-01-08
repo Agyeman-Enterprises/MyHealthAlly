@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { MedicationLogger } from '@/components/medications/MedicationLogger';
+import { FormVoiceAssistant } from '@/components/voice/FormVoiceAssistant';
 
 type IntakeStep = 'demographics' | 'address' | 'emergency' | 'insurance' | 'medical' | 'review';
 
@@ -67,7 +68,6 @@ export default function IntakeWizardPage() {
   const [currentStep, setCurrentStep] = useState<IntakeStep>('demographics');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isDictating, setIsDictating] = useState(false);
   
   const [formData, setFormData] = useState<IntakeData>({
     firstName: '',
@@ -200,48 +200,6 @@ export default function IntakeWizardPage() {
     if (prevStep) setCurrentStep(prevStep);
   };
 
-  const startVoiceCommand = () => {
-    const SpeechRecognitionCtor =
-      typeof window !== 'undefined' &&
-      ((window as typeof window & { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).SpeechRecognition ||
-        (window as typeof window & { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).webkitSpeechRecognition);
-    if (!SpeechRecognitionCtor) {
-      setError('Voice input not supported in this browser.');
-      return;
-    }
-    try {
-      const recognition = new (SpeechRecognitionCtor as {
-        new (): {
-          lang: string;
-          interimResults: boolean;
-          continuous: boolean;
-          start: () => void;
-          stop: () => void;
-          onresult: ((event: unknown) => void) | null;
-          onerror: ((event: { error?: string }) => void) | null;
-          onend: (() => void) | null;
-        };
-      })();
-      recognition.lang = 'en-US';
-      recognition.interimResults = false;
-      recognition.continuous = true;
-      setIsDictating(true);
-      recognition.onresult = (event) => {
-        const evt = event as { results: Array<unknown> };
-        const res = evt.results?.[0] as unknown as { [key: number]: { transcript: string } } | undefined;
-        const transcript = res?.[0]?.transcript || '';
-        const lower = transcript.toLowerCase();
-        if (lower.includes('next')) goNext();
-        if (lower.includes('back') || lower.includes('previous')) goPrev();
-      };
-      recognition.onerror = () => {};
-      recognition.onend = () => setIsDictating(false);
-      recognition.start();
-    } catch (err) {
-      setIsDictating(false);
-      setError(err instanceof Error ? err.message : 'Unable to start voice command.');
-    }
-  };
 
   const saveProgress = async (partialData?: Partial<IntakeData>) => {
     let currentPatientId = patientId;
@@ -510,12 +468,14 @@ export default function IntakeWizardPage() {
                 label="First Name *"
                 value={formData.firstName}
                 onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                enableVoice={false}
                 required
               />
               <Input
                 label="Last Name *"
                 value={formData.lastName}
                 onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                enableVoice={false}
                 required
               />
             </div>
@@ -523,6 +483,7 @@ export default function IntakeWizardPage() {
               label="Preferred Name"
               value={formData.preferredName}
               onChange={(e) => setFormData({ ...formData, preferredName: e.target.value })}
+              enableVoice={false}
             />
             <div className="grid grid-cols-2 gap-4">
               <Input
@@ -530,6 +491,7 @@ export default function IntakeWizardPage() {
                 type="date"
                 value={formData.dateOfBirth}
                 onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                enableVoice={false}
                 required
               />
               <div>
@@ -552,6 +514,7 @@ export default function IntakeWizardPage() {
               type="number"
               value={formData.heightInches}
               onChange={(e) => setFormData({ ...formData, heightInches: e.target.value })}
+              enableVoice={false}
             />
           </div>
         );
@@ -564,24 +527,28 @@ export default function IntakeWizardPage() {
               label="Street Address *"
               value={formData.street1}
               onChange={(e) => setFormData({ ...formData, street1: e.target.value })}
+              enableVoice={false}
               required
             />
             <Input
               label="Apartment/Unit"
               value={formData.street2}
               onChange={(e) => setFormData({ ...formData, street2: e.target.value })}
+              enableVoice={false}
             />
             <div className="grid grid-cols-2 gap-4">
               <Input
                 label="City *"
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                enableVoice={false}
                 required
               />
               <Input
                 label="State *"
                 value={formData.state}
                 onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                enableVoice={false}
                 required
               />
             </div>
@@ -590,12 +557,14 @@ export default function IntakeWizardPage() {
                 label="ZIP Code *"
                 value={formData.zipCode}
                 onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
+                enableVoice={false}
                 required
               />
               <Input
                 label="Country"
                 value={formData.country}
                 onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                enableVoice={false}
               />
             </div>
           </div>
@@ -609,6 +578,7 @@ export default function IntakeWizardPage() {
               label="Contact Name *"
               value={formData.emergencyName}
               onChange={(e) => setFormData({ ...formData, emergencyName: e.target.value })}
+              enableVoice={false}
               required
             />
             <Input
@@ -616,6 +586,7 @@ export default function IntakeWizardPage() {
               value={formData.emergencyRelationship}
               onChange={(e) => setFormData({ ...formData, emergencyRelationship: e.target.value })}
               placeholder="e.g., Spouse, Parent, Friend"
+              enableVoice={false}
               required
             />
             <Input
@@ -623,6 +594,7 @@ export default function IntakeWizardPage() {
               type="tel"
               value={formData.emergencyPhone}
               onChange={(e) => setFormData({ ...formData, emergencyPhone: e.target.value })}
+              enableVoice={false}
               required
             />
             <Input
@@ -630,6 +602,7 @@ export default function IntakeWizardPage() {
               type="email"
               value={formData.emergencyEmail}
               onChange={(e) => setFormData({ ...formData, emergencyEmail: e.target.value })}
+              enableVoice={false}
             />
           </div>
         );
@@ -658,16 +631,19 @@ export default function IntakeWizardPage() {
               label="Insurance Provider"
               value={formData.insuranceProvider}
               onChange={(e) => setFormData({ ...formData, insuranceProvider: e.target.value })}
+              enableVoice={false}
             />
             <Input
               label="Policy Number"
               value={formData.insurancePolicyNumber}
               onChange={(e) => setFormData({ ...formData, insurancePolicyNumber: e.target.value })}
+              enableVoice={false}
             />
             <Input
               label="Group Number"
               value={formData.insuranceGroupNumber}
               onChange={(e) => setFormData({ ...formData, insuranceGroupNumber: e.target.value })}
+              enableVoice={false}
             />
             <p className="text-sm text-gray-500">
               💡 You can upload insurance card images in the Documents section.
@@ -876,11 +852,39 @@ export default function IntakeWizardPage() {
           <h1 className="text-2xl font-bold text-navy-600">Intake Forms</h1>
           <p className="text-gray-600">Step {currentStepIndex + 1} of {steps.length}</p>
         </div>
-        <div className="flex items-center gap-3 mb-4">
-          <Button variant="secondary" onClick={startVoiceCommand} disabled={isDictating}>
-            {isDictating ? 'Listening…' : 'Voice command (say "next" or "back")'}
-          </Button>
-          <p className="text-xs text-gray-500">Hands-free navigation; speak your answers, then say &quot;next&quot;.</p>
+        <div className="flex items-center justify-between mb-4 p-4 bg-primary-50 rounded-lg border border-primary-200">
+          <div className="flex-1">
+            <p className="text-sm font-medium text-navy-600 mb-1">🎤 Voice Input Available</p>
+            <p className="text-xs text-gray-600">
+              Click the microphone and speak naturally: &quot;My name is John Doe&quot;, &quot;My email is test@example.com&quot;, &quot;My date of birth is January 1st 1990&quot;
+            </p>
+          </div>
+          <FormVoiceAssistant
+            fields={[
+              { id: 'firstName', label: 'First Name', type: 'text', setValue: (v) => setFormData({ ...formData, firstName: v }) },
+              { id: 'lastName', label: 'Last Name', type: 'text', setValue: (v) => setFormData({ ...formData, lastName: v }) },
+              { id: 'preferredName', label: 'Preferred Name', type: 'text', setValue: (v) => setFormData({ ...formData, preferredName: v }) },
+              { id: 'dateOfBirth', label: 'Date of Birth', type: 'date', setValue: (v) => setFormData({ ...formData, dateOfBirth: v }) },
+              { id: 'gender', label: 'Gender', type: 'text', setValue: (v) => setFormData({ ...formData, gender: v }) },
+              { id: 'heightInches', label: 'Height', type: 'number', setValue: (v) => setFormData({ ...formData, heightInches: v }) },
+              { id: 'street1', label: 'Street Address', type: 'text', setValue: (v) => setFormData({ ...formData, street1: v }) },
+              { id: 'street2', label: 'Apartment/Unit', type: 'text', setValue: (v) => setFormData({ ...formData, street2: v }) },
+              { id: 'city', label: 'City', type: 'text', setValue: (v) => setFormData({ ...formData, city: v }) },
+              { id: 'state', label: 'State', type: 'text', setValue: (v) => setFormData({ ...formData, state: v }) },
+              { id: 'zipCode', label: 'ZIP Code', type: 'text', setValue: (v) => setFormData({ ...formData, zipCode: v }) },
+              { id: 'country', label: 'Country', type: 'text', setValue: (v) => setFormData({ ...formData, country: v }) },
+              { id: 'emergencyName', label: 'Emergency Contact Name', type: 'text', setValue: (v) => setFormData({ ...formData, emergencyName: v }) },
+              { id: 'emergencyRelationship', label: 'Emergency Relationship', type: 'text', setValue: (v) => setFormData({ ...formData, emergencyRelationship: v }) },
+              { id: 'emergencyPhone', label: 'Emergency Phone', type: 'tel', setValue: (v) => setFormData({ ...formData, emergencyPhone: v }) },
+              { id: 'emergencyEmail', label: 'Emergency Email', type: 'email', setValue: (v) => setFormData({ ...formData, emergencyEmail: v }) },
+              { id: 'insuranceProvider', label: 'Insurance Provider', type: 'text', setValue: (v) => setFormData({ ...formData, insuranceProvider: v }) },
+              { id: 'insurancePolicyNumber', label: 'Policy Number', type: 'text', setValue: (v) => setFormData({ ...formData, insurancePolicyNumber: v }) },
+              { id: 'insuranceGroupNumber', label: 'Group Number', type: 'text', setValue: (v) => setFormData({ ...formData, insuranceGroupNumber: v }) },
+            ]}
+            onFieldFilled={(fieldId, value) => {
+              console.log(`Voice filled ${fieldId} with: ${value}`);
+            }}
+          />
         </div>
 
         {/* Progress Bar */}

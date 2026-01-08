@@ -37,10 +37,20 @@ export interface ChatResponse {
  * 
  * Uses Redis (Upstash) for production with automatic fallback to in-memory storage.
  * This provides distributed caching and rate limiting across multiple instances.
+ * 
+ * Development mode: Stricter limits to conserve tokens
  */
-const CACHE_TTL_SECONDS = 3 * 60; // 3 minutes in seconds (commercial best practice: 2-5 minutes)
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+// Cache TTL: Longer in dev to reduce API calls
+const CACHE_TTL_SECONDS = isDevelopment ? 10 * 60 : 3 * 60; // 10 min in dev, 3 min in prod
+
+// Rate limiting: Stricter in dev to prevent excessive token usage
 const RATE_LIMIT_WINDOW_SECONDS = 60; // 1 minute in seconds
-const MAX_REQUESTS_PER_WINDOW = 15; // Commercial best practice: 10-20 msgs/min/user (using 15 as middle ground)
+const MAX_REQUESTS_PER_WINDOW = isDevelopment ? 5 : 15; // 5 msgs/min in dev, 15 in prod
+
+// Token limits: Lower in dev to conserve tokens
+const MAX_TOKENS = isDevelopment ? 500 : 1000; // 500 tokens in dev, 1000 in prod
 
 /**
  * WebMD-style Health Information Assistant
@@ -257,7 +267,7 @@ export async function chatWithAssistant(
     // Call Claude API
     const response = await anthropic.messages.create({
       model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 1000,
+      max_tokens: MAX_TOKENS,
       system: CHAT_SYSTEM_PROMPT,
       messages: messages as any,
     });

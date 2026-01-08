@@ -22,9 +22,13 @@ let violations = [];
 // Routes that are exempt from the assertion
 // - create-or-get: Called during attachment process itself
 // - medications: Inbound webhook only (receives data, doesn't make SP calls)
+// - hospital-admission/notify: Wellness-first - conditionally notifies if practice_id exists
+// - hospital/parse-discharge-summary: Wellness-first - conditionally notifies if practice_id exists
 const EXEMPT_ROUTES = [
   "app/api/solopractice/patients/create-or-get/route.ts",
   "app/api/patient/medications/route.ts", // Inbound webhook only
+  "app/api/hospital-admission/notify/route.ts", // Wellness-first: conditionally notifies
+  "app/api/hospital/parse-discharge-summary/route.ts", // Wellness-first: conditionally notifies
 ];
 
 for (const file of routes) {

@@ -7,7 +7,8 @@ import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { RequirePractice } from '@/components/RequirePractice';
+import { useAttachmentStatus } from '@/lib/hooks/useAttachmentStatus';
+import { supabase } from '@/lib/supabase/client';
 import { getPatientMedications, type Medication } from '@/lib/supabase/queries-medications';
 import { getRefillInfo, formatRefillStatus } from '@/lib/utils/medication-refills';
 
@@ -39,11 +40,14 @@ export default function MedicationsPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useRequireAuth();
   const patientId = useAuthStore((state) => state.patientId);
+  const { attached } = useAttachmentStatus();
   const [meds, setMeds] = useState<MedicationWithPrescriber[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newMed, setNewMed] = useState({ name: '', dosage: '', frequency: '', instructions: '' });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   // Load medications from database
   useEffect(() => {
@@ -76,13 +80,89 @@ export default function MedicationsPage() {
   }
 
   const handleAddMed = async () => {
-    if (!newMed.name) { alert('Please enter medication name'); return; }
+    if (!newMed.name.trim()) {
+      setError('Please enter medication name');
+      return;
+    }
+    if (!newMed.dosage.trim()) {
+      setError('Please enter dosage');
+      return;
+    }
+    if (!newMed.frequency.trim()) {
+      setError('Please select frequency');
+      return;
+    }
+    if (!patientId) {
+      setError('Patient ID not found. Please try logging in again.');
+      return;
+    }
+
     setSaving(true);
-    await new Promise(r => setTimeout(r, 1000));
-    setSaving(false);
-    alert('Medication added! Your care team will review and verify this information.');
-    setShowAddForm(false);
-    setNewMed({ name: '', dosage: '', frequency: '', instructions: '' });
+    setError(null);
+    setSuccess(null);
+
+    try {
+      // Extract dosage and unit - try to parse common formats
+      let dosageValue = newMed.dosage.trim();
+      let dosageUnit = 'mg'; // Default unit
+      
+      // Try to match patterns like "500mg", "500 mg", "10 tablets", etc.
+      const dosageMatch = newMed.dosage.match(/^(\d+(?:\.\d+)?)\s*(mg|mcg|g|ml|tablet|capsule|unit|iu|tab|cap)?$/i);
+      if (dosageMatch && dosageMatch[1]) {
+        dosageValue = dosageMatch[1];
+        if (dosageMatch[2]) {
+          // Normalize unit names
+          const unit = dosageMatch[2].toLowerCase();
+          if (unit === 'tab') dosageUnit = 'tablet';
+          else if (unit === 'cap') dosageUnit = 'capsule';
+          else dosageUnit = unit;
+        }
+      } else {
+        // If no match, use the whole string as dosage value
+        dosageValue = newMed.dosage.trim();
+      }
+
+      const medicationData = {
+        patient_id: patientId,
+        name: newMed.name.trim(),
+        dosage: dosageValue,
+        dosage_unit: dosageUnit,
+        frequency: newMed.frequency,
+        route: 'oral', // Default, can be enhanced later
+        instructions: newMed.instructions.trim() || null,
+        is_active: true,
+        start_date: new Date().toISOString().split('T')[0],
+      };
+
+      const { error: insertError } = await supabase
+        .from('medications')
+        .insert(medicationData)
+        .select()
+        .single();
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      // Reload medications
+      const medications = await getPatientMedications(patientId);
+      setMeds(medications);
+
+      setSuccess(attached 
+        ? 'Medication added! Your care team will review and verify this information.'
+        : 'Medication added! This is for your personal tracking. Connect to a care team to share with your provider.'
+      );
+      setShowAddForm(false);
+      setNewMed({ name: '', dosage: '', frequency: '', instructions: '' });
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => setSuccess(null), 5000);
+    } catch (err) {
+      console.error('Error adding medication:', err);
+      setError(err instanceof Error ? err.message : 'Failed to add medication. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const activeMeds = meds.filter(m => m.is_active);
@@ -96,12 +176,35 @@ export default function MedicationsPage() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-navy-600">Medications</h1>
-            <p className="text-gray-600">View and manage your prescriptions</p>
+            <p className="text-gray-600">
+              {attached ? 'View and manage your prescriptions' : 'Track your medications for personal wellness'}
+            </p>
           </div>
-          {hasMeds && !showAddForm && (
-            <Button variant="primary" onClick={() => setShowAddForm(true)}>+ Add Medication</Button>
+          {!showAddForm && (
+            <Button variant="primary" onClick={() => setShowAddForm(true)}>
+              + Add Medication
+            </Button>
           )}
         </div>
+
+        {!attached && (
+          <div className="mb-6 rounded-md border border-yellow-300 bg-yellow-50 p-4 text-sm">
+            <strong>Wellness Mode:</strong> These medications are for your personal tracking only.
+            <a href="/connect" className="ml-1 text-blue-600 underline">Connect to a care team</a> to share medications with your provider.
+          </div>
+        )}
+
+        {error && (
+          <Card className="mb-6 bg-red-50 border-red-200">
+            <p className="text-red-800 text-sm">{error}</p>
+          </Card>
+        )}
+
+        {success && (
+          <Card className="mb-6 bg-green-50 border-green-200">
+            <p className="text-green-800 text-sm">{success}</p>
+          </Card>
+        )}
 
         {showAddForm && (
           <Card className="mb-6">
@@ -129,7 +232,11 @@ export default function MedicationsPage() {
                 <Button variant="primary" onClick={handleAddMed} isLoading={saving}>Save Medication</Button>
               </div>
             </div>
-            <p className="text-xs text-amber-600 mt-3">⚠️ Self-reported medications will be marked as pending until verified by your care team.</p>
+            {attached ? (
+              <p className="text-xs text-amber-600 mt-3">⚠️ Self-reported medications will be marked as pending until verified by your care team.</p>
+            ) : (
+              <p className="text-xs text-blue-600 mt-3">ℹ️ This medication is for your personal tracking. Connect to a care team to share with your provider.</p>
+            )}
           </Card>
         )}
 
@@ -168,7 +275,12 @@ export default function MedicationsPage() {
                       {med.instructions && (
                         <p className="text-sm text-gray-500 mt-1">{med.instructions}</p>
                       )}
-                      <p className="text-sm text-gray-500 mt-1">Prescribed by {prescriberName}</p>
+                      {med.prescriber_id && (
+                        <p className="text-sm text-gray-500 mt-1">Prescribed by {prescriberName}</p>
+                      )}
+                      {!med.prescriber_id && (
+                        <p className="text-sm text-gray-500 mt-1">Self-reported medication</p>
+                      )}
                       {refillStatus && (
                         <p className={`text-sm mt-1 ${needsRefill ? 'text-amber-600 font-medium' : 'text-gray-500'}`}>
                           {refillStatus}
@@ -179,7 +291,7 @@ export default function MedicationsPage() {
                       <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
                         ● Active
                       </span>
-                      {needsRefill && (
+                      {needsRefill && attached && (
                         <Button 
                           variant="outline" 
                           size="sm" 
@@ -213,9 +325,5 @@ export default function MedicationsPage() {
     );
   }
 
-  return (
-    <RequirePractice featureName="Medications">
-      <MedicationsPageInner />
-    </RequirePractice>
-  );
+  return <MedicationsPageInner />;
 }

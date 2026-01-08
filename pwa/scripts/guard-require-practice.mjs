@@ -7,14 +7,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..');
 
-// These are the clinical routes from your audit (adjust if route filenames differ)
+// These are the clinical routes that MUST have RequirePractice gates
 // NOTE: /vitals and /symptom-check are NOT in this list - they support dual mode (local/clinical)
+// NOTE: /labs, /medications, and /care-plan are wellness-first (no gate required) per new architecture
 const CLINICAL_ROUTE_HINTS = [
   'app/messages',
-  'app/labs',
-  'app/medications',
   'app/appointments',
-  'app/care-plan',
   'app/referrals',
   'app/billing',
   'app/hospital-admission',

@@ -54,8 +54,9 @@ export function useVoiceCapture(options: Options = {}) {
     recognitionRef.current?.stop();
   }, []);
 
-  const start = useCallback(() => {
+  const start = useCallback(async () => {
     if (typeof window === "undefined") return;
+    
     const SpeechRecognitionCtor =
       (window as typeof window & { webkitSpeechRecognition?: SpeechRecognitionCtor; SpeechRecognition?: SpeechRecognitionCtor }).SpeechRecognition ||
       (window as typeof window & { webkitSpeechRecognition?: SpeechRecognitionCtor; SpeechRecognition?: SpeechRecognitionCtor }).webkitSpeechRecognition;
@@ -63,7 +64,25 @@ export function useVoiceCapture(options: Options = {}) {
       onPermissionError?.("Voice input not supported in this browser.");
       return;
     }
+
     try {
+      // Request microphone permission first
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          // Stop the stream immediately - we just needed permission
+          stream.getTracks().forEach(track => track.stop());
+        } catch (mediaError) {
+          const errorMsg = mediaError instanceof Error ? mediaError.message : 'Unknown error';
+          if (errorMsg.includes('denied') || errorMsg.includes('blocked') || errorMsg.includes('permission')) {
+            setState("error");
+            onPermissionError?.("Microphone access was blocked. Please allow mic permissions for this site.");
+            return;
+          }
+          // If it's not a permission error, continue - some browsers don't require getUserMedia for SpeechRecognition
+        }
+      }
+
       const recognition = new (SpeechRecognitionCtor as SpeechRecognitionCtor)();
       // Use targetLang if provided, otherwise fall back to navigator language or en-US
       recognition.lang = targetLang || (typeof navigator !== "undefined" && navigator.language) || "en-US";
@@ -89,10 +108,15 @@ export function useVoiceCapture(options: Options = {}) {
       };
 
       recognition.onerror = (evt: SpeechRecognitionErrorEventLike) => {
+        console.error('Speech recognition error:', evt.error);
         setState("error");
         const msg =
           evt.error === "not-allowed"
             ? "Microphone access was blocked. Please allow mic permissions for this site."
+            : evt.error === "no-speech"
+            ? "No speech detected. Please try again."
+            : evt.error === "audio-capture"
+            ? "No microphone found. Please check your device."
             : `Voice input error: ${evt.error || "unknown"}`;
         onPermissionError?.(msg);
       };
@@ -100,9 +124,14 @@ export function useVoiceCapture(options: Options = {}) {
       recognition.onend = () => {
         const finalText = partialRef.current.trim();
         setState("idle");
-        if (!finalText) return;
+        if (!finalText) {
+          console.log('Speech recognition ended with no text');
+          return;
+        }
+        console.log('Speech recognition ended with text:', finalText);
         translateText(finalText, targetLang)
           .then(({ translatedText, detectedLang }) => {
+            console.log('Translation complete:', { translatedText, detectedLang });
             setResult({
               transcript: finalText,
               translated: translatedText || finalText,
@@ -110,6 +139,13 @@ export function useVoiceCapture(options: Options = {}) {
             });
           })
           .catch((err) => {
+            console.error('Translation error:', err);
+            // Even if translation fails, return the original text
+            setResult({
+              transcript: finalText,
+              translated: finalText,
+              detectedLang: targetLang || 'en',
+            });
             onError?.(err instanceof Error ? err.message : "Translation failed");
           });
       };

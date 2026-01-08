@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/Button';
 import { supabase } from '@/lib/supabase/client';
 import { getCurrentUserAndPatient } from '@/lib/supabase/queries-settings';
 import { getPatientMedications } from '@/lib/supabase/queries-medications';
+import { apiClient } from '@/lib/api/solopractice-client';
 
 interface MedicationReconciliation {
   id: string;
@@ -146,6 +147,38 @@ export default function MedicationReconciliationPage() {
           medications_reconciled_at: new Date().toISOString(),
         })
         .eq('id', visitId);
+
+      // CRITICAL: Notify primary care that medication reconciliation is complete
+      // This ensures primary care knows changes have been applied (award-winning feature)
+      try {
+        const { patient } = await getCurrentUserAndPatient();
+        if (patient?.practice_id && patient?.sp_patient_id) {
+          const appliedCount = unappliedReconciliations.length;
+          const summary = `✅ Medication Reconciliation Complete: ${appliedCount} medication change${appliedCount !== 1 ? 's' : ''} applied to patient's medication list`;
+
+          await apiClient.submitPatientRequest({
+            type: 'question',
+            patient: {
+              id: patient.sp_patient_id,
+              name: `${patient.first_name || ''} ${patient.last_name || ''}`.trim(),
+              planTier: 'Essential',
+            },
+            summary,
+            details: {
+              hospitalAdmissionId: visitId,
+              medicationsApplied: appliedCount,
+              reconciliationDate: new Date().toISOString(),
+              alertType: 'medication_reconciliation_complete',
+              priority: 'normal',
+            },
+            priority: 'green',
+            source: 'mha',
+          });
+        }
+      } catch (notifyError) {
+        console.error('Error notifying primary care of reconciliation:', notifyError);
+        // Don't fail the reconciliation if notification fails
+      }
 
       router.push('/hospital-visits');
     } catch (err) {

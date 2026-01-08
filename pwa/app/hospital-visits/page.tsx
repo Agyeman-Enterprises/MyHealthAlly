@@ -48,8 +48,17 @@ export default function HospitalVisitsPage() {
       if (isLoading) return;
 
       try {
+        // Check for session first
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          setError('Please log in to view your hospital visits');
+          setLoading(false);
+          return;
+        }
+
         const { patientId } = await getCurrentUserAndPatient();
         if (!patientId) {
+          setError('Patient record not found. Please contact support.');
           setLoading(false);
           return;
         }
@@ -65,7 +74,12 @@ export default function HospitalVisitsPage() {
         setVisits(data || []);
       } catch (err) {
         console.error('Error loading visits:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load visits');
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load visits';
+        if (errorMessage.includes('not authenticated') || errorMessage.includes('session')) {
+          setError('Please log in to view your hospital visits');
+        } else {
+          setError(errorMessage);
+        }
       } finally {
         setLoading(false);
       }

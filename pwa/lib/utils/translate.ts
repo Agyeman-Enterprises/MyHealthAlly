@@ -1,16 +1,21 @@
 /**
- * Translation helper with pluggable provider (stub-friendly).
- * - Detects source language from browser when available.
- * - If TRANSLATE_API_URL/TRANSLATE_API_KEY are set, posts to that service.
- * - Otherwise, falls back to returning the original text.
+ * Translation helper - CRITICAL: 100% reliability required for award-winning feature.
+ * - All user inputs → English (for clinic)
+ * - All clinic responses → User's language
+ * - NO FALLBACKS - translation must work or throw error
  *
  * Expected provider contract (JSON):
  * { text: string, targetLang: string } -> { translatedText: string, detectedLang?: string }
  */
+import { env } from '@/lib/env';
+
 type TranslateResponse = { translatedText: string; detectedLang?: string };
 
 function detectBrowserLang(): string {
-  return 'en'; // fallback; replace with real detector if needed
+  if (typeof window !== 'undefined') {
+    return navigator.language.split('-')[0] || 'en';
+  }
+  return 'en';
 }
 
 export async function translateText(
@@ -20,36 +25,65 @@ export async function translateText(
   const detectedLang = detectBrowserLang();
   if (!text.trim()) return { translatedText: '', detectedLang };
 
-  const apiUrl = process.env['TRANSLATE_API_URL'];
-  const apiKey = process.env['TRANSLATE_API_KEY'];
+  const apiUrl = env.TRANSLATE_API_URL;
+  const apiKey = env.TRANSLATE_API_KEY;
 
-  if (apiUrl && apiKey) {
-    try {
-      const res = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({ text, targetLang }),
-      });
-      if (!res.ok) {
-        throw new Error(`Translate API error ${res.status}`);
-      }
-      const data = (await res.json()) as TranslateResponse;
-      return {
-        translatedText: data.translatedText || text,
-        detectedLang: data.detectedLang || detectedLang,
-      };
-    } catch (err) {
-      console.warn('Translation failed, falling back to source text', err);
-      return { translatedText: text, detectedLang };
+  if (!apiUrl || !apiKey) {
+    // CRITICAL: Translation service must be configured
+    // In production, this should throw an error, not fallback
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Translation service not configured. TRANSLATE_API_URL and TRANSLATE_API_KEY must be set.');
     }
+    // In development, log warning but allow fallback for testing
+    console.warn('Translation service not configured. Using original text.');
+    return { translatedText: text, detectedLang };
   }
 
-  // Fallback: return original text and detected language
-  return {
-    translatedText: targetLang === detectedLang ? text : text,
-    detectedLang,
-  };
+  try {
+    const res = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({ text, targetLang }),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text().catch(() => 'Unknown error');
+      throw new Error(`Translation API error ${res.status}: ${errorText}`);
+    }
+
+    const data = (await res.json()) as TranslateResponse;
+    
+    // CRITICAL: Ensure we have a translation
+    if (!data.translatedText || data.translatedText.trim() === '') {
+      throw new Error('Translation service returned empty result');
+    }
+
+    return {
+      translatedText: data.translatedText,
+      detectedLang: data.detectedLang || detectedLang,
+    };
+  } catch (err) {
+    // CRITICAL: In production, translation failures are not acceptable
+    // Log error with full context for debugging
+    const errorMessage = err instanceof Error ? err.message : 'Unknown translation error';
+    console.error('Translation failed:', {
+      error: errorMessage,
+      text: text.substring(0, 100),
+      targetLang,
+      apiUrl: apiUrl ? 'configured' : 'missing',
+      apiKey: apiKey ? 'configured' : 'missing',
+    });
+
+    // In production, throw error to prevent silent failures
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(`Translation failed: ${errorMessage}. This is a critical feature and must work.`);
+    }
+
+    // In development, return original text with warning
+    console.warn('Translation failed, using original text. This should not happen in production.');
+    return { translatedText: text, detectedLang };
+  }
 }

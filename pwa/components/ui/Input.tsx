@@ -3,6 +3,7 @@
 import React, { useState, forwardRef } from 'react';
 import { cn } from '@/lib/utils';
 import { VoiceInput } from '@/components/voice/VoiceInput';
+import { parseDateFromVoice } from '@/lib/utils/voice-date-parser';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -39,13 +40,37 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({
   };
 
   const handleVoiceTranscript = (text: string) => {
-    const currentValue = value !== undefined ? String(value) : inputValue;
-    const newValue = currentValue ? `${currentValue} ${text}` : text;
-    setInputValue(newValue);
+    // Parse the transcript based on input type
+    // IMPORTANT: Replace field value (don't append) - each field gets its own voice input
+    let parsedValue = text;
+    
+    if (props.type === 'date') {
+      // Use date parser for date fields - handles mmddyyyy, natural language, etc.
+      const parsedDate = parseDateFromVoice(text);
+      parsedValue = parsedDate || text;
+    } else if (props.type === 'tel') {
+      // Format phone numbers
+      const phoneDigits = text.replace(/\D/g, '');
+      if (phoneDigits.length === 10) {
+        parsedValue = `(${phoneDigits.substring(0, 3)}) ${phoneDigits.substring(3, 6)}-${phoneDigits.substring(6)}`;
+      } else {
+        parsedValue = text;
+      }
+    } else if (props.type === 'email') {
+      // Extract email if present
+      const emailMatch = text.match(/\b[\w\.-]+@[\w\.-]+\.\w+\b/i);
+      parsedValue = emailMatch ? emailMatch[0] : text;
+    } else if (props.type === 'number') {
+      // Extract numbers only
+      parsedValue = text.replace(/\D/g, '');
+    }
+    
+    // Replace the field value (don't append) - each field gets its own voice input
+    setInputValue(parsedValue);
     if (onChange) {
       const syntheticEvent = {
-        target: { value: newValue },
-        currentTarget: { value: newValue },
+        target: { value: parsedValue },
+        currentTarget: { value: parsedValue },
       } as React.ChangeEvent<HTMLInputElement>;
       onChange(syntheticEvent);
     }
